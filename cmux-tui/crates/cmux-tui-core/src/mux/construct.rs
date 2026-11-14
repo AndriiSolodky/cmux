@@ -591,6 +591,8 @@ impl Mux {
             eprintln!("cmux-tui: output cleanup: not started: {error:#}");
         }
         crate::state::project_watch::start(&mux);
+        // The ports the terminals' programs listen on, as each workspace's `ports` entry.
+        terminal_ports::start(&mux);
         timings.lap("journal.maintenance_start");
         *mux.startup_timings.open.lock().unwrap_or_else(PoisonError::into_inner) = Some(timings);
         Ok(mux)

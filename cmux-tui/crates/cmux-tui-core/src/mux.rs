@@ -348,6 +348,7 @@ mod terminal_live;
 pub(crate) use terminal_live::TerminalProgressFollower;
 mod terminal_move;
 mod terminal_move_topology;
+pub(crate) mod terminal_ports;
 mod terminal_progress;
 mod terminal_publisher;
 mod terminal_reap;
