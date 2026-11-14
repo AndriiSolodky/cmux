@@ -268,8 +268,8 @@ pub(super) async fn dispatch(
         method::MUX_MACHINE_CONSENT_SET => machine_consent(conn, params),
         method::MUX_MACHINE_CONSENT_REFUSED => {
             let surface = params.get("surface").and_then(Value::as_str).unwrap_or_default();
-            if !matches!(surface, "screen" | "control") {
-                Err(RpcError::invalid_params("surface must be screen or control"))
+            if !crate::cli::cloud_join::is_consent_surface(surface) {
+                Err(RpcError::invalid_params("surface must be screen, control or signedInMachines"))
             } else {
                 crate::cli::cloud_join::record_consent_refusal(surface)
                     .map(|_| serde_json::json!({"recorded":true}))
@@ -292,8 +292,10 @@ fn machine_consent(conn: &Conn, params: &Value) -> Result<Value, RpcError> {
     let surface = params
         .get("surface")
         .and_then(Value::as_str)
-        .filter(|surface| matches!(*surface, "screen" | "control"))
-        .ok_or_else(|| RpcError::invalid_params("surface must be screen or control"))?;
+        .filter(|surface| crate::cli::cloud_join::is_consent_surface(surface))
+        .ok_or_else(|| {
+            RpcError::invalid_params("surface must be screen, control or signedInMachines")
+        })?;
     if !conn.is_person() || conn.origin != Origin::Local || conn.origin.web_class() {
         return Err(crate::hub::person::person_required(
             "changing this machine's screen or control consent; use the local cmux app",

@@ -180,6 +180,11 @@ impl Authority {
         match surface {
             "screen" => consent.screen = state,
             "control" => consent.control = state,
+            super::cloud_join::SIGNED_IN_MACHINES => {
+                consent.signed_in_machines = state;
+                // Any answer (Allow, Not now, a later Off) is the one ask this machine gets.
+                consent.signed_in_machines_answered_at = Some(crate::store::now_ms().to_string());
+            }
             _ => anyhow::bail!("unknown consent surface"),
         }
         if granted {
@@ -193,14 +198,20 @@ impl Authority {
     }
 
     pub(super) fn refused(&self, surface: &str) -> Result<()> {
-        anyhow::ensure!(matches!(surface, "screen" | "control"), "unknown consent surface");
+        self.refused_from(surface, None)
+    }
+
+    /// [`Self::refused`], naming the machine that asked (`from`, a host the hub lists) when one
+    /// is known, so the app's ask says which of the person's machines wants in.
+    pub(super) fn refused_from(&self, surface: &str, from: Option<&str>) -> Result<()> {
+        anyhow::ensure!(super::cloud_join::is_consent_surface(surface), "unknown consent surface");
         self.prepare()?;
-        crate::config::write_atomic(
-            &self.root.join("refusal.json"),
-            &serde_json::to_vec(
-                &json!({"event":"consent_refused","code":"consent_required","surface":surface,"at":crate::store::now_ms()}),
-            )?,
-        )
+        let mut record = json!({"event":"consent_refused","code":"consent_required","surface":surface,"at":crate::store::now_ms()});
+        if let Some(from) = from.filter(|from| !from.is_empty()) {
+            // A host name from the hub's book, bounded so the record stays small.
+            record["from"] = json!(from.chars().take(128).collect::<String>());
+        }
+        crate::config::write_atomic(&self.root.join("refusal.json"), &serde_json::to_vec(&record)?)
     }
 
     #[cfg(unix)]
