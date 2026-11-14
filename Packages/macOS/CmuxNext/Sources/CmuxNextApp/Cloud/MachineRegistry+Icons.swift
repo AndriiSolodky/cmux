@@ -44,7 +44,10 @@ extension MachineRegistry {
         let asset = IconAssetImages.shared.sidebarIcon(owner: local)
         return sections.map { section in
             guard case .machine(var machine) = section.kind else { return section }
+            // The person's own icon first; else the symbol of the device the machine is (its daemon's
+            // `machine_symbol`, Leo 2026-11-14: "nicer icons ... across all the remote related areas").
             machine.icon = SidebarMapping.machineIcon(icon(machine: machine.id.rawValue), asset: asset)
+                ?? anyDaemon(machine: machine.id.rawValue)?.store.identity?.machineSymbol.map { .symbol($0) }
             var drawn = section
             drawn.kind = .machine(machine)
             return drawn
