@@ -351,6 +351,8 @@ mod terminal_move_topology;
 mod terminal_progress;
 mod terminal_publisher;
 mod terminal_reap;
+mod terminal_port_watch;
+pub(crate) use terminal_port_watch::PortMark;
 mod terminal_tail_pins;
 pub(crate) use terminal_tail_pins::RESERVED_TAIL_KEY_PREFIX;
 #[cfg(unix)]
@@ -752,6 +754,8 @@ pub struct Mux {
     terminal_live: terminal_live::TerminalLiveLog,
     /// Pinned terminals' last lines and their publisher (`terminal-tail-pin-v1`).
     terminal_tail_pins: terminal_tail_pins::TerminalTailPins,
+    /// The terminals that printed, for their workspaces' `ports` entries.
+    terminal_port_watch: terminal_port_watch::TerminalPortWatch,
     notification_ledger: Mutex<VecDeque<ResourceNotification>>,
     /// Per-client read marks. The shared unread marker above answers "does this terminal need
     /// attention on the shared console"; this map answers "has this client install seen this
