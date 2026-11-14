@@ -394,6 +394,27 @@ await requireBrowserLane("agent-pane-jump-latest-motion.test.ts", async () => {
       await settled;
       const frames = await stopFrames(page);
       const end = await measure(page);
+      const dbg = () =>
+        page.evaluate(() => {
+          const scroller = document.querySelector<HTMLElement>(".acpmux-scroll")!;
+          const rows = [...scroller.querySelectorAll<HTMLElement>(".acpmux-row")];
+          const last = rows.reduce((a, b) =>
+            Number(b.getAttribute("aria-posinset")) > Number(a.getAttribute("aria-posinset")) ? b : a,
+          );
+          return {
+            cls: last.className,
+            pos: last.getAttribute("aria-posinset"),
+            html: last.outerHTML.slice(0, 300),
+            translate: getComputedStyle(last).translate,
+            anims: scroller
+              .getAnimations({ subtree: true })
+              .map((a) => `${(a as CSSAnimation).animationName ?? a.constructor.name}:${a.playState}:${a.currentTime}:${(a.effect as KeyframeEffect | null)?.target?.className}`),
+          };
+        });
+      console.info("JLMDBG", name, JSON.stringify({ before, start, end, d: await dbg() }));
+      await untilStill(page);
+      await new Promise((r) => setTimeout(r, 1500));
+      console.info("JLMDBG later", name, JSON.stringify({ end: await measure(page), d: await dbg() }));
       // At the end, the streamed reply's last line is the transcript's, whole above the card.
       expect({ fromEnd: end.fromEnd, lastIsLatest: end.lastIsLatest }).toEqual({ fromEnd: 0, lastIsLatest: true });
       expect(end.lastLine).toContain("Streamed paragraph 12:");
