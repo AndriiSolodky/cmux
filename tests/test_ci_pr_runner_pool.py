@@ -3431,11 +3431,14 @@ class IOSRouting(unittest.TestCase):
         readers = [name for name, job in workflow["jobs"].items()
                    if "needs.runner.outputs.runs_on" in str(job.get("runs-on", ""))]
         self.assertEqual(readers, ["ios"])
-        # The kit workflow's job is not simulator-class: its lane never takes the sim-first label.
+        # The kit workflow's runs_on serves only kit-tests, a simulator-step job: its lane may take the label.
         kit = yaml.safe_load((WORKFLOWS / "cmux-next-ios-kit.yml").read_text())
         kit_pick = next(step for step in kit["jobs"]["runner"]["steps"] if step.get("id") == "pool")
         self.assertIn("--lane kit", kit_pick["run"])
-        self.assertNotIn("kit", ios_pool.SIM_FIRST_LANES)
+        self.assertIn("kit", ios_pool.SIM_FIRST_LANES)
+        kit_readers = [name for name, job in kit["jobs"].items()
+                       if "needs.runner.outputs.runs_on" in str(job.get("runs-on", ""))]
+        self.assertEqual(kit_readers, ["kit-tests"])
 
     def test_matrix_nightly_dispatch_may_take_the_owned_pool(self):
         # The nightly arrives as a workflow_dispatch from main's copy (cmux#40397): GitHub fires
