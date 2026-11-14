@@ -908,9 +908,19 @@ impl Hub {
             let done = session.restore_done.notified();
             tokio::pin!(done);
             done.as_mut().enable();
-            // The person's steer that came before its turn showed goes in once a turn runs, but
-            // never into a verified trigger's turn, which takes no steer (`turns.rs`).
-            let turn_runs = session.turn().is_some_and(|t| !t.trigger);
+            // The person's steer that came before its turn showed goes in once that turn's own
+            // prompt is written (`steer_end.rs` wakes the queue then): written before it, the steer
+            // would reach the agent ahead of the prompt it steers. Never into a verified trigger's
+            // turn, which takes no steer (`turns.rs`).
+            let turn_runs = session.turn().is_some_and(|t| {
+                !t.trigger
+                    && session
+                        .unwritten_prompt
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .as_ref()
+                        .is_none_or(|(unwritten, _)| *unwritten != t.turn_id)
+            });
             let steer =
                 session.queue.lock().unwrap_or_else(std::sync::PoisonError::into_inner).iter().any(
                     |q| {

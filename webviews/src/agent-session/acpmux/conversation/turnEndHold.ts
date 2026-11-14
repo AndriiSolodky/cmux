@@ -72,6 +72,25 @@ export function foldsToHold(
   return [...held];
 }
 
+/// Whether a row in `seen` (the rows in the view now, the view following the latest row) is one the
+/// held "Worked for" keeps drawn: in `open` (the rows shaped with it open) and not in `closed` (shaped
+/// with it closed). While one is, the Worked for stays open (App.tsx `heldWorked`): closing it under
+/// a view that follows the bottom brought everything above the reply down by the work's height at
+/// once (Leo, 2026-11-14: "a resizing/re-adjustment of all chats after tool calls get folded").
+/// O(rows) once per shaping, only while a Worked for is held and the view follows.
+export function workedInSight(
+  seen: readonly string[],
+  open: readonly AcpmuxRow[],
+  closed: readonly AcpmuxRow[],
+): boolean {
+  if (seen.length === 0) return false;
+  const kept = new Set<string>();
+  for (const row of closed) kept.add(row.id);
+  const opened = new Set<string>();
+  for (const row of open) if (!kept.has(row.id)) opened.add(row.id);
+  return seen.some((id) => opened.has(id));
+}
+
 /// `held` (``foldsToHold``) with one key per message run: each open run's line keeps the key it
 /// toggles, and a key another row of that run brought is dropped. `drawn` is the view shaped with
 /// `held` open; only its rows after the first `reused` are looked at. A running turn draws every row
