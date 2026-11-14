@@ -216,6 +216,37 @@ await requireBrowserLane("agent-pane-tool-row-renders.test.ts", async () => {
         }),
       count,
     );
+  /// Waits until the page has drawn 10 frames in a row with no element added or removed and no
+  /// animation that ends still playing (a fold, a fade, a row's entrance), so what is counted next is the stream's alone.
+  const settled = (page: Page) =>
+    page.waitForFunction(
+      () =>
+        new Promise<boolean>((resolve) => {
+          let changed = false;
+          const observer = new MutationObserver(() => (changed = true));
+          observer.observe(document.body, { childList: true, subtree: true });
+          const step = (left: number) => {
+            // A live line's shimmer loops for as long as the turn runs: only an animation that ends counts.
+            const playing = document
+              .getAnimations()
+              .some(
+                (each) => each.playState === "running" && each.effect?.getComputedTiming().iterations !== Infinity,
+              );
+            if (changed || playing) {
+              observer.disconnect();
+              return resolve(false);
+            }
+            if (left === 0) {
+              observer.disconnect();
+              return resolve(true);
+            }
+            requestAnimationFrame(() => step(left - 1));
+          };
+          requestAnimationFrame(() => step(10));
+        }),
+      null,
+      { timeout: 15_000, polling: 50 },
+    );
   const renders = (page: Page) =>
     page.evaluate(() => (window as any).cmuxAcpmuxDebug.renders() as Record<string, number>);
   /// Starts counting what a stream does to the transcript's drawn elements besides the live ones:
@@ -294,14 +325,14 @@ await requireBrowserLane("agent-pane-tool-row-renders.test.ts", async () => {
       for (let index = 0; index < count; index++) await closed.nth(0).click();
       await frames(page, 30);
     }
-    await page.waitForTimeout(800);
+    await settled(page);
     const opened = await renders(page);
     const drawn = new Set(
       Object.keys(opened)
         .filter((key) => key.startsWith("tool-mount:"))
         .map((key) => key.slice("tool-mount:".length)),
     );
-    await page.waitForTimeout(400);
+    await settled(page);
     // Nothing draws at rest.
     const rest = Object.entries(await renders(page)).filter(([key]) => key.startsWith("tool"));
     await watchReplaced(page);
@@ -309,7 +340,7 @@ await requireBrowserLane("agent-pane-tool-row-renders.test.ts", async () => {
       push(step);
       await frames(page, 3);
     }
-    await page.waitForTimeout(600);
+    await settled(page);
     await frames(page, 4);
     const after = await renders(page);
     const gone = await replaced(page);
