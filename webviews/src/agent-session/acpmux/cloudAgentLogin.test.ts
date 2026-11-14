@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { cloudAgentLogin, localApiKeyLogin } from "./cloudAgentLogin";
+import { agentLoginSupported, cloudAgentLogin, localApiKeyLogin } from "./cloudAgentLogin";
+import { peerAgentLoginFromStatus } from "./environments";
 
 type Call = [string, ...unknown[]];
 
@@ -62,4 +63,28 @@ test("a chat on this Mac keeps Use an API key beside Sign in again, and no machi
   const { login } = options({ elsewhere: false });
   expect(cloudAgentLogin(login)).toBeUndefined();
   expect(localApiKeyLogin(login)?.agent).toBe("claude");
+});
+
+test("the sign-in card follows the machine the chat runs on, not only the acpmux the page talks to", () => {
+  const peerChat = { peer: "studio", host: "studio" };
+  const kinds = { studio: "ssh" as const };
+  // A peer chat: the page's acpmux forwards the login, and the peer must run it too.
+  expect(agentLoginSupported(true, peerChat, kinds, {}, { studio: true })).toBe(true);
+  expect(agentLoginSupported(true, peerChat, kinds, {}, { studio: false })).toBe(false);
+  // The page's acpmux cannot forward what it does not serve, whatever the peer lists.
+  expect(agentLoginSupported(false, peerChat, kinds, {}, { studio: true })).toBe(false);
+  // An acpmux too old to report the peer's answer keeps its own, as before.
+  expect(agentLoginSupported(true, peerChat, kinds, {}, {})).toBe(true);
+  // A chat on this Mac, or on the machine the app's wire reaches, runs on the page's acpmux.
+  expect(agentLoginSupported(true, { machine: "box" }, {}, {}, { studio: false })).toBe(true);
+  expect(agentLoginSupported(true, { machine: "box" }, {}, { origin: "remote" }, { studio: false })).toBe(true);
+  // A Cloud peer is a peer too.
+  const cloudChat = { peer: "vm-1", hostKind: "cloud" as const };
+  expect(agentLoginSupported(true, cloudChat, { "vm-1": "cloud" }, {}, { "vm-1": false })).toBe(false);
+});
+
+test("a status row's agentLogin is read per peer; a row without one is left out", () => {
+  expect(
+    peerAgentLoginFromStatus({ peers: [{ name: "a", agentLogin: true }, { name: "b", agentLogin: false }, { name: "c" }] }),
+  ).toEqual({ a: true, b: false });
 });
