@@ -639,6 +639,7 @@ import {
   lastTurnWorkedKeys,
   rowsToHold,
   withoutHeldRows,
+  workedInSight,
 } from "./conversation/turnEndHold";
 import { HarnessHealthNotice } from "./HarnessHealthNotice";
 import { type HarnessHealth, type UpdateOffer, UpdateOfferContext } from "./harnessHealthNoticeModel";
@@ -2107,7 +2108,7 @@ function AcpmuxPane({ initialChat }: { initialChat?: InitialChat }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   /// The rows in the shown transcript's view (VirtualTranscript `inViewNow`), and the folds a turn's
   /// end holds open over them until `expanded` has them (conversation/turnEndHold.ts).
-  const transcriptInView = useRef<(() => readonly string[] | null) | undefined>(undefined);
+  const transcriptInView = useRef<((following?: boolean) => readonly string[] | null) | undefined>(undefined);
   const heldFolds = useRef<{ session?: string; keys: ReadonlySet<string> }>({ keys: new Set() });
   const foldsSeen = useRef<{ session?: string; folds?: Folds }>({});
   /// The commands the live line let go of while the reader was scrolled up, kept out of their runs
@@ -3066,8 +3067,14 @@ function AcpmuxPane({ initialChat }: { initialChat?: InitialChat }) {
       const asked = heldRuns.current.asked === true;
       if (heldRuns.current.session !== shownSessionId || asked || (!viewNow && heldRuns.current.keys.size > 0))
         heldRuns.current = { session: shownSessionId, keys: new Set() };
-      if (heldWorked.current.session !== shownSessionId || (!viewNow && heldWorked.current.keys.size > 0))
+      if (heldWorked.current.session !== shownSessionId)
         heldWorked.current = { session: shownSessionId, keys: new Set() };
+      // Back at the latest row, a Worked for held open over what the reader read closes only once
+      // none of the work it hides is in sight: closed there, everything above the reply came down
+      // at once by the work's height, under the reader's eyes (Leo, 2026-11-14: "a resizing/
+      // re-adjustment of all chats after tool calls get folded"). Out of sight above the view, its
+      // close moves nothing they see: the view follows the bottom.
+      const workedFollowing = !viewNow && heldWorked.current.keys.size > 0;
       const shapeFrom = (source: readonly AcpmuxRow[], open: Folds) =>
         turnViewFrom(
           source,
@@ -3102,6 +3109,18 @@ function AcpmuxPane({ initialChat }: { initialChat?: InitialChat }) {
         heldWorked.current.keys.size === 0
           ? heldFolds.current.keys
           : new Set([...heldFolds.current.keys, ...heldWorked.current.keys]);
+      if (workedFollowing) {
+        const seen = transcriptInView.current?.(true);
+        if (
+          !seen?.length ||
+          !workedInSight(
+            seen,
+            shape(withHeldFolds(folds, heldOpen())).rows,
+            shape(withHeldFolds(folds, heldFolds.current.keys)).rows,
+          )
+        )
+          heldWorked.current = { session: shownSessionId, keys: new Set() };
+      }
       let turns = shape(withHeldFolds(folds, heldOpen()));
       const inView = ownChange ? null : transcriptInView.current?.();
       if (inView) {

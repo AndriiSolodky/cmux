@@ -1664,8 +1664,9 @@ function TranscriptView({
   /// never in view), for a page about to let go.
   anchorNow?: React.MutableRefObject<(() => ScrollAnchor | null | undefined) | undefined>;
   /// Filled with the ids of the rows in the reader's view now, or null while it follows the latest
-  /// message (a turn's end keeps those rows open, conversation/turnEndHold.ts).
-  inViewNow?: React.MutableRefObject<(() => readonly string[] | null) | undefined>;
+  /// message (a turn's end keeps those rows open, conversation/turnEndHold.ts). `following`: the ids
+  /// even while it follows (a Worked for held open closes only once its rows are out of sight).
+  inViewNow?: React.MutableRefObject<((following?: boolean) => readonly string[] | null) | undefined>;
   /// A reply is streaming: Jump to latest remains static while the shared transcript spinner carries
   /// the working state.
   working?: boolean;
@@ -5568,9 +5569,9 @@ function TranscriptView({
   }, [anchorNow]);
   useEffect(() => {
     if (!inViewNow) return;
-    inViewNow.current = () => {
+    inViewNow.current = (following = false) => {
       const node = ref.current;
-      if (!node || followingRef.current || node.clientHeight === 0) return null;
+      if (!node || (followingRef.current && !following) || node.clientHeight === 0) return null;
       const { layout: placed, rows: shown } = latestLayout.current;
       const view = visibleLayoutRange(placed, layoutScrollTop(node), node.clientHeight, 0);
       return shown.slice(view.first, view.last).map((row) => row.id);
