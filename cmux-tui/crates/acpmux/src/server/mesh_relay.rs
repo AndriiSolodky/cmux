@@ -367,7 +367,6 @@ async fn heartbeats(
                     }
                     halt.all();
                     if let Some(hub) = hub.upgrade() {
-                        hub.set_mesh_book_machines(Default::default());
                         hub.set_mesh_book(Default::default(), Vec::new());
                     }
                     return;
@@ -422,7 +421,6 @@ async fn heartbeats(
         }
     }
     if let Some(hub) = hub.upgrade() {
-        hub.set_mesh_book_machines(Default::default());
         hub.set_mesh_book(Default::default(), Vec::new());
     }
     let last = Heartbeat { host, sessions: Vec::new(), leaving: true };
