@@ -50,6 +50,8 @@ export interface MachineRow {
   id: string;
   name: string;
   kind: MachineKind;
+  /** What device it is (`mac-mini`, `linux-server`; cmux-device-kind), when its daemon said. */
+  device?: string;
   isLocal: boolean;
   isConnected: boolean;
   /** The link is being made, or a resume is on its way (a spinner). Never with a settled serverState. */

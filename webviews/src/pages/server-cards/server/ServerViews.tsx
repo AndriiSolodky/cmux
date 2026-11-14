@@ -3,6 +3,8 @@
 // app's status; every change is an intent the app's owner answers. Few labels by design: glyphs and
 // dots carry state. Alert titles and bodies come from the server (they carry live numbers); check
 // names are ours.
+import { DeviceGlyph } from "../../../ui/DeviceGlyph";
+import { deviceKindOf } from "../../../ui/deviceKinds";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Spinner } from "../../../agent-session/acpmux/conversation/icons";
 import { DialogButton } from "../../../ui/DialogButton";
@@ -33,6 +35,7 @@ import type {
   HealthSeverity,
   PairingCandidate,
   PairingOffer,
+  ServerDevice,
   ServerIntent,
   ServerRoleState,
   ServerSnapshot,
@@ -558,6 +561,13 @@ function appTone(state: string) {
 
 const DEVICE_ICONS: Record<string, ServerIconName> = { mac: "mac", phone: "phone", web: "browser", cli: "terminal" };
 
+/** A paired device's icon: its device glyph once it said what it is (Leo 2026-11-14), else its kind's. */
+function DeviceIcon({ device }: { device: ServerDevice }) {
+  const kind = deviceKindOf(device.device);
+  if (kind) return <DeviceGlyph kind={kind} className="sv-row-icon" />;
+  return <ServerIcon name={DEVICE_ICONS[device.kind] ?? "devices"} className="sv-row-icon" />;
+}
+
 function ListPanel(props: PanelProps) {
   const { snapshot, status, actions, strings } = props;
   const open = HealthOrdering.open(snapshot.alerts);
@@ -608,7 +618,7 @@ function ListPanel(props: PanelProps) {
       {snapshot.devices.length > 0 && <h4 className="sv-group">{strings.t("row.devices")}</h4>}
       {snapshot.devices.map((device) => (
         <div key={device.id} className="sv-row sv-device" data-device={device.id}>
-          <ServerIcon name={DEVICE_ICONS[device.kind] ?? "devices"} className="sv-row-icon" />
+          <DeviceIcon device={device} />
           <span className="sv-grow">{device.name}</span>
           {device.lastSeen !== undefined && (
             <span className="sv-caption sv-device-seen">{formatTime(device.lastSeen, strings.language)}</span>

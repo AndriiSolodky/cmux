@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MacBookGlyph } from "./MacBookGlyph";
+import { DeviceGlyphShapes } from "../../ui/DeviceGlyph";
+import { DEVICE_GLYPH_VIEWBOX } from "../../ui/deviceGlyphPaths";
+import { type DeviceKind, useDeviceKind } from "../../ui/deviceKinds";
 import { Combobox } from "../../ui/Combobox";
 import { ContextMenu } from "../../ui/ContextMenu";
 import { Popover } from "../../ui/Popover";
@@ -986,14 +989,16 @@ function matches(words: readonly string[], text: string): boolean {
 /// it reads the same in the chip, this list and the chat's Environment line; this Mac stays quiet
 /// (Leo 2026-10-20: another machine is the news).
 export function EnvironmentIcon({ kind, name }: { kind: EnvironmentKind; name?: string }) {
+  const device = environmentDevice(kind, useDeviceKind(kind === "local" ? undefined : name));
   return (
     <svg
-      className={`acpmux-icon acpmux-location-icon acpmux-env-icon ui-ghost-icon${kind === "local" ? " acpmux-macbook-icon" : ""}`}
+      className={`acpmux-icon acpmux-location-icon acpmux-env-icon ui-ghost-icon${device ? " acpmux-macbook-icon acpmux-device-icon" : ""}`}
       data-kind={kind}
+      data-device={device}
       style={name && kind !== "local" ? { color: machineColor(name) } : undefined}
       width={14}
       height={14}
-      viewBox={kind === "local" ? "0 0 20 16" : "0 0 16 16"}
+      viewBox={device ? DEVICE_GLYPH_VIEWBOX : "0 0 16 16"}
       fill="none"
       stroke="currentColor"
       strokeWidth={1.25}
@@ -1002,8 +1007,10 @@ export function EnvironmentIcon({ kind, name }: { kind: EnvironmentKind; name?: 
       aria-hidden="true"
       focusable="false"
     >
-      {kind === "local" ? (
+      {device === "macbook" ? (
         <MacBookGlyph />
+      ) : device ? (
+        <DeviceGlyphShapes kind={device} />
       ) : kind === "ssh" ? (
         <>
           <rect x="2" y="3" width="12" height="10" rx="1.5" />
@@ -1014,6 +1021,15 @@ export function EnvironmentIcon({ kind, name }: { kind: EnvironmentKind; name?: 
       )}
     </svg>
   );
+}
+
+/// The device glyph a machine of `kind` draws: what the daemon says it is (`reported`); this Mac
+/// until it says, the MacBook it always drew; a Cloud machine is the cloud by its source. An SSH
+/// machine that has not said keeps its terminal glyph.
+export function environmentDevice(kind: EnvironmentKind, reported: DeviceKind | undefined): DeviceKind | undefined {
+  if (kind === "cloud") return "cloud";
+  if (kind === "local") return reported ?? "macbook";
+  return reported;
 }
 
 /// Remote (one of the person's own machines): a globe, any kind of machine alike.

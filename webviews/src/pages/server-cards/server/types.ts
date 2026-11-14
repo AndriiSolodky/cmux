@@ -96,6 +96,8 @@ export interface ServerDevice {
   id: string;
   name: string;
   kind: "mac" | "phone" | "web" | "cli";
+  /** What device it is (`macbook`, `iphone`; cmux-device-kind), when it said. */
+  device?: string;
   lastSeen?: number;
 }
 
