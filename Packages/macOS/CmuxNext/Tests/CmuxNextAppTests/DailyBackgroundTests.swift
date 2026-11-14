@@ -89,9 +89,11 @@ import Testing
         await settle { harness.scope.backdropSelection == .art(.daily(on: today, calendar: calendar)) }
         let tomorrow = BackdropArt.nextDay(after: today, calendar: calendar).addingTimeInterval(60)
         harness.terminal.now = { tomorrow }
-        harness.terminal.showShuffledArt()
+        harness.terminal.showSwitchedArt()
         #expect(harness.scope.backdropSelection == .art(.daily(on: tomorrow, calendar: calendar)))
         #expect(harness.scope.backdropSelection != .art(.daily(on: today, calendar: calendar)))
+        // debug.themes reports the change after: the next local midnight.
+        #expect(harness.terminal.nextChange == BackdropRotation.daily.nextTurn(after: tomorrow, calendar: calendar))
     }
 
     /// A time zone or clock change re-picks the work for the new local day at once.
@@ -135,7 +137,7 @@ import Testing
         for _ in 0..<(2 * BackdropArt.allCases.count) {
             let now = day
             harness.terminal.now = { now }
-            harness.terminal.showShuffledArt()
+            harness.terminal.showSwitchedArt()
             if case let .art(art) = harness.scope.backdropSelection { shown.append(art) }
             day = BackdropArt.nextDay(after: now, calendar: calendar).addingTimeInterval(60)
         }
