@@ -1104,9 +1104,15 @@ impl Hub {
         // A subagent retry skipped since its prompt went out, or that no attempt of this daemon
         // sent (one a restart or a move restored), does not start (`subagent_retry.rs`).
         let prompt_id = turn.prompt_id.clone();
-        self.subagent_retries.start(&session.id, &prompt_id, subagent_retry, || {
+        let started = self.subagent_retries.start(&session.id, &prompt_id, subagent_retry, || {
             *session.turn.lock().unwrap_or_else(|e| e.into_inner()) = Some(turn);
-        })
+        });
+        // The person's steer that queued while this turn was starting goes in now
+        // (`queue.rs` `QueuedPrompt::steer_on_start`).
+        if started.is_ok() {
+            session.queue_moved.notify_waiters();
+        }
+        started
     }
 
     /// Sets the wait of the chat's continuation of `cut_turn`, when it still waits: what the

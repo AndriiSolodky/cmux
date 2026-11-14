@@ -84,6 +84,8 @@ mod peer_notice_cost_tests;
 #[cfg(test)]
 mod prompt_accept_tests;
 #[cfg(test)]
+mod steer_on_start_tests;
+#[cfg(test)]
 mod remote_table_bench;
 #[cfg(test)]
 mod review_queue_tests;
