@@ -114,7 +114,8 @@ import { Elapsed } from "./Elapsed";
 import { commandStatus, trayItemKey, type TrayItem } from "./runningTray";
 import { longestRunningFirst, runSince } from "./trayHeadOrder";
 import { attentionFirst, type TrayCard } from "./trayAttention";
-import { actionDetail, latestLine, namedAction } from "./trayDetail";
+import { latestLine } from "./trayDetail";
+import { SubagentPreviewCard } from "./SubagentPreview";
 import { trayPanelLook, trayRowLook, trayStopLook } from "./trayPanel.experiment";
 import { trayMotionLook } from "./trayMotion.experiment";
 import { trayHeadLook } from "./trayHead.experiment";
@@ -1007,8 +1008,9 @@ export const SubagentTray = memo(function SubagentTray({
               time={agentTime(item.agent)}
               depth={item.depth}
               // Its kind and what it does now are off the line (Leo, 2026-10-31: "a lot of these
-              // subtitles are bad"); the tooltip keeps them under its task.
-              title={agentTooltip(t, item.agent)}
+              // subtitles are bad"); its hover card keeps them, the one card every subagent chip
+              // shows (SubagentPreview.tsx).
+              card={<SubagentPreviewCard agent={item.agent} waiting={waiting} />}
               label={subagentTaskLabel(t, item.agent)}
               chevron
               trayColumns
@@ -1162,27 +1164,6 @@ const quietAgent = (agent: Subagent, waiting: ReadonlySet<string>) => {
   const status = subagentStatus(agent, waiting);
   return status === "done" || status === "running";
 };
-
-/// What the line no longer says, in its tooltip: its whole task (the line may cut it), its name
-/// when the line shows its task instead, its kind (Explore, general-purpose) and, while it runs,
-/// what it does now.
-function agentTooltip(t: Translate, agent: Subagent): string | undefined {
-  const doing =
-    agent.state !== "running"
-      ? undefined
-      : agent.actionShell
-        ? actionDetail(t, agent.action, true)
-        : namedAction(t, agent.action);
-  const label = subagentTaskLabel(t, agent);
-  const name = subagentDisplayName(t, agent);
-  const lines = [
-    agent.task,
-    name !== label && name !== agent.task ? name : undefined,
-    agent.kind && agent.kind !== agent.name ? agent.kind : undefined,
-    doing,
-  ];
-  return lines.filter((line): line is string => Boolean(line)).join("\n") || undefined;
-}
 
 /// What a lone item's folded header says (SubagentTray.tsx `lone`): its name as its line names it, what
 /// it does now (as its line's latest), its status, its state word and its time.
