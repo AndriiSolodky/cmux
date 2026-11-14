@@ -201,6 +201,7 @@ pub(crate) use pool::SESSION_NEW_BUDGET;
 #[cfg(test)]
 mod fork_retarget_tests;
 mod prompt_attribution;
+pub(crate) mod image_size;
 pub(crate) mod prompt_images;
 mod prompt_ledger;
 mod prompt_line;
