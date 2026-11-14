@@ -71,6 +71,7 @@ fn trim(v: Value) -> Value {
     for key in [
         "os",
         "arch",
+        "device",
         "cpus",
         "load",
         "ram",
