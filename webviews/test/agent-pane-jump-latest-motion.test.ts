@@ -372,6 +372,14 @@ await requireBrowserLane("agent-pane-jump-latest-motion.test.ts", async () => {
     async (name) => {
       const page = await open(name);
       const before = await measure(page);
+      process.stdout.write(
+        `JLMDBG-before ${name} ${await page.evaluate(() =>
+          [...document.querySelectorAll<HTMLElement>(".acpmux-scroll .acpmux-row")]
+            .slice(-3)
+            .map((r) => `${r.getAttribute("aria-posinset")} ${r.className} top=${Math.round(r.getBoundingClientRect().top)} h=${Math.round(r.getBoundingClientRect().height)} ${r.textContent?.slice(0, 50)}`)
+            .join(" | "),
+        )} card=${await page.evaluate(() => Math.round(document.querySelector(".acpmux-composer-box")!.getBoundingClientRect().top))}\n`,
+      );
       await growWhileScrolledUp(page);
       const start = await measure(page);
       await startFrames(page);
@@ -394,6 +402,26 @@ await requireBrowserLane("agent-pane-jump-latest-motion.test.ts", async () => {
       await settled;
       const frames = await stopFrames(page);
       const end = await measure(page);
+      const dbg = () =>
+        page.evaluate(() => {
+          const scroller = document.querySelector<HTMLElement>(".acpmux-scroll")!;
+          const rows = [...scroller.querySelectorAll<HTMLElement>(".acpmux-row")];
+          const tail = rows
+            .sort((a, b) => Number(a.getAttribute("aria-posinset")) - Number(b.getAttribute("aria-posinset")))
+            .slice(-3)
+            .map((r) => {
+              const b = r.getBoundingClientRect();
+              return `${r.getAttribute("aria-posinset")}/${r.getAttribute("aria-setsize")} ${r.className} top=${Math.round(b.top)} h=${Math.round(b.height)} ${r.textContent?.slice(0, 50)}`;
+            });
+          const anims = scroller
+            .getAnimations({ subtree: true })
+            .map((a) => `${String((a as { animationName?: string }).animationName)}:${a.playState}`);
+          return { tail, anims, card: Math.round(document.querySelector(".acpmux-composer-box")!.getBoundingClientRect().top) };
+        });
+      const beforeTail = "n/a";
+      process.stdout.write(`JLMDBG ${name} before=${JSON.stringify(before)} end=${JSON.stringify(end)} d=${JSON.stringify(await dbg())} ${beforeTail}\n`);
+      await page.waitForTimeout(1500);
+      process.stdout.write(`JLMDBG-later ${name} end=${JSON.stringify(await measure(page))} d=${JSON.stringify(await dbg())}\n`);
       // At the end, the streamed reply's last line is the transcript's, whole above the card.
       expect({ fromEnd: end.fromEnd, lastIsLatest: end.lastIsLatest }).toEqual({ fromEnd: 0, lastIsLatest: true });
       expect(end.lastLine).toContain("Streamed paragraph 12:");
