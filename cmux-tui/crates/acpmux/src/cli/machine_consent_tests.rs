@@ -178,3 +178,44 @@ fn a_join_the_person_made_gates_the_macs_own_computer_use_as_before() {
     let (_dir, fresh, _) = fixture();
     assert_eq!(fresh.status_for(true), fresh.status());
 }
+/// "Control for my other machines signed in to this account": off after a sign-in join, granted
+/// and revoked only by a set, and any answer is recorded so the machine is asked once.
+#[test]
+fn signed_in_machines_is_off_by_default_and_answered_once() {
+    let (_dir, a, b) = fixture();
+    a.enroll_as(true).unwrap();
+    let status = b.status();
+    assert_eq!(status["consent"]["signedInMachines"], "none", "signing in grants nothing");
+    assert!(status["consent"]["signedInMachinesAnsweredAt"].is_null(), "not asked yet");
+    a.refused_from(super::super::cloud_join::SIGNED_IN_MACHINES, Some("studio")).unwrap();
+    let status = b.status();
+    assert_eq!(status["lastRefusal"]["surface"], "signedInMachines");
+    assert_eq!(status["lastRefusal"]["from"], "studio");
+    assert_eq!(status["consent"]["signedInMachines"], "none", "a refusal grants nothing");
+    // Not now: still off, and answered.
+    b.set("signedInMachines", false).unwrap();
+    let status = a.status();
+    assert_eq!(status["consent"]["signedInMachines"], "none");
+    assert!(status["consent"]["signedInMachinesAnsweredAt"].is_string());
+    // Allow, then Off again: revocable on this machine.
+    a.set("signedInMachines", true).unwrap();
+    assert_eq!(b.status()["consent"]["signedInMachines"], "granted");
+    assert_eq!(b.status()["consent"]["control"], "none", "it is not control from elsewhere");
+    b.set("signedInMachines", false).unwrap();
+    assert_eq!(a.status()["consent"]["signedInMachines"], "none");
+}
+/// A consent file an older build wrote (no signedInMachines) reads as off, and its other grants
+/// keep.
+#[test]
+fn an_older_consent_file_reads_signed_in_machines_as_off() {
+    let (_dir, a, _b) = fixture();
+    a.enroll().unwrap();
+    crate::config::write_atomic(
+        &a.root.join("consent.json"),
+        b"{\"screen\":\"granted\",\"control\":\"none\"}",
+    )
+    .unwrap();
+    let status = a.status();
+    assert_eq!(status["consent"]["screen"], "granted");
+    assert_eq!(status["consent"]["signedInMachines"], "none");
+}
