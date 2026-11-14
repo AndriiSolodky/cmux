@@ -379,3 +379,30 @@ async fn parked_boot_settles_without_probing_but_manual_replacement_retries() {
         assert_eq!(reason(&refused.expect("fast refusal").unwrap_err()), Some("peer_unreachable"));
     }
 }
+
+/// Every field of a peer row (`_acpmux/peers`, `_acpmux/status`) is named in the schema's
+/// `_acpmux/peers` result, so a client reads only what is documented (`parked` and
+/// `agentLogin` went out undocumented).
+#[test]
+fn every_peer_row_field_is_named_in_the_schema() {
+    let (tx, _notices) = mpsc::channel(4);
+    let peer = Peer::new("box", "ws://127.0.0.1:9", None, None, tx);
+    peer.seed_features(&[crate::agent_login::FEATURE]);
+    let row = peer.summary();
+    assert_eq!(row["agentLogin"], true, "{row}");
+    let schema: Value = serde_json::from_str(crate::schema::SCHEMA).unwrap();
+    let doc = schema["methods"]["_acpmux/peers"]["result"]["peers"]
+        .as_str()
+        .expect("_acpmux/peers documents its rows")
+        .to_owned();
+    let named = |key: &str| {
+        doc.match_indices(key).any(|(at, _)| {
+            let before = doc[..at].chars().next_back();
+            let after = doc[at + key.len()..].chars().next();
+            !before.is_some_and(char::is_alphanumeric) && !after.is_some_and(char::is_alphanumeric)
+        })
+    };
+    let missing: Vec<&String> =
+        row.as_object().unwrap().keys().filter(|key| !named(key)).collect();
+    assert!(missing.is_empty(), "peer row fields the schema does not name: {missing:?}");
+}

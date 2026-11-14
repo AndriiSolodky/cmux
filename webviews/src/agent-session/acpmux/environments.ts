@@ -92,6 +92,19 @@ export function peerConnectedFromStatus(status: unknown): Record<string, boolean
   return connected;
 }
 
+/// Each peer's `agentLogin` flag from `_acpmux/status` (it listed `agent_login` at its last
+/// handshake). A peer with no flag (an older acpmux, which does not report it) is left out.
+export function peerAgentLoginFromStatus(status: unknown): Record<string, boolean> {
+  const peers = (status as { peers?: unknown } | undefined)?.peers;
+  if (!Array.isArray(peers)) return {};
+  const login: Record<string, boolean> = {};
+  for (const peer of peers) {
+    const { name, agentLogin } = (peer ?? {}) as { name?: unknown; agentLogin?: unknown };
+    if (typeof name === "string" && name && typeof agentLogin === "boolean") login[name] = agentLogin;
+  }
+  return login;
+}
+
 /// Each peer's link state from `_acpmux/status` (the relay keeps it as a string;
 /// AcpmuxPaneMethods.replyShapes). A peer with no state, or one that is not a string, is left out.
 /// Each peer's whole link state from `_acpmux/status` or `_acpmux/peers` rows (`link`, linkState.ts),
