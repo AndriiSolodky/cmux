@@ -1,3 +1,4 @@
+import AppKit
 import CmuxNextCompat
 import Foundation
 import CmuxNextDesign
@@ -67,14 +68,27 @@ final class TerminalThemeSetting {
     private let reloadTimer = DemandTimer(owner: "terminal-theme.background-reload")
     /// How long that reload waits after a step (tests lengthen it, so a slow host's steps still coalesce).
     var reloadDelay = TerminalThemeSetting.backgroundReloadDelay
-    /// Shuffle: turns the backdrop to its next picture when the period ends (``BackdropRotation``).
+    /// A switching background (``BackdropSwitch``: shuffle, schedule, dynamic wallpaper by time)
+    /// turns to its next picture when its change comes: one timer, armed to that change only.
     private let dailyTimer = DemandTimer(owner: "terminal-theme.daily-background")
-    /// The clock and calendar (read per pick, so a time zone change applies) a shuffle reads; tests pin both.
+    /// Starts decoding the next picture shortly before its change (``prewarmLead``).
+    private let prewarmTimer = DemandTimer(owner: "terminal-theme.background-prewarm")
+    /// The clock and calendar (read per pick, so a time zone change applies) a switch reads; tests pin both.
     var now: () -> Date = Date.init, calendar: () -> Calendar = { .current }
-    /// Where it hears of a day, time zone or clock change (tests post to their own); set before `follow`.
+    /// Where it hears of a day, time zone or clock change and of the app hiding and unhiding
+    /// (tests post to their own); set before `follow`.
     var notificationCenter: NotificationCenter = .default
-    /// The shuffle the background is, so a day, time zone or clock change re-picks its picture.
-    private var shuffling: BackdropShuffle?
+    /// Where it hears of the Mac waking (tests post to their own); set before `follow`.
+    var workspaceCenter: NotificationCenter = NSWorkspace.shared.notificationCenter
+    /// Whether the app is hidden: no switch timer runs while it is (tests pin it).
+    var isHidden: () -> Bool = { NSApp?.isHidden ?? false }
+    /// Decodes a picture the switch turns to next (tests record it).
+    var prewarm: (BackdropSelection) -> Void = { BackdropImageStore.shared.prewarm($0) }
+    /// How long before a change the next picture starts decoding.
+    static let prewarmLead: TimeInterval = 30
+    /// The switch the background is, so a day, time zone or clock change, a wake or an unhide
+    /// re-picks its picture.
+    private var switching: BackdropSwitch?
     private var dayObservers: [any NSObjectProtocol] = []
     static let backgroundReloadDelay = Duration.milliseconds(60)
     private var observation: Task<Void, Never>?
@@ -92,21 +106,28 @@ final class TerminalThemeSetting {
         // reloads Ghostty per tick. A background step repaints at once and reloads Ghostty after the steps stop (`apply`).
         take(settings.lookFollowed, theme: settings.applied.appTheme, edits: settings.applied.themeEdits,
              background: settings.applied.windowBackground, art: settings.applied.backdropSelection,
-             shuffle: BackdropSelectionSetting.shuffle(settings.applied.root), tuning: settings.applied.windowTuning,
+             shuffle: BackdropSwitch(settings.applied.root), tuning: settings.applied.windowTuning,
              reduced: settings.applied.reducedBackgrounds)
-        // A time zone or clock change moves local midnight, which the armed timer cannot see.
-        for name in [Notification.Name.NSCalendarDayChanged, .NSSystemTimeZoneDidChange, .NSSystemClockDidChange] {
-            dayObservers.append(notificationCenter.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+        BackdropLocation.prewarm()
+        // A time zone or clock change moves local midnight and the sun, which the armed timer
+        // cannot see; a wake or an unhide may be past the change. Hidden, no timer runs.
+        let names: [(NotificationCenter, Notification.Name)] = [
+            (notificationCenter, .NSCalendarDayChanged), (notificationCenter, .NSSystemTimeZoneDidChange),
+            (notificationCenter, .NSSystemClockDidChange), (notificationCenter, NSApplication.didUnhideNotification),
+            (notificationCenter, NSApplication.didHideNotification), (workspaceCenter, NSWorkspace.didWakeNotification),
+        ]
+        for (center, name) in names {
+            dayObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in
-                    guard let self, self.shuffling != nil else { return }
-                    self.showShuffledArt()
+                    guard let self, self.switching != nil else { return }
+                    self.showSwitchedArt()
                 }
             })
         }
         observation = Task { [weak self] in
             for await (snapshot, theme, edits, background, art, shuffle, tuning, reduced) in ObservationStream({
                 (settings.lookFollowed, settings.applied.appTheme, settings.applied.themeEdits, settings.applied.windowBackground,
-                 settings.applied.backdropSelection, BackdropSelectionSetting.shuffle(settings.applied.root), settings.applied.windowTuning,
+                 settings.applied.backdropSelection, BackdropSwitch(settings.applied.root), settings.applied.windowTuning,
                  settings.applied.reducedBackgrounds)
             }) {
                 self?.take(snapshot, theme: theme, edits: edits, background: background, art: art, shuffle: shuffle, tuning: tuning,
@@ -116,15 +137,16 @@ final class TerminalThemeSetting {
     }
 
     private func take(_ snapshot: CmuxConfigSnapshot, theme: String?, edits: ThemeEdits, background: WindowBackgroundOverride,
-                      art: BackdropSelection?, shuffle: BackdropShuffle?, tuning: AppearanceTuning, reduced: Bool) {
-        shuffling = shuffle
+                      art: BackdropSelection?, shuffle: BackdropSwitch?, tuning: AppearanceTuning, reduced: Bool) {
+        switching = shuffle
         // `reduced` (`ui.reducedBackgrounds`, from `applied` so a preview of it repaints): the plain
         // theme background; the person's picks are kept.
         backdropScope.setBackdropsHidden(reduced)
         if shuffle != nil {
-            showShuffledArt()
+            showSwitchedArt()
         } else {
             dailyTimer.cancel()
+            prewarmTimer.cancel()
             backdropScope.setBackdropSelection(art)
         }
         backdropScope.setAppearanceTuning(tuning)
@@ -140,11 +162,24 @@ final class TerminalThemeSetting {
         apply(state)
     }
 
-    /// Shows the shuffle's picture of `now()` and turns to the next one when its period ends.
-    func showShuffledArt() {
-        guard let turn = shuffling?.turn(at: now(), calendar: calendar()) else { return }
+    /// Shows the switch's picture of `now()` and turns to the next one when it changes (a second
+    /// past it), decoding that one ``prewarmLead`` before; while the app is hidden, no timer.
+    func showSwitchedArt() {
+        guard let switching else { return }
+        let (date, calendar) = (now(), calendar())
+        let turn = switching.turn(at: date, calendar: calendar)
         backdropScope.setBackdropSelection(turn.picture)
-        dailyTimer.schedule(after: .seconds(turn.wait)) { @MainActor [weak self] in self?.showShuffledArt() }
+        dailyTimer.cancel()
+        prewarmTimer.cancel()
+        guard let next = turn.next, !isHidden() else { return }
+        let wait = max(1, next.timeIntervalSince(date) + 1)
+        dailyTimer.schedule(after: .seconds(wait)) { @MainActor [weak self] in self?.showSwitchedArt() }
+        guard wait > Self.prewarmLead else { return }
+        prewarmTimer.schedule(after: .seconds(wait - Self.prewarmLead)) { @MainActor [weak self] in
+            guard let self, let upcoming = self.switching?.turn(at: next.addingTimeInterval(1), calendar: self.calendar()).picture
+            else { return }
+            self.prewarm(upcoming)
+        }
     }
 
     /// Puts `snapshot`'s appearance on the Ghostty overrides before the
