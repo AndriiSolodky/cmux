@@ -12,6 +12,8 @@ export const ROW_LEVELS: {
     "workspaces.freeing.idleMinutes": "more",
     "workspaces.freeing.agents": "more",
     "workspaces.freeing.runningCommands": "more",
+    "agents.hiddenChats.discard": "more",
+    "agents.hiddenChats.discardAfterMinutes": "hidden",
     "workspaces.autoArchive.idleDays": "more",
     "updates.checkIntervalSeconds": "hidden",
     "updates.whatsNewInstall": "hidden",
