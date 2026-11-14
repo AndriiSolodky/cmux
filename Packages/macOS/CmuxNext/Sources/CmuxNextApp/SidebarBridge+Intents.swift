@@ -59,6 +59,17 @@ extension SidebarBridge {
         case let .selectTab(_, tab): revealPinnedTab(tab.rawValue) // shown in this window (cmux#37371)
         // The tab strip's close for that tab, on whichever machine holds it (the palette's Close Tab).
         case let .closeTab(_, tab): PaletteSourcesBridge.TabSource(services: services).closeTab(id: tab.rawValue)
+        // A port row of the hover card: the workspace shows here, and its own daemon opens the port in a browser tab
+        // of it (`workspace.open_url`); a tab in another machine's workspace reaches that machine's localhost.
+        case let .openPort(id, url, _):
+            guard !model.isPlaceholder(id), let (workspace, daemon) = services.machines.workspace(id: id.rawValue),
+                  let resource = workspace.resourceID?.rawValue else { return }
+            guard daemon.supports(Self.openURLCapability) else {
+                return services.registry.refuse(daemon.missingCapabilityMessage(Self.openURLCapability))
+            }
+            model.apply(.select(id))
+            services.windows.show(workspaceID: id.rawValue, in: state, from: .thisWindow)
+            command("workspace.open_url", on: daemon, for: intent) { c in try await WorkspaceOpenURLClient(c).open(url, inWorkspace: resource) }
         case .reorder(let ids, let position):
             // A pending edit, as on the personal path: each command's echo shows no step between.
             SidebarDaemonReorder.reorder(ids, to: position, in: model.sections, edit: rows.edits.add(intent), bridge: self)
@@ -210,6 +221,9 @@ extension SidebarBridge {
         model.profiles = SidebarSpaceBar.profiles(services.machines.local, window: state.id, windows: services.windows)
         groupFlow.openPendingEditor()
     }
+
+    /// `workspace.open_url` on a daemon (a port row of the hover card opens through it).
+    static let openURLCapability = "workspace-open-url-v1"
 
     /// Sends one command for `intent`, shown at once through the store's intent log when it has a store
     /// `change`; a failure re-syncs the sidebar and says why (#26382).

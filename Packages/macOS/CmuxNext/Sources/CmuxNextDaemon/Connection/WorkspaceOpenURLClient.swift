@@ -20,4 +20,16 @@ public struct WorkspaceOpenURLClient: Sendable {
                                     idempotencyKey: key)
         }, as: ResourceMutationResult<JSONValue>.self)
     }
+
+    /// Opens `url` (http or https) on the right side of the workspace with resource id `workspace` (`ws_…`), on
+    /// this connection's daemon: a port row of the sidebar's hover card.
+    public func open(_ url: String, inWorkspace workspace: String) async throws {
+        let key = "cmux-next-open-url-" + UUID().uuidString.lowercased()
+        _ = try await connection.resourceRequest({ id in
+            ResourceRequestEnvelope(id: id, operation: "workspace.open_url",
+                                    params: ["machine": .string("current"), "session": .string("current"),
+                                             "workspace": .string(workspace), "url": .string(url)],
+                                    idempotencyKey: key)
+        }, as: ResourceMutationResult<JSONValue>.self)
+    }
 }
