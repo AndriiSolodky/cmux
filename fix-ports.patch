@@ -1,0 +1,600 @@
+diff --git a/cmux-tui/crates/cmux-tui-core/src/mux.rs b/cmux-tui/crates/cmux-tui-core/src/mux.rs
+index 6898c68205d..fddbc066781 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/mux.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/mux.rs
+@@ -348,6 +348,7 @@ mod terminal_live;
+ pub(crate) use terminal_live::TerminalProgressFollower;
+ mod terminal_move;
+ mod terminal_move_topology;
++pub(crate) mod terminal_ports;
+ mod terminal_progress;
+ mod terminal_publisher;
+ mod terminal_reap;
+diff --git a/cmux-tui/crates/cmux-tui-core/src/mux/construct.rs b/cmux-tui/crates/cmux-tui-core/src/mux/construct.rs
+index 123ee4662ce..c1611d3bb5a 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/mux/construct.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/mux/construct.rs
+@@ -591,6 +591,8 @@ impl Mux {
+             eprintln!("cmux-tui: output cleanup: not started: {error:#}");
+         }
+         crate::state::project_watch::start(&mux);
++        // The ports the terminals' programs listen on, as each workspace's `ports` entry.
++        terminal_ports::start(&mux);
+         timings.lap("journal.maintenance_start");
+         *mux.startup_timings.open.lock().unwrap_or_else(PoisonError::into_inner) = Some(timings);
+         Ok(mux)
+diff --git a/cmux-tui/crates/cmux-tui-core/src/mux/terminal_ports.rs b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_ports.rs
+new file mode 100644
+index 00000000000..a41ba16f7f4
+--- /dev/null
++++ b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_ports.rs
+@@ -0,0 +1,254 @@
++//! Terminal ports: the TCP ports the programs in a workspace's terminals
++//! listen on show as the workspace's status entry `ports` (":3000, :5173"),
++//! which the app's sidebar row and hover card already draw (CmuxNextBridge
++//! `SidebarMapping.portsKey`). Every machine's daemon writes the entries of
++//! its own workspaces, so a dev server started on another machine shows on
++//! that machine's workspace in the app, the same as one on this Mac; a browser
++//! tab in that workspace already reaches the machine's localhost.
++//!
++//! One thread scans every [`SCAN_INTERVAL`] while the mux lives. A scan reads
++//! the terminals (pid and workspace) under the state lock, then everything
++//! else outside it: on Linux the machine's LISTEN table first, and the
++//! process trees and their sockets only when that table or the terminals
++//! changed since the last scan, so a quiet machine costs two small file reads
++//! per scan; on macOS the terminals' trees through libproc
++//! (`cmux_tui_platform::listening_sockets`). It commits only a change.
++//!
++//! The daemon's entry carries the icon [`PORTS_ICON`]. A `ports` entry with
++//! another icon (or none) is a person's or a hook's
++//! (`cmux workspace status set ports ...`): the scan never replaces or clears
++//! it. Entries an earlier daemon run left are reconciled by the first scan.
++
++use std::collections::{BTreeMap, BTreeSet};
++
++use super::*;
++use crate::process_resources::Sampler;
++use crate::state::WorkspaceStatusChange;
++use crate::state::status_meta::StatusMeta;
++use crate::workspace_registry::WorkspaceMutation;
++use cmux_tui_platform::listening_sockets::Listeners;
++
++/// The status key the sidebar's ports element reads.
++pub(crate) const PORTS_KEY: &str = "ports";
++/// Marks the entry as the daemon's.
++pub(crate) const PORTS_ICON: &str = "network";
++/// How often the terminals' listeners are read.
++pub(crate) const SCAN_INTERVAL: Duration = Duration::from_secs(2);
++
++/// One live terminal: its workspace's public id and its program's pid.
++#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
++pub(crate) struct TerminalProcess {
++    pub(crate) workspace: String,
++    pub(crate) pid: u32,
++}
++
++/// The ports each workspace's terminals listen on: every process in the tree
++/// under each terminal's program counts.
++pub(crate) fn workspace_ports(
++    terminals: &[TerminalProcess],
++    mut tree: impl FnMut(u32) -> Vec<u32>,
++    mut ports_of: impl FnMut(u32) -> BTreeSet<u16>,
++) -> BTreeMap<String, BTreeSet<u16>> {
++    let mut out: BTreeMap<String, BTreeSet<u16>> = BTreeMap::new();
++    for terminal in terminals {
++        let ports: BTreeSet<u16> = tree(terminal.pid).into_iter().flat_map(&mut ports_of).collect();
++        if !ports.is_empty() {
++            out.entry(terminal.workspace.clone()).or_default().extend(ports);
++        }
++    }
++    out
++}
++
++/// The entry's text, in the sidebar's documented form: ":3000, :5173".
++pub(crate) fn ports_text(ports: &BTreeSet<u16>) -> String {
++    ports.iter().map(|port| format!(":{port}")).collect::<Vec<_>>().join(", ")
++}
++
++/// One write the scan makes.
++#[derive(Debug, PartialEq, Eq)]
++pub(crate) enum PortsChange {
++    Set { workspace: String, text: String },
++    Clear { workspace: String },
++}
++
++/// A `ports` entry as stored: its text and icon.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub(crate) struct StoredPorts {
++    pub(crate) text: String,
++    pub(crate) icon: Option<String>,
++}
++
++/// The writes that make the stored entries of `live` workspaces match
++/// `wanted`, touching only the daemon's own entries (icon [`PORTS_ICON`]).
++pub(crate) fn plan(
++    live: &BTreeSet<String>,
++    stored: &BTreeMap<String, StoredPorts>,
++    wanted: &BTreeMap<String, String>,
++) -> Vec<PortsChange> {
++    let ours = |entry: &StoredPorts| entry.icon.as_deref() == Some(PORTS_ICON);
++    let mut changes = Vec::new();
++    for workspace in live {
++        let current = stored.get(workspace);
++        match (wanted.get(workspace), current) {
++            (Some(text), None) => {
++                changes.push(PortsChange::Set { workspace: workspace.clone(), text: text.clone() })
++            }
++            (Some(text), Some(entry)) if ours(entry) && entry.text != *text => {
++                changes.push(PortsChange::Set { workspace: workspace.clone(), text: text.clone() })
++            }
++            (None, Some(entry)) if ours(entry) => {
++                changes.push(PortsChange::Clear { workspace: workspace.clone() })
++            }
++            _ => {}
++        }
++    }
++    changes
++}
++
++/// What the last scan saw, to skip a scan whose inputs did not change.
++#[derive(Default)]
++pub(crate) struct ScanMemory {
++    terminals: Vec<TerminalProcess>,
++    /// The machine's LISTEN sockets (Linux); `None` reads every scan.
++    listeners: Option<BTreeSet<u64>>,
++    /// What the last scan wrote; `None` until the first reconcile.
++    wanted: Option<BTreeMap<String, String>>,
++}
++
++/// Starts the scan thread. In-crate tests build many a `Mux` and drive
++/// [`Mux::scan_terminal_ports`] themselves; `tests/terminal_ports.rs` runs
++/// the thread through `Mux::new`.
++pub(crate) fn start(mux: &Arc<Mux>) {
++    if cfg!(test) {
++        return;
++    }
++    let weak = Arc::downgrade(mux);
++    if let Err(error) =
++        std::thread::Builder::new().name("terminal-ports".into()).spawn(move || run(&weak))
++    {
++        eprintln!("cmux-tui: terminal ports: not started: {error}");
++    }
++}
++
++/// Scans until the mux is gone or shuts down. The mux is let go between
++/// scans, so dropping it ends the thread.
++fn run(weak: &Weak<Mux>) {
++    let mut memory = ScanMemory::default();
++    loop {
++        {
++            let Some(mux) = weak.upgrade() else { return };
++            if mux.daemon_shutdown_requested() {
++                return;
++            }
++            mux.scan_terminal_ports(&mut memory);
++        }
++        // A bounded wait between scans, not a synchronization: nothing wakes it.
++        std::thread::park_timeout(SCAN_INTERVAL);
++    }
++}
++
++impl Mux {
++    /// One scan: read the terminals' listeners and commit what changed.
++    pub(crate) fn scan_terminal_ports(&self, memory: &mut ScanMemory) {
++        let (mut terminals, live) = self.with_state(|state| {
++            let live: BTreeSet<String> =
++                state.workspaces.iter().map(|workspace| workspace.public_id.to_string()).collect();
++            let terminals: Vec<TerminalProcess> = state
++                .surfaces
++                .iter()
++                .filter(|(_, surface)| surface.kind() == SurfaceKind::Pty && !surface.is_dead())
++                .filter_map(|(id, surface)| {
++                    let pid = surface.process_id()?;
++                    let workspace = Self::workspace_for_surface_in_state(state, *id)?;
++                    let workspace = state.workspace_by_id(workspace)?.public_id.to_string();
++                    Some(TerminalProcess { workspace, pid })
++                })
++                .collect();
++            (terminals, live)
++        });
++        terminals.sort();
++        terminals.dedup();
++        let Some(listeners) = Listeners::read() else { return };
++        let fingerprint = listeners.fingerprint();
++        let unchanged = memory.wanted.is_some()
++            && fingerprint.is_some()
++            && fingerprint == memory.listeners
++            && terminals == memory.terminals;
++        if unchanged {
++            return;
++        }
++        let sampler = (!terminals.is_empty()).then(Sampler::new);
++        let tree = |pid: u32| -> Vec<u32> {
++            let Some(sampler) = sampler.as_ref() else { return Vec::new() };
++            sampler.tree(pid).nodes.iter().map(|node| node.pid).collect()
++        };
++        let ports = workspace_ports(&terminals, tree, |pid| listeners.ports_of(pid));
++        let wanted: BTreeMap<String, String> =
++            ports.iter().map(|(workspace, ports)| (workspace.clone(), ports_text(ports))).collect();
++        memory.terminals = terminals;
++        memory.listeners = fingerprint;
++        if memory.wanted.as_ref() == Some(&wanted) {
++            return;
++        }
++        let stored = match self.read_registry_state(stored_ports) {
++            Ok(stored) => stored,
++            Err(error) => {
++                eprintln!("cmux-tui: terminal ports: reading entries failed: {error}");
++                return;
++            }
++        };
++        let mut all_committed = true;
++        for change in plan(&live, &stored, &wanted) {
++            all_committed &= self.commit_terminal_ports(change);
++        }
++        // A failed write is tried again by the next scan.
++        memory.wanted = all_committed.then_some(wanted);
++    }
++
++    fn commit_terminal_ports(&self, change: PortsChange) -> bool {
++        let mutation = WorkspaceMutation::daemon_local("terminal.ports");
++        let (workspace, operation, change) = match change {
++            PortsChange::Set { workspace, text } => (
++                workspace,
++                "workspace_status.set",
++                WorkspaceStatusChange::Set {
++                    key: PORTS_KEY.into(),
++                    text,
++                    icon: Some(PORTS_ICON.into()),
++                    color: None,
++                    meta: Box::new(StatusMeta::default()),
++                },
++            ),
++            PortsChange::Clear { workspace } => (
++                workspace,
++                "workspace_status.clear",
++                WorkspaceStatusChange::Clear { key: Some(PORTS_KEY.into()) },
++            ),
++        };
++        let selectors = self.local_workspace_selectors(&workspace);
++        match self.state_workspace_status(&mutation, operation, None, &selectors, change) {
++            Ok(_) => true,
++            Err(error) => {
++                eprintln!("cmux-tui: terminal ports: {operation} failed: {error}");
++                false
++            }
++        }
++    }
++}
++
++/// Every stored `ports` entry, by workspace public id.
++fn stored_ports(
++    connection: &rusqlite::Connection,
++) -> anyhow::Result<BTreeMap<String, StoredPorts>> {
++    let mut statement = connection.prepare(
++        "SELECT workspace_id, text, icon FROM workspace_status_entries WHERE status_key = ?1",
++    )?;
++    let rows = statement.query_map([PORTS_KEY], |row| {
++        Ok((row.get::<_, String>(0)?, StoredPorts { text: row.get(1)?, icon: row.get(2)? }))
++    })?;
++    Ok(rows.collect::<Result<BTreeMap<_, _>, _>>()?)
++}
++
++#[cfg(test)]
++#[path = "terminal_ports_tests.rs"]
++mod tests;
+diff --git a/cmux-tui/crates/cmux-tui-core/src/mux/terminal_ports_tests.rs b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_ports_tests.rs
+new file mode 100644
+index 00000000000..16a47af3b9b
+--- /dev/null
++++ b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_ports_tests.rs
+@@ -0,0 +1,61 @@
++//! The terminal ports rules without live processes: which workspace a
++//! listener counts for, the entry's text, and which entries a scan writes.
++
++use std::collections::{BTreeMap, BTreeSet, HashMap};
++
++use super::*;
++
++fn terminal(workspace: &str, pid: u32) -> TerminalProcess {
++    TerminalProcess { workspace: workspace.into(), pid }
++}
++
++#[test]
++fn a_listener_anywhere_in_a_terminals_tree_counts_for_its_workspace() {
++    // ws_a: shell 10 -> npm 11 -> node 12 (listens on 5173); shell 20 listens on 3000.
++    // ws_b: shell 30, nothing listening. Process 99 is outside every terminal.
++    let trees: HashMap<u32, Vec<u32>> =
++        HashMap::from([(10, vec![10, 11, 12]), (20, vec![20]), (30, vec![30])]);
++    let listening: HashMap<u32, Vec<u16>> =
++        HashMap::from([(12, vec![5173]), (20, vec![3000]), (99, vec![8080])]);
++    let ports = workspace_ports(
++        &[terminal("ws_a", 10), terminal("ws_a", 20), terminal("ws_b", 30)],
++        |pid| trees.get(&pid).cloned().unwrap_or_default(),
++        |pid| listening.get(&pid).into_iter().flatten().copied().collect(),
++    );
++    assert_eq!(ports, BTreeMap::from([("ws_a".to_owned(), BTreeSet::from([3000, 5173]))]));
++    assert_eq!(ports_text(&ports["ws_a"]), ":3000, :5173");
++}
++
++fn stored(text: &str, icon: Option<&str>) -> StoredPorts {
++    StoredPorts { text: text.into(), icon: icon.map(str::to_owned) }
++}
++
++#[test]
++fn a_scan_writes_only_the_daemons_own_entries_of_live_workspaces() {
++    let live: BTreeSet<String> = ["new", "changed", "same", "closed", "person", "gone_ws_kept"]
++        .into_iter()
++        .map(str::to_owned)
++        .collect();
++    let stored = BTreeMap::from([
++        ("changed".to_owned(), stored(":3000", Some(PORTS_ICON))),
++        ("same".to_owned(), stored(":4000", Some(PORTS_ICON))),
++        ("closed".to_owned(), stored(":5000", Some(PORTS_ICON))),
++        ("person".to_owned(), stored("api :8080", None)),
++        // Another session's workspace: not live here, never touched.
++        ("elsewhere".to_owned(), stored(":6000", Some(PORTS_ICON))),
++    ]);
++    let wanted = BTreeMap::from([
++        ("new".to_owned(), ":1234".to_owned()),
++        ("changed".to_owned(), ":3000, :3001".to_owned()),
++        ("same".to_owned(), ":4000".to_owned()),
++        ("person".to_owned(), ":9000".to_owned()),
++    ]);
++    assert_eq!(
++        plan(&live, &stored, &wanted),
++        [
++            PortsChange::Set { workspace: "changed".into(), text: ":3000, :3001".into() },
++            PortsChange::Clear { workspace: "closed".into() },
++            PortsChange::Set { workspace: "new".into(), text: ":1234".into() },
++        ]
++    );
++}
+diff --git a/cmux-tui/crates/cmux-tui-platform/src/lib.rs b/cmux-tui/crates/cmux-tui-platform/src/lib.rs
+index a89cd21a6be..263f143ef19 100644
+--- a/cmux-tui/crates/cmux-tui-platform/src/lib.rs
++++ b/cmux-tui/crates/cmux-tui-platform/src/lib.rs
+@@ -13,6 +13,7 @@ pub mod file_birth;
+ #[cfg(unix)]
+ pub mod host_exe;
+ mod kinfo_proc;
++pub mod listening_sockets;
+ pub mod platform;
+ #[cfg(unix)]
+ pub mod process_identity;
+diff --git a/cmux-tui/crates/cmux-tui-platform/src/listening_sockets.rs b/cmux-tui/crates/cmux-tui-platform/src/listening_sockets.rs
+new file mode 100644
+index 00000000000..0b9475b9367
+--- /dev/null
++++ b/cmux-tui/crates/cmux-tui-platform/src/listening_sockets.rs
+@@ -0,0 +1,230 @@
++//! The TCP ports a process listens on, for the daemon's terminal ports
++//! (cmux-tui-core `mux/terminal_ports.rs`). It reads only the processes it
++//! is asked about and spawns nothing:
++//!
++//! - Linux: the LISTEN rows of `/proc/net/tcp` and `/proc/net/tcp6` once per
++//!   [`Listeners::read`], then a process's sockets from `/proc/<pid>/fd`.
++//! - macOS: a process's socket descriptors (`PROC_PIDLISTFDS`) and each one's
++//!   `socket_fdinfo` (`PROC_PIDFDSOCKETINFO`), at the offsets
++//!   cmux-browser-host `egress_listeners.rs` measured from the SDK headers.
++//!
++//! A process that exited between the listing and the read has no ports; a
++//! read that fails otherwise also gives none (the entry it feeds is advisory).
++
++use std::collections::BTreeSet;
++
++/// The machine's LISTEN sockets, read once per scan.
++#[derive(Debug, Default)]
++pub struct Listeners {
++    /// Socket inode to its port (Linux).
++    #[cfg(target_os = "linux")]
++    by_inode: std::collections::HashMap<u64, u16>,
++}
++
++impl Listeners {
++    /// The LISTEN sockets now: `None` on a platform this does not read.
++    pub fn read() -> Option<Self> {
++        #[cfg(target_os = "linux")]
++        {
++            let mut by_inode = std::collections::HashMap::new();
++            for table in ["/proc/net/tcp", "/proc/net/tcp6"] {
++                // No IPv6 table (a kernel without IPv6): nothing listens there.
++                let Ok(text) = std::fs::read_to_string(table) else { continue };
++                by_inode.extend(
++                    parse_proc_net_tcp(&text).into_iter().map(|(port, inode)| (inode, port)),
++                );
++            }
++            Some(Self { by_inode })
++        }
++        #[cfg(target_os = "macos")]
++        {
++            Some(Self {})
++        }
++        #[cfg(not(any(target_os = "linux", target_os = "macos")))]
++        {
++            None
++        }
++    }
++
++    /// What changes when a socket starts or stops listening anywhere on the
++    /// machine, so a caller can skip the per-process reads while it stays
++    /// the same. `None` where the machine-wide table is not read (macOS):
++    /// every scan reads the processes.
++    pub fn fingerprint(&self) -> Option<BTreeSet<u64>> {
++        #[cfg(target_os = "linux")]
++        {
++            Some(self.by_inode.keys().copied().collect())
++        }
++        #[cfg(not(target_os = "linux"))]
++        {
++            None
++        }
++    }
++
++    /// The ports process `pid` listens on (TCP, IPv4 or IPv6, any address).
++    pub fn ports_of(&self, pid: u32) -> BTreeSet<u16> {
++        #[cfg(target_os = "linux")]
++        {
++            let mut ports = BTreeSet::new();
++            if self.by_inode.is_empty() {
++                return ports;
++            }
++            let Ok(fds) = std::fs::read_dir(format!("/proc/{pid}/fd")) else { return ports };
++            for fd in fds.flatten() {
++                let Ok(target) = std::fs::read_link(fd.path()) else { continue };
++                if let Some(port) = socket_inode(&target.to_string_lossy())
++                    .and_then(|inode| self.by_inode.get(&inode))
++                {
++                    ports.insert(*port);
++                }
++            }
++            ports
++        }
++        #[cfg(target_os = "macos")]
++        {
++            mac::ports_of(pid)
++        }
++        #[cfg(not(any(target_os = "linux", target_os = "macos")))]
++        {
++            let _ = pid;
++            BTreeSet::new()
++        }
++    }
++}
++
++/// The inode of an fd link `socket:[<inode>]`.
++#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
++fn socket_inode(link: &str) -> Option<u64> {
++    link.strip_prefix("socket:[")?.strip_suffix(']')?.parse().ok()
++}
++
++/// `(port, inode)` of each LISTEN row of a `/proc/net/tcp` or `tcp6` table
++/// (state `0A`). A row that does not parse is skipped.
++pub fn parse_proc_net_tcp(text: &str) -> Vec<(u16, u64)> {
++    const LISTEN: &str = "0A";
++    text.lines()
++        .skip(1)
++        .filter_map(|line| {
++            let fields: Vec<&str> = line.split_whitespace().collect();
++            if fields.get(3) != Some(&LISTEN) {
++                return None;
++            }
++            let port = fields.get(1)?.rsplit_once(':')?.1;
++            let port = u16::from_str_radix(port, 16).ok().filter(|port| *port != 0)?;
++            let inode = fields.get(9)?.parse::<u64>().ok().filter(|inode| *inode != 0)?;
++            Some((port, inode))
++        })
++        .collect()
++}
++
++#[cfg(target_os = "macos")]
++mod mac {
++    use std::collections::BTreeSet;
++
++    const SFI_SIZE: usize = 792;
++    const SFI_KIND: usize = 256;
++    const SFI_LPORT: usize = 268;
++    const SFI_STATE: usize = 344;
++
++    fn u32_at(data: &[u8], at: usize) -> Option<u32> {
++        Some(u32::from_le_bytes(data.get(at..at + 4)?.try_into().ok()?))
++    }
++
++    pub(super) fn ports_of(pid: u32) -> BTreeSet<u16> {
++        let Ok(pid) = i32::try_from(pid) else { return BTreeSet::new() };
++        socket_fds(pid).into_iter().filter_map(|fd| listening_port(pid, fd)).collect()
++    }
++
++    /// The socket descriptors of `pid`; none when it exited or does not read.
++    fn socket_fds(pid: i32) -> Vec<i32> {
++        const PROX_FDTYPE_SOCKET: u32 = 2;
++        // SAFETY: a size query (null buffer).
++        let bytes =
++            unsafe { libc::proc_pidinfo(pid, libc::PROC_PIDLISTFDS, 0, std::ptr::null_mut(), 0) };
++        if bytes <= 0 {
++            return Vec::new();
++        }
++        let size = size_of::<libc::proc_fdinfo>();
++        let mut count = bytes as usize / size + 16;
++        for _ in 0..4 {
++            let mut fds = vec![libc::proc_fdinfo { proc_fd: 0, proc_fdtype: 0 }; count];
++            let room = (fds.len() * size) as libc::c_int;
++            // SAFETY: the buffer is writable for `room` bytes, which is passed.
++            let filled = unsafe {
++                libc::proc_pidinfo(pid, libc::PROC_PIDLISTFDS, 0, fds.as_mut_ptr().cast(), room)
++            };
++            if filled <= 0 {
++                return Vec::new();
++            }
++            if filled < room {
++                fds.truncate(filled as usize / size);
++                return fds
++                    .into_iter()
++                    .filter(|fd| fd.proc_fdtype == PROX_FDTYPE_SOCKET)
++                    .map(|fd| fd.proc_fd)
++                    .collect();
++            }
++            count *= 2;
++        }
++        Vec::new()
++    }
++
++    /// The port of socket `fd` of `pid` when it is a TCP socket in LISTEN.
++    fn listening_port(pid: i32, fd: i32) -> Option<u16> {
++        const PROC_PIDFDSOCKETINFO: libc::c_int = 3;
++        const SOCKINFO_TCP: u32 = 2;
++        const TSI_S_LISTEN: u32 = 1;
++        let mut info = vec![0u8; SFI_SIZE];
++        // SAFETY: the buffer is writable for SFI_SIZE bytes, which is passed.
++        let filled = unsafe {
++            libc::proc_pidfdinfo(
++                pid,
++                fd,
++                PROC_PIDFDSOCKETINFO,
++                info.as_mut_ptr().cast(),
++                SFI_SIZE as libc::c_int,
++            )
++        };
++        if filled as usize != SFI_SIZE
++            || u32_at(&info, SFI_KIND) != Some(SOCKINFO_TCP)
++            || u32_at(&info, SFI_STATE) != Some(TSI_S_LISTEN)
++        {
++            return None;
++        }
++        Some(u16::from_be_bytes([info[SFI_LPORT], info[SFI_LPORT + 1]])).filter(|port| *port != 0)
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn proc_net_tcp_rows_in_listen_give_their_port_and_inode() {
++        let table = "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
++   0: 0100007F:0BB8 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1000        0 41234 1 0000000000000000 100 0 0 10 0
++   1: 0100007F:0BB8 0100007F:D431 01 00000000:00000000 00:00000000 00000000  1000        0 41299 1 0000000000000000 20 4 30 10 -1
++   2: 00000000:1435 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 0 1 0000000000000000 100 0 0 10 0
++";
++        // The established row and the inode-0 row (a socket with no owner) are not listeners.
++        assert_eq!(parse_proc_net_tcp(table), [(3000, 41234)]);
++        let tcp6 = "  sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
++   0: 00000000000000000000000000000000:1435 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000  1000        0 52000 1 0000000000000000 100 0 0 10 0
++";
++        assert_eq!(parse_proc_net_tcp(tcp6), [(5173, 52000)]);
++        assert_eq!(socket_inode("socket:[52000]"), Some(52000));
++        assert_eq!(socket_inode("pipe:[52000]"), None);
++    }
++
++    #[cfg(any(target_os = "linux", target_os = "macos"))]
++    #[test]
++    fn this_process_reads_the_port_it_listens_on() {
++        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
++        let port = listener.local_addr().unwrap().port();
++        let listeners = Listeners::read().expect("this platform reads listeners");
++        assert!(listeners.ports_of(std::process::id()).contains(&port));
++        drop(listener);
++        let after = Listeners::read().unwrap();
++        assert!(!after.ports_of(std::process::id()).contains(&port));
++    }
++}
