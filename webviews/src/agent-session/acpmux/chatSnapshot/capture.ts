@@ -4,6 +4,7 @@
 // it forces at most the one layout the page already needs for its next frame.
 import {
   attributesOf,
+  pageBuild,
   PAGE_STYLE_ID,
   SNAPSHOT_MAX_CHARS,
   SNAPSHOT_SCROLL_ATTRIBUTE,
@@ -191,6 +192,7 @@ export function captureSnapshot(doc: Document, theme: string): ChatSnapshot | un
     sheets: sheetTexts,
     styles,
     theme,
+    build: pageBuild(doc),
     savedAt: Date.now(),
   };
 }

@@ -64,8 +64,9 @@ await requireBrowserLane("agent-pane-chat-snapshot.test.ts", async () => {
   const HTML_ATTRIBUTES = `data-look="roomy" style="--cmux-surface: rgb(10, 20, 30);"`;
   // As the app serves the page (build-agent-pane-web.sh): its rules linked as pane.css, and the copy's
   // (the same rules for its shadow tree) as pane-copy.css beside it.
-  const htmlDocument = (body: string) =>
-    `<!doctype html><html ${HTML_ATTRIBUTES}><head><link rel="stylesheet" id="cmux-pane-styles" href="/pane.css" data-copy="pane-copy.css"></head><body>${body}</body></html>`;
+  /// `build`: the sheet's content key (`pane.css?h=...`), which names the page build (shared.ts `pageBuild`).
+  const htmlDocument = (body: string, build = "") =>
+    `<!doctype html><html ${HTML_ATTRIBUTES}><head><link rel="stylesheet" id="cmux-pane-styles" href="/pane.css${build ? `?h=${build}` : ""}" data-copy="pane-copy.css"></head><body>${body}</body></html>`;
   const COPY_CSS = snapshotCss(CSS);
   /// Serves the page's two sheets; false for any other request.
   const servesSheet = (route: Route): boolean => {
@@ -203,7 +204,8 @@ requestAnimationFrame(() => {
       holdUntil,
       drawFirst = false,
       holdDraw = false,
-    }: { holdUntil?: "bundle" | "drawn"; drawFirst?: boolean; holdDraw?: boolean } = {},
+      build = "",
+    }: { holdUntil?: "bundle" | "drawn"; drawFirst?: boolean; holdDraw?: boolean; build?: string } = {},
   ): Promise<void> {
     await page.route("http://chat.test/**", (route) => {
       const url = new URL(route.request().url());
@@ -213,6 +215,7 @@ requestAnimationFrame(() => {
           contentType: "text/html",
           body: htmlDocument(
             `<main id="root"></main><script src="/fixture.js"></script><script async src="/__snapshot/chat.js"></script><script src="/chat-snapshot.js"></script><script type="module" src="/pane.js"></script>`,
+            build,
           ),
         });
       if (url.pathname === "/fixture.js")
@@ -472,6 +475,28 @@ requestAnimationFrame(() => {
     const page = await context.newPage();
     await relaunched(page, before.snapshot, "theme-2");
     expect(await page.evaluate(() => (window as any).atBundle.shown)).toBe(false);
+    await context.close();
+  });
+
+  test("a copy written by another build of the page draws nothing (an update)", async () => {
+    // The copy is that build's markup under this build's sheet, whose classes may differ: it drew
+    // wrong, then jumped to the live page (Leo, 2026-11-14: "after a jolt of rendering").
+    const context = await newContext(800, 600);
+    const before = await written(await context.newPage());
+    const page = await context.newPage();
+    await relaunched(page, before.snapshot, "theme-1", { build: "0123456789abcdef" });
+    expect(await page.evaluate(() => (window as any).atBundle.shown)).toBe(false);
+    expect(await page.evaluate(() => (window as any).__cmuxChatSnapshotMiss)).toBe("another build");
+    await context.close();
+  });
+
+  test("a copy written by this build draws", async () => {
+    const context = await newContext(800, 600);
+    const before = await written(await context.newPage());
+    expect((before.snapshot as { build?: string }).build).toBe("");
+    const page = await context.newPage();
+    await relaunched(page, before.snapshot, "theme-1", { holdDraw: true });
+    expect(await page.evaluate(() => (window as any).__cmuxChatSnapshotShown !== undefined)).toBe(true);
     await context.close();
   });
 

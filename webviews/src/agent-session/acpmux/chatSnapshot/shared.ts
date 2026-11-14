@@ -77,9 +77,22 @@ export type ChatSnapshot = {
   styles: string[];
   /// The key of the theme it was drawn in (the host's `theme` event `key`).
   theme: string;
+  /// The page build it was drawn by: its sheet's content key (``pageBuild``). The markup is that build's
+  /// and the copy draws under this build's sheet, so a copy from another build (an update) is never drawn:
+  /// its classes may be gone from this sheet (Tailwind keeps only the classes this build's sources use),
+  /// and it drew wrong, then jumped to the live page (Leo, 2026-11-14: "after a jolt of rendering").
+  build?: string;
   /// When it was written (`Date.now()`).
   savedAt: number;
 };
+
+/// The page build `doc` runs: its sheet's content key (`pane.css?h=...`, build-agent-pane-web.sh), so two
+/// builds whose sheets differ have different keys; "" when the sheet names none (a dev server).
+export function pageBuild(doc: Document): string {
+  const link = doc.getElementById(PAGE_STYLE_ID);
+  const href = link?.getAttribute("href") ?? "";
+  return /[?&]h=([0-9a-f]{8,64})(?:&|$)/.exec(href)?.[1] ?? "";
+}
 
 /// Whether `value` is a snapshot this version draws.
 export function isChatSnapshot(value: unknown): value is ChatSnapshot {
@@ -137,5 +150,7 @@ export function misfit(snapshot: ChatSnapshot, doc: Document): string | undefine
   // l10n-allow: a diagnostic code for the page's debug record (layoutWatch.ts), never shown in the pane.
   if (!widthFits || !heightFits) return `size ${size}, drawn at ${drawn}`;
   if ((view as unknown as Record<string, unknown>)[SNAPSHOT_THEME_GLOBAL] !== snapshot.theme) return "theme";
+  // l10n-allow: a diagnostic code for the page's debug record (layoutWatch.ts), never shown in the pane.
+  if ((snapshot.build ?? "") !== pageBuild(doc)) return "another build";
   return undefined;
 }
