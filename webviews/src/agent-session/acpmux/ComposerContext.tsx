@@ -60,6 +60,9 @@ import type { BrowseResult } from "./addProjectPanelModel";
 import type { Project } from "./ProjectChooser";
 import { ProjectBadge } from "./ProjectBadge";
 import { MacBookGlyph } from "./MacBookGlyph";
+import { DeviceGlyphShapes } from "../../ui/DeviceGlyph";
+import { DEVICE_GLYPH_VIEWBOX } from "../../ui/deviceGlyphPaths";
+import { useDeviceKind } from "../../ui/deviceKinds";
 import { projectSuffixes } from "./projectSuffix";
 import { belowCheckout, folderRepo, isMainCheckout, worktreeName, type ProjectRepo } from "./projectRepos";
 import { isAgentHome, projectLabel, SessionsBy } from "./sessionList";
@@ -1438,13 +1441,18 @@ function FolderIcon() {
 
 /// The computer chip's icon, in another machine's own color (machineColor); this Mac's stays quiet.
 function ComputerIcon({ name }: { name?: string }) {
+  // The machine's own device glyph once the daemon says what it is (Leo 2026-11-14); this Mac is
+  // the MacBook until then, another machine the laptop it always drew.
+  const reported = useDeviceKind(name);
+  const device = name ? reported : (reported ?? "macbook");
   return (
     <svg
-      className={`acpmux-icon acpmux-location-icon ui-ghost-icon${name ? "" : " acpmux-macbook-icon"}`}
+      className={`acpmux-icon acpmux-location-icon ui-ghost-icon${device ? " acpmux-macbook-icon acpmux-device-icon" : ""}`}
+      data-device={device}
       style={name ? { color: machineColor(name) } : undefined}
       width={14}
       height={14}
-      viewBox={name ? "0 0 16 16" : "0 0 20 16"}
+      viewBox={device ? DEVICE_GLYPH_VIEWBOX : "0 0 16 16"}
       fill="none"
       stroke="currentColor"
       strokeWidth={1.25}
@@ -1452,13 +1460,15 @@ function ComputerIcon({ name }: { name?: string }) {
       aria-hidden="true"
       focusable="false"
     >
-      {name ? (
+      {device === "macbook" ? (
+        <MacBookGlyph />
+      ) : device ? (
+        <DeviceGlyphShapes kind={device} />
+      ) : (
         <>
           <rect x="3" y="3.5" width="10" height="7" rx="1.2" />
           <path d="M1.75 12.5h12.5" strokeLinecap="round" />
         </>
-      ) : (
-        <MacBookGlyph />
       )}
     </svg>
   );
