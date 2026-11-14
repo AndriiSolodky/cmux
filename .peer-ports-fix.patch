@@ -1,0 +1,743 @@
+diff --git a/cmux-next-ios/verify/parity-mac.md b/cmux-next-ios/verify/parity-mac.md
+index f72d7da6df8..f6646b41006 100644
+--- a/cmux-next-ios/verify/parity-mac.md
++++ b/cmux-next-ios/verify/parity-mac.md
+@@ -119,6 +119,7 @@ a stated limit), **missing** (not on the phone yet), **not from a phone**
+ | Duplicate Workspace | composed app-side (`WorkspaceStructureHandlers.duplicate`: new workspace, then `WorkspaceBlueprintBuilder` makes each tab with `new-tab {cwd}` or a browser tab) | workspace row menu > **Duplicate Workspace** (not on Home) | works (round 3; live: `duplicate` pass) | No daemon command duplicates a workspace, and `apply-layout` carries `command` per leaf, so it stays off the lane. The phone composes it from lines it already sends: `new-workspace {name}`, then in the new pane `new-tab {pane}` per terminal and `new-browser-tab {url, pane}` per http/https page, and `cd '<folder>' && clear` typed into each new shell (`changeDirectoryLine`, as New Workspace in a folder). No allowlist change and no new spawn path (each shell is the Mac's own New Terminal). Unlike the Mac: every tab goes in one pane (splits and ratios are not copied), agent chats and non-web pages are left out, color and icon are not copied, and the copy is not placed right below the source. |
+ | New Workspace Group (standalone), Duplicate Workspace Group | `workspace_group.create {name, color, room}`; `workspaceGroup.duplicate` (a new group of the same name with a duplicate of each member) | New Workspace (hold) > **New Workspace Group…** (a name); group header menu > **Duplicate Workspace Group** | works (ws-rows batch; live: `groups` pass) | The new group is empty on the Mac; the list shows it as an empty header whose menu has New Workspace in Group and Delete Group. Duplicate makes the group (same name and color), then each member's Duplicate Workspace into it, in order. **New Subgroup**: not from a phone; `workspace_group.create` from a phone takes no parent group (policy.rs `ALLOWED_RESOURCE_OPERATIONS`), so nesting needs a lane change (#13742). |
+ | Show Workspace / Tab Resource Usage (`ResourceActionCatalog`) | the app's `resources` control method (each terminal's CPU and memory) | — | not from a phone (yet) | The phone's lane has `machine-usage`, which is a Cloud machine's model spend (tokens and dollars for its `vm_id`, null on a local Mac), not CPU or memory per workspace or tab. The per-terminal numbers are the daemon's `terminal-resources`, which is not on the lane: a lane change for #13742. |
++| A workspace's dev-server ports (2026-11-14): the loopback ports its terminals show (`Local: http://localhost:5173/`) and that accept a connect, as the workspace's status entry `ports` (":3000, :5173") on its sidebar row and hover card; every machine's daemon writes its own (`mux/terminal_port_watch.rs`) | none: the daemon writes the entry itself | — | missing (not checked) | The entry is ordinary workspace status in the daemon's state, so the phone needs no new trust to show it; whether the phone's workspace list draws a `ports` entry was not checked. Opening the port from a phone needs a streamed Mac browser tab (New Browser Tab). |
+ | New WebKit Tab / New Chromium Tab (`TabActionCatalog`) | `new-browser-tab` with the Mac's engine choice | — | not from a phone (yet) | The phone's lane takes `new-browser-tab {url, pane}` only (DaemonLanePolicy fields `cols, pane, rows, url`); no engine field, so the phone's one New Browser Tab stays. A lane change for #13742. |
+ | Workspace groups | personal groups as `cmux.protocol/2` state operations: `workspace_group.create {name, color, room}`, `workspace_group.update {name \| color \| collapsed}`, `workspace_group.delete`, `workspace.place {workspace, group}` | the list shows each group's header in the Mac's order (tap: **Collapse / Expand Workspace Group**); hold a header for **Rename Group…**, **Set Workspace Group Color…** (the nine colors), **Collapse / Expand Workspace Group**, **Ungroup Workspaces**, **Delete Group** (asks first); a row's menu > **Group** > **Move Workspace to Group…** (the Mac's groups, then **Move Workspace to New Group**) and **Remove Workspace from Group** | works (round 3; live: `groups` pass) | Each change shows at once and comes back if the Mac refuses. A new group takes the Mac's next color and "New Group" when unnamed. Move Workspace Up / Down stays inside the workspace's group. The phone shows only groups of this Mac's workspaces (cmux-mobile-host refuses changes to a group that holds another machine's workspaces) and shows them whatever the Mac window's room. Not on the phone: Move Workspace Group Up / Down, group icon, Pin/Unpin Group, New Workspace in Group, Close All Workspaces in Group (SECURITY.md "Workspace groups"). |
+ | Remove All Workspace Colors; Collapse Others, Collapse All Groups, Expand All Groups | `set-workspace-metadata {color: null}` per colored workspace; `workspace_group.update {collapsed}` per group | row menu > **Appearance** > **Remove All Workspace Colors**; group header menu > **Options** > the rest (and Remove All Workspace Colors) | works (menu-rows batch; live) | The Mac also sets every group to no color (`GroupTint.none`, wire `none`); the phone's lane takes only the nine palette colors for a group, so group colors stay (a #13742 change would be needed). Collapse Others folds every other group and opens this one (`groupsToggledByCollapsingOthers`). |
+diff --git a/cmux-tui/crates/cmux-tui-core/src/mux.rs b/cmux-tui/crates/cmux-tui-core/src/mux.rs
+index 6898c68205d..16817fdb4de 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/mux.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/mux.rs
+@@ -348,9 +348,11 @@ mod terminal_live;
+ pub(crate) use terminal_live::TerminalProgressFollower;
+ mod terminal_move;
+ mod terminal_move_topology;
++mod terminal_port_watch;
+ mod terminal_progress;
+ mod terminal_publisher;
+ mod terminal_reap;
++pub(crate) use terminal_port_watch::PortMark;
+ mod terminal_tail_pins;
+ pub(crate) use terminal_tail_pins::RESERVED_TAIL_KEY_PREFIX;
+ #[cfg(unix)]
+@@ -752,6 +754,8 @@ pub struct Mux {
+     terminal_live: terminal_live::TerminalLiveLog,
+     /// Pinned terminals' last lines and their publisher (`terminal-tail-pin-v1`).
+     terminal_tail_pins: terminal_tail_pins::TerminalTailPins,
++    /// The terminals that printed, for their workspaces' `ports` entries.
++    terminal_port_watch: terminal_port_watch::TerminalPortWatch,
+     notification_ledger: Mutex<VecDeque<ResourceNotification>>,
+     /// Per-client read marks. The shared unread marker above answers "does this terminal need
+     /// attention on the shared console"; this map answers "has this client install seen this
+diff --git a/cmux-tui/crates/cmux-tui-core/src/mux/construct.rs b/cmux-tui/crates/cmux-tui-core/src/mux/construct.rs
+index 123ee4662ce..67ca5b6f36f 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/mux/construct.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/mux/construct.rs
+@@ -380,6 +380,7 @@ impl Mux {
+             terminal_publisher: Default::default(),
+             terminal_live: Default::default(),
+             terminal_tail_pins: Default::default(),
++            terminal_port_watch: Default::default(),
+             notification_ledger: Mutex::new(notification_ledger),
+             notification_reads: Mutex::new(notification_reads),
+             notification_read_prunes: Mutex::new(Vec::new()),
+diff --git a/cmux-tui/crates/cmux-tui-core/src/mux/terminal_port_watch.rs b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_port_watch.rs
+new file mode 100644
+index 00000000000..dfe451377be
+--- /dev/null
++++ b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_port_watch.rs
+@@ -0,0 +1,511 @@
++//! Terminal ports on the sidebar: a dev server a workspace's terminal shows
++//! (`Local: http://localhost:5173/`) appears as the workspace's status entry
++//! `ports` (":3000, :5173"), which the app's sidebar row and hover card
++//! already draw (`SidebarMapping.portsKey`). Every machine's daemon writes
++//! the entries of its own workspaces, so a server started on another machine
++//! shows on that machine's workspace in the app, the same as one on this Mac.
++//!
++//! No process scanning (plans/cmux-next/pty-holder.md section 4): discovery is
++//! `terminal-ports` (`cmux-local-url`): the text a terminal shows, then a
++//! loopback connect (plans/cmux-next/workspace-proxy-DESIGN.md section 6).
++//!
++//! Mark and wake. The output reader only sets the terminal's [`PortMark`]
++//! and, when it was clear, queues the terminal here; it reads no text and
++//! probes nothing. One worker thread takes the queued terminals, at most one
++//! pass per [`PASS_INTERVAL`], so a pass costs what the terminals that printed
++//! cost, never a sweep of every terminal. A pass reads each queued terminal's
++//! live screen (the rows its new output wrote to, not the scrollback), finds
++//! its loopback URLs, and probes those ports and the ports it already knew
++//! for the terminal: a server that exited drops off at the terminal's next
++//! output (the shell prompt after it). The worker ends once nothing was queued
++//! for [`IDLE_LINGER`], when the mux is dropped, or at shutdown; the next
++//! output starts it again.
++//!
++//! The daemon's entry carries the icon [`PORTS_ICON`]. A `ports` entry with
++//! another icon (or none) is a person's or a hook's
++//! (`cmux workspace status set ports ...`): it is never replaced or cleared.
++//! At daemon start the entries an earlier run left are re-probed
++//! ([`Mux::reconcile_terminal_ports`]): ports still accepting stay, the rest go.
++
++use std::collections::{BTreeSet, HashMap, HashSet};
++use std::sync::atomic::{AtomicBool, Ordering};
++use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError, Weak};
++use std::time::{Duration, Instant};
++
++use super::*;
++use crate::state::WorkspaceStatusChange;
++use crate::state::status_meta::StatusMeta;
++use crate::workspace_registry::WorkspaceMutation;
++
++/// The status key the sidebar's ports element reads.
++pub(crate) const PORTS_KEY: &str = "ports";
++/// Marks the entry as the daemon's.
++pub(crate) const PORTS_ICON: &str = "network";
++/// At most one pass per interval.
++pub(crate) const PASS_INTERVAL: Duration = Duration::from_secs(1);
++/// How long the worker waits for output before it ends.
++const IDLE_LINGER: Duration = Duration::from_secs(5);
++/// Passes a terminal gets without new output while its screen names a port
++/// that does not accept yet (a server that prints before it listens).
++const UNCONFIRMED_RETRIES: u8 = 3;
++
++/// A terminal's "printed since the last pass" flag, set by the output reader.
++#[derive(Default)]
++pub(crate) struct PortMark(AtomicBool);
++
++impl PortMark {
++    /// The reader's side: true when the terminal was not marked yet, so the
++    /// caller queues it once per pass, not once per output chunk.
++    pub(crate) fn mark(&self) -> bool {
++        !self.0.swap(true, Ordering::AcqRel)
++    }
++
++    /// The pass's side, before it reads the screen: output after the read
++    /// marks the terminal again.
++    fn take(&self) {
++        self.0.store(false, Ordering::Release);
++    }
++}
++
++#[derive(Default)]
++pub(crate) struct TerminalPortWatch {
++    state: Mutex<WatchState>,
++    wake: Condvar,
++}
++
++#[derive(Default)]
++struct WatchState {
++    /// Terminal runtimes queued since the last pass.
++    queued: HashSet<SurfaceId>,
++    /// Retries used by terminals whose screen names a port not accepting yet.
++    retries: HashMap<SurfaceId, u8>,
++    /// A daemon start asked for the stale entries to be re-probed.
++    reconcile: bool,
++    worker: bool,
++    last_pass: Option<Instant>,
++    /// The terminal a pass is reading now, and whether it ended meanwhile:
++    /// an end during the read wins over what the read saw.
++    reading: Option<(SurfaceId, bool)>,
++    /// The workspace each watched terminal counted for.
++    terminal_workspace: HashMap<SurfaceId, String>,
++    /// By workspace public id.
++    workspaces: HashMap<String, WorkspacePorts>,
++}
++
++#[derive(Default, Debug, PartialEq, Eq)]
++struct WorkspacePorts {
++    /// The accepting ports each terminal showed.
++    terminals: HashMap<SurfaceId, BTreeSet<u16>>,
++    /// Ports of an entry an earlier daemon run left, still accepting.
++    carried: BTreeSet<u16>,
++    /// The text this daemon last wrote, to skip a pass that changed nothing.
++    written: Option<String>,
++}
++
++impl WorkspacePorts {
++    fn ports(&self) -> BTreeSet<u16> {
++        self.terminals.values().flatten().chain(&self.carried).copied().collect()
++    }
++
++    /// Nothing to show and nothing written: the watch can forget it.
++    fn is_idle(&self) -> bool {
++        self.carried.is_empty()
++            && self.written.is_none()
++            && self.terminals.values().all(BTreeSet::is_empty)
++    }
++}
++
++/// The entry's text, in the sidebar's documented form: ":3000, :5173".
++pub(crate) fn ports_text(ports: &BTreeSet<u16>) -> String {
++    ports.iter().map(|port| format!(":{port}")).collect::<Vec<_>>().join(", ")
++}
++
++/// The ports of an entry's text, the inverse of [`ports_text`].
++pub(crate) fn parse_ports_text(text: &str) -> BTreeSet<u16> {
++    text.split(',')
++        .filter_map(|part| part.trim().strip_prefix(':')?.parse().ok())
++        .filter(|port| *port != 0)
++        .collect()
++}
++
++/// A `ports` entry as stored: its text and icon.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub(crate) struct StoredPorts {
++    pub(crate) text: String,
++    pub(crate) icon: Option<String>,
++}
++
++/// One write a pass makes.
++#[derive(Debug, PartialEq, Eq)]
++pub(crate) enum PortsChange {
++    Set(String),
++    Clear,
++}
++
++/// The write that makes a workspace's stored entry show `wanted`, touching
++/// only the daemon's own entry (icon [`PORTS_ICON`]) or none.
++pub(crate) fn plan(stored: Option<&StoredPorts>, wanted: Option<&str>) -> Option<PortsChange> {
++    let ours = |entry: &StoredPorts| entry.icon.as_deref() == Some(PORTS_ICON);
++    match (wanted, stored) {
++        (Some(text), None) => Some(PortsChange::Set(text.to_owned())),
++        (Some(text), Some(entry)) if ours(entry) && entry.text != text => {
++            Some(PortsChange::Set(text.to_owned()))
++        }
++        (None, Some(entry)) if ours(entry) => Some(PortsChange::Clear),
++        _ => None,
++    }
++}
++
++/// What a pass learned about one queued terminal.
++enum Seen {
++    /// The terminal counts for `workspace` with these accepting ports;
++    /// `unconfirmed` when its screen names a port that did not accept.
++    Ports { workspace: String, ports: BTreeSet<u16>, unconfirmed: bool },
++    /// Ended, closed, private or not in a workspace: it counts for none.
++    Gone,
++}
++
++impl Mux {
++    /// The output reader's side: `runtime` printed. Takes only this
++    /// watch's lock (never `Mux::state`), so the reader may hold `term`.
++    pub(crate) fn queue_terminal_ports(self: &Arc<Self>, runtime: SurfaceId) {
++        let mut state = self.terminal_port_watch.lock();
++        state.queued.insert(runtime);
++        state.retries.remove(&runtime);
++        self.ensure_terminal_port_worker(&mut state);
++    }
++
++    /// `runtime`'s terminal ended: its ports leave its workspace's entry now.
++    pub(crate) fn forget_terminal_ports(&self, runtime: SurfaceId) {
++        let workspace = {
++            let mut state = self.terminal_port_watch.lock();
++            state.queued.remove(&runtime);
++            state.retries.remove(&runtime);
++            if let Some((reading, ended)) = state.reading.as_mut()
++                && *reading == runtime
++            {
++                *ended = true;
++            }
++            let Some(workspace) = state.terminal_workspace.remove(&runtime) else { return };
++            if let Some(entry) = state.workspaces.get_mut(&workspace) {
++                entry.terminals.remove(&runtime);
++            }
++            workspace
++        };
++        self.write_terminal_ports(&workspace);
++    }
++
++    /// At daemon start: re-probe the `ports` entries an earlier run wrote.
++    pub(crate) fn reconcile_terminal_ports(self: &Arc<Self>) {
++        let mut state = self.terminal_port_watch.lock();
++        state.reconcile = true;
++        self.ensure_terminal_port_worker(&mut state);
++    }
++
++    fn ensure_terminal_port_worker(self: &Arc<Self>, state: &mut WatchState) {
++        if state.worker {
++            self.terminal_port_watch.wake.notify_all();
++            return;
++        }
++        let weak = Arc::downgrade(self);
++        match std::thread::Builder::new()
++            .name("terminal-port-watch".into())
++            .spawn(move || run_worker(&weak))
++        {
++            Ok(_) => state.worker = true,
++            Err(error) => eprintln!("cmux-tui: terminal port watch did not start: {error}"),
++        }
++    }
++
++    /// One pass over the queued terminals (and, once, the stale entries).
++    fn terminal_ports_pass(&self, queued: Vec<SurfaceId>, reconcile: bool) {
++        let mut touched: BTreeSet<String> = BTreeSet::new();
++        if reconcile {
++            touched.extend(self.carry_stale_terminal_ports());
++        }
++        for runtime in queued {
++            let known: BTreeSet<u16> = {
++                let mut state = self.terminal_port_watch.lock();
++                state.reading = Some((runtime, false));
++                state
++                    .terminal_workspace
++                    .get(&runtime)
++                    .and_then(|workspace| state.workspaces.get(workspace))
++                    .and_then(|ports| ports.terminals.get(&runtime))
++                    .cloned()
++                    .unwrap_or_default()
++            };
++            let seen = self.see_terminal_ports(runtime, &known);
++            let mut state = self.terminal_port_watch.lock();
++            // The terminal ended while it was read: its forget already ran.
++            let seen = match state.reading.take() {
++                Some((_, true)) => Seen::Gone,
++                _ => seen,
++            };
++            if matches!(seen, Seen::Gone) {
++                state.retries.remove(&runtime);
++            }
++            let previous = state.terminal_workspace.remove(&runtime);
++            if let Some(previous) = previous {
++                if let Some(entry) = state.workspaces.get_mut(&previous) {
++                    entry.terminals.remove(&runtime);
++                }
++                touched.insert(previous);
++            }
++            if let Seen::Ports { workspace, ports, unconfirmed } = seen {
++                if unconfirmed {
++                    let used = state.retries.entry(runtime).or_default();
++                    if *used < UNCONFIRMED_RETRIES {
++                        *used += 1;
++                        state.queued.insert(runtime);
++                    }
++                } else {
++                    state.retries.remove(&runtime);
++                }
++                state.terminal_workspace.insert(runtime, workspace.clone());
++                state
++                    .workspaces
++                    .entry(workspace.clone())
++                    .or_default()
++                    .terminals
++                    .insert(runtime, ports);
++                touched.insert(workspace);
++            }
++        }
++        // The carried ports of a workspace whose terminal printed are
++        // re-probed with it: a server from before the restart that exited.
++        for workspace in &touched {
++            let carried = {
++                let state = self.terminal_port_watch.lock();
++                state.workspaces.get(workspace).map(|entry| entry.carried.clone())
++            };
++            let Some(carried) = carried.filter(|carried| !carried.is_empty()) else { continue };
++            let accepting: BTreeSet<u16> =
++                carried.into_iter().filter(|port| cmux_local_url::probe(*port).is_some()).collect();
++            if let Some(entry) = self.terminal_port_watch.lock().workspaces.get_mut(workspace) {
++                entry.carried = accepting;
++            }
++        }
++        for workspace in touched {
++            self.write_terminal_ports(&workspace);
++        }
++    }
++
++    /// The accepting ports `runtime`'s live screen names, plus those of
++    /// `known` that still accept. Reads the screen outside every watch lock.
++    fn see_terminal_ports(&self, runtime: SurfaceId, known: &BTreeSet<u16>) -> Seen {
++        let Some(surface) = self.surface(runtime).filter(|surface| !surface.is_dead()) else {
++            return Seen::Gone;
++        };
++        if surface.terminal_runtime_id() != Some(runtime) {
++            return Seen::Gone;
++        }
++        let Some(mark) = surface.port_mark() else { return Seen::Gone };
++        // First, so output from here on queues the terminal again.
++        mark.take();
++        // An incognito terminal's output stays off disk; a status entry is durable.
++        if surface
++            .terminal_public_id()
++            .is_some_and(|terminal| self.output_store.is_private(self, terminal))
++        {
++            return Seen::Gone;
++        }
++        let Some(workspace) = self.workspace_public_id_of_surface(runtime) else {
++            return Seen::Gone;
++        };
++        let text =
++            surface.try_with_terminal(|terminal| terminal.active_text()).ok().and_then(Result::ok);
++        drop(surface);
++        let shown: BTreeSet<u16> = text
++            .map(|text| {
++                cmux_local_url::candidates(&text).into_iter().map(|found| found.port).collect()
++            })
++            .unwrap_or_default();
++        let ports: BTreeSet<u16> = known
++            .union(&shown)
++            .copied()
++            .filter(|port| cmux_local_url::probe(*port).is_some())
++            .collect();
++        let unconfirmed = !shown.is_subset(&ports);
++        Seen::Ports { workspace, ports, unconfirmed }
++    }
++
++    /// Commit `workspace`'s entry if what it should show changed.
++    fn write_terminal_ports(&self, workspace: &str) {
++        let (wanted, written) = {
++            let state = self.terminal_port_watch.lock();
++            let Some(entry) = state.workspaces.get(workspace) else { return };
++            let ports = entry.ports();
++            ((!ports.is_empty()).then(|| ports_text(&ports)), entry.written.clone())
++        };
++        if wanted == written {
++            self.forget_idle_workspace_ports(workspace);
++            return;
++        }
++        let stored = self.read_registry_state(|connection| {
++            let mut statement = connection.prepare(
++                "SELECT text, icon FROM workspace_status_entries
++                 WHERE workspace_id = ?1 AND status_key = ?2",
++            )?;
++            let mut rows = statement.query_map([workspace, PORTS_KEY], |row| {
++                Ok(StoredPorts { text: row.get(0)?, icon: row.get(1)? })
++            })?;
++            Ok(rows.next().transpose()?)
++        });
++        let stored = match stored {
++            Ok(stored) => stored,
++            Err(error) => {
++                eprintln!("cmux-tui: terminal ports: reading the entry failed: {error}");
++                return;
++            }
++        };
++        let committed = match plan(stored.as_ref(), wanted.as_deref()) {
++            Some(change) => self.commit_terminal_ports(workspace, change),
++            None => true,
++        };
++        // A failed write is tried again at the workspace's next pass.
++        if committed {
++            if let Some(entry) = self.terminal_port_watch.lock().workspaces.get_mut(workspace) {
++                entry.written = wanted;
++            }
++            self.forget_idle_workspace_ports(workspace);
++        }
++    }
++
++    /// A workspace with no ports and nothing written leaves the map, so the
++    /// watch holds only workspaces that show ports.
++    fn forget_idle_workspace_ports(&self, workspace: &str) {
++        let mut state = self.terminal_port_watch.lock();
++        if !state.workspaces.get(workspace).is_some_and(WorkspacePorts::is_idle) {
++            return;
++        }
++        if let Some(entry) = state.workspaces.remove(workspace) {
++            for runtime in entry.terminals.keys() {
++                state.terminal_workspace.remove(runtime);
++            }
++        }
++    }
++
++    fn commit_terminal_ports(&self, workspace: &str, change: PortsChange) -> bool {
++        let mutation = WorkspaceMutation::daemon_local("terminal.ports");
++        let (operation, change) = match change {
++            PortsChange::Set(text) => (
++                "workspace_status.set",
++                WorkspaceStatusChange::Set {
++                    key: PORTS_KEY.into(),
++                    text,
++                    icon: Some(PORTS_ICON.into()),
++                    color: None,
++                    meta: Box::new(StatusMeta::default()),
++                },
++            ),
++            PortsChange::Clear => (
++                "workspace_status.clear",
++                WorkspaceStatusChange::Clear { key: Some(PORTS_KEY.into()) },
++            ),
++        };
++        let selectors = self.local_workspace_selectors(workspace);
++        match self.state_workspace_status(&mutation, operation, None, &selectors, change) {
++            Ok(_) => true,
++            Err(error) => {
++                eprintln!("cmux-tui: terminal ports: {operation} failed: {error}");
++                false
++            }
++        }
++    }
++
++    /// The daemon's own `ports` entries an earlier run left: their ports
++    /// that still accept are carried, the rest go at this pass. Returns the
++    /// workspaces to write.
++    fn carry_stale_terminal_ports(&self) -> Vec<String> {
++        let stale = self.read_registry_state(|connection| {
++            let mut statement = connection.prepare(
++                "SELECT workspace_id, text FROM workspace_status_entries
++                 WHERE status_key = ?1 AND icon = ?2",
++            )?;
++            let rows = statement.query_map([PORTS_KEY, PORTS_ICON], |row| {
++                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
++            })?;
++            Ok(rows.collect::<Result<Vec<_>, _>>()?)
++        });
++        let stale = match stale {
++            Ok(stale) => stale,
++            Err(error) => {
++                eprintln!("cmux-tui: terminal ports: reading stale entries failed: {error}");
++                return Vec::new();
++            }
++        };
++        let mut touched = Vec::new();
++        for (workspace, text) in stale {
++            let accepting: BTreeSet<u16> = parse_ports_text(&text)
++                .into_iter()
++                .filter(|port| cmux_local_url::probe(*port).is_some())
++                .collect();
++            let mut state = self.terminal_port_watch.lock();
++            let entry = state.workspaces.entry(workspace.clone()).or_default();
++            entry.carried.extend(accepting);
++            entry.written.get_or_insert(text);
++            touched.push(workspace);
++        }
++        touched
++    }
++}
++
++impl TerminalPortWatch {
++    fn lock(&self) -> MutexGuard<'_, WatchState> {
++        self.state.lock().unwrap_or_else(PoisonError::into_inner)
++    }
++}
++
++/// The worker: one pass per [`PASS_INTERVAL`] while terminals print. Ends
++/// after [`IDLE_LINGER`] with nothing queued, when the mux is gone, or at
++/// shutdown; its waits are bounded and it lets the mux go between them.
++fn run_worker(weak: &Weak<Mux>) {
++    // A pass that panics leaves no stale `worker`: the next output starts one.
++    struct OnPanic<'a>(&'a Weak<Mux>);
++    impl Drop for OnPanic<'_> {
++        fn drop(&mut self) {
++            if std::thread::panicking()
++                && let Some(mux) = self.0.upgrade()
++            {
++                mux.terminal_port_watch.lock().worker = false;
++            }
++        }
++    }
++    let _on_panic = OnPanic(weak);
++    loop {
++        let Some(mux) = weak.upgrade() else { return };
++        let watch = &mux.terminal_port_watch;
++        let mut state = watch.lock();
++        if mux.daemon_shutdown_requested() {
++            state.worker = false;
++            state.queued.clear();
++            return;
++        }
++        let now = Instant::now();
++        if state.queued.is_empty() && !state.reconcile {
++            let (mut state, waited) =
++                watch.wake.wait_timeout(state, IDLE_LINGER).unwrap_or_else(PoisonError::into_inner);
++            if waited.timed_out() && state.queued.is_empty() && !state.reconcile {
++                state.worker = false;
++                return;
++            }
++            continue;
++        }
++        let due = state.last_pass.map_or(now, |last| last + PASS_INTERVAL);
++        if due > now {
++            let _ =
++                watch.wake.wait_timeout(state, due - now).unwrap_or_else(PoisonError::into_inner);
++            continue;
++        }
++        state.last_pass = Some(now);
++        let queued: Vec<SurfaceId> = state.queued.drain().collect();
++        let reconcile = std::mem::take(&mut state.reconcile);
++        drop(state);
++        mux.terminal_ports_pass(queued, reconcile);
++    }
++}
++
++#[cfg(test)]
++#[path = "terminal_port_watch_tests.rs"]
++mod tests;
+diff --git a/cmux-tui/crates/cmux-tui-core/src/mux/terminal_port_watch_tests.rs b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_port_watch_tests.rs
+new file mode 100644
+index 00000000000..55a3bfd4918
+--- /dev/null
++++ b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_port_watch_tests.rs
+@@ -0,0 +1,45 @@
++//! The terminal ports rules without live servers: the entry's text, and
++//! which entries a pass writes.
++
++use std::collections::BTreeSet;
++
++use super::*;
++
++fn stored(text: &str, icon: Option<&str>) -> StoredPorts {
++    StoredPorts { text: text.into(), icon: icon.map(str::to_owned) }
++}
++
++#[test]
++fn the_entry_text_lists_ports_in_order_and_reads_back() {
++    let ports = BTreeSet::from([5173, 3000]);
++    assert_eq!(ports_text(&ports), ":3000, :5173");
++    assert_eq!(parse_ports_text(":3000, :5173"), ports);
++    assert_eq!(parse_ports_text(":8080, :x, :0"), BTreeSet::from([8080]));
++}
++
++#[test]
++fn a_pass_writes_only_the_daemons_own_entry() {
++    let ours = |text: &str| stored(text, Some(PORTS_ICON));
++    // No entry yet: the daemon's goes in.
++    assert_eq!(plan(None, Some(":1234")), Some(PortsChange::Set(":1234".into())));
++    // Its own entry follows the ports, and goes when none accepts.
++    assert_eq!(
++        plan(Some(&ours(":3000")), Some(":3000, :3001")),
++        Some(PortsChange::Set(":3000, :3001".into()))
++    );
++    assert_eq!(plan(Some(&ours(":4000")), Some(":4000")), None);
++    assert_eq!(plan(Some(&ours(":5000")), None), Some(PortsChange::Clear));
++    assert_eq!(plan(None, None), None);
++    // A person's or a hook's entry (another icon, or none) stays.
++    assert_eq!(plan(Some(&stored("api :8080", None)), Some(":9000")), None);
++    assert_eq!(plan(Some(&stored("api :8080", Some("server"))), None), None);
++}
++
++#[test]
++fn a_mark_queues_once_until_the_pass_takes_it() {
++    let mark = PortMark::default();
++    assert!(mark.mark(), "the first output queues the terminal");
++    assert!(!mark.mark(), "more output before the pass queues nothing");
++    mark.take();
++    assert!(mark.mark(), "output after the pass queues it again");
++}
+diff --git a/cmux-tui/crates/cmux-tui-core/src/mux/terminal_publisher.rs b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_publisher.rs
+index 2bc126dcda1..5d4d40e36de 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/mux/terminal_publisher.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_publisher.rs
+@@ -304,6 +304,9 @@ impl Mux {
+     pub(crate) fn settle_terminal_publications(&self, surface: &Arc<Surface>) {
+         let jobs = self.terminal_publisher.settle(surface);
+         self.forget_terminal_tail(surface);
++        if let Some(runtime) = surface.terminal_runtime_id() {
++            self.forget_terminal_ports(runtime);
++        }
+         surface.publish_pending_directory();
+         surface.publish_pending_state();
+         // The latest state is published above: a queued publication of the
+diff --git a/cmux-tui/crates/cmux-tui-core/src/mux/terminal_tail_pins.rs b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_tail_pins.rs
+index c53e52271e4..101c0c5ac93 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/mux/terminal_tail_pins.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/mux/terminal_tail_pins.rs
+@@ -369,7 +369,7 @@ impl Mux {
+         }
+     }
+ 
+-    fn workspace_public_id_of_surface(&self, view: SurfaceId) -> Option<String> {
++    pub(crate) fn workspace_public_id_of_surface(&self, view: SurfaceId) -> Option<String> {
+         let workspace = self.surface_workspace(view)?;
+         self.with_state(|state| {
+             let index = state.workspace_index(workspace)?;
+diff --git a/cmux-tui/crates/cmux-tui-core/src/state/workspace.rs b/cmux-tui/crates/cmux-tui-core/src/state/workspace.rs
+index cfbf145ce5c..9d7b1a011da 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/state/workspace.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/state/workspace.rs
+@@ -246,6 +246,7 @@ impl Mux {
+         // drop the ones whose TTL passed while the daemon was down.
+         crate::state::status_owners::resume(self);
+         self.clear_stale_terminal_tails();
++        self.reconcile_terminal_ports();
+         let ephemeral = self.read_registry_state(crate::state::store::ephemeral_workspaces)?;
+         for workspace_id in ephemeral {
+             self.close_ephemeral_workspace(&workspace_id, TerminalCloseGuard::None)?;
+diff --git a/cmux-tui/crates/cmux-tui-core/src/surface.rs b/cmux-tui/crates/cmux-tui-core/src/surface.rs
+index 7f6f19af701..b1f95b929a2 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/surface.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/surface.rs
+@@ -676,6 +676,10 @@ impl Surface {
+         self.as_pty().map(|pty| &pty.tail_pin)
+     }
+ 
++    pub(crate) fn port_mark(&self) -> Option<&crate::mux::PortMark> {
++        self.as_pty().map(|pty| &pty.port_mark)
++    }
++
+     pub(crate) fn terminal_runtime_id(&self) -> Option<SurfaceId> {
+         match self {
+             Surface::Pty(surface) => Some(surface.event_surface_id),
+@@ -834,6 +838,7 @@ impl Surface {
+                 stream_progress: Box::new(TerminalStreamProgress::default()),
+                 terminal_metadata: Mutex::new(terminal_metadata),
+                 tail_pin: Default::default(),
++                port_mark: Default::default(),
+                 command_tracker: Mutex::new(Default::default()),
+                 mouse_encoders: RankedMutex::new(
+                     LockRank::Leaf,
+diff --git a/cmux-tui/crates/cmux-tui-core/src/surface/adopt.rs b/cmux-tui/crates/cmux-tui-core/src/surface/adopt.rs
+index a674bbfb717..e1ca664e990 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/surface/adopt.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/surface/adopt.rs
+@@ -240,6 +240,7 @@ impl Surface {
+                 stream_progress: Box::new(TerminalStreamProgress::default()),
+                 terminal_metadata: Mutex::new(terminal_metadata),
+                 tail_pin: Default::default(),
++                port_mark: Default::default(),
+                 command_tracker: Mutex::new(Default::default()),
+                 mouse_encoders: RankedMutex::new(
+                     LockRank::Leaf,
+diff --git a/cmux-tui/crates/cmux-tui-core/src/surface/spawn.rs b/cmux-tui/crates/cmux-tui-core/src/surface/spawn.rs
+index d979a2b51fc..85ac9bc4d66 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/surface/spawn.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/surface/spawn.rs
+@@ -224,6 +224,7 @@ impl Surface {
+                 stream_progress: Box::new(TerminalStreamProgress::default()),
+                 terminal_metadata: Mutex::new(terminal_metadata),
+                 tail_pin: Default::default(),
++                port_mark: Default::default(),
+                 command_tracker: Mutex::new(Default::default()),
+                 mouse_encoders: RankedMutex::new(
+                     LockRank::Leaf,
+diff --git a/cmux-tui/crates/cmux-tui-core/src/surface/terminal_runtime.rs b/cmux-tui/crates/cmux-tui-core/src/surface/terminal_runtime.rs
+index 94b8097a96a..3811ace27f0 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/surface/terminal_runtime.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/surface/terminal_runtime.rs
+@@ -151,6 +151,13 @@ impl PtyTerminalRuntime {
+         {
+             mux.queue_terminal_tail(self.event_surface_id);
+         }
++        // Mark and wake: the ports pass reads the screen later, off the reader.
++        if !bytes.is_empty()
++            && self.port_mark.mark()
++            && let Some(mux) = self.mux.upgrade()
++        {
++            mux.queue_terminal_ports(self.event_surface_id);
++        }
+         metadata.take_admitted_notifications(Instant::now())
+     }
+ 
+@@ -329,6 +336,9 @@ pub struct PtyTerminalRuntime {
+     /// The last line of a pinned terminal (`terminal-tail-pin-v1`); idle
+     /// unless the terminal is pinned.
+     pub(crate) tail_pin: crate::terminal_tail::TailPinSlot,
++    /// Set when the terminal printed since the last ports pass
++    /// (`mux/terminal_port_watch.rs`); the reader only sets it.
++    pub(crate) port_mark: crate::mux::PortMark,
+     /// OSC 133 command tracking (`terminal-command-history-v1`); idle unless
+     /// the daemon records terminal commands.
+     pub(super) command_tracker: Mutex<crate::shell_history::CommandTracker>,
+diff --git a/cmux-tui/crates/cmux-tui-core/src/surface/test_spawn.rs b/cmux-tui/crates/cmux-tui-core/src/surface/test_spawn.rs
+index 11e3d207494..c7f1bcf7141 100644
+--- a/cmux-tui/crates/cmux-tui-core/src/surface/test_spawn.rs
++++ b/cmux-tui/crates/cmux-tui-core/src/surface/test_spawn.rs
+@@ -180,6 +180,7 @@ impl Surface {
+                 stream_progress: Box::new(TerminalStreamProgress::default()),
+                 terminal_metadata: Mutex::new(Default::default()),
+                 tail_pin: Default::default(),
++                port_mark: Default::default(),
+                 command_tracker: Mutex::new(Default::default()),
+                 mouse_encoders: RankedMutex::new(
+                     LockRank::Leaf,
