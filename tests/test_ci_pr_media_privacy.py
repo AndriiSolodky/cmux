@@ -624,7 +624,8 @@ class WriterInventoryTests(unittest.TestCase):
                            "scripts/cmux-next/media/whats-new-clips.py", "scripts/cmux-next/media/whats-new-gallery.py",
                            ".github/workflows/cmux-next-media.yml", ".github/workflows/cmux-next-iphone-clips.yml",
                            ".github/workflows/nightly.yml",
-                           ".github/workflows/whats-new-gallery.yml",
+                           ".github/workflows/whats-new-gallery.yml", ".github/workflows/cmux-next-hot-verify.yml",
+                           "scripts/cmux-next/hot-verify-ci.py",
                            ".github/actions/pr-media-publish/action.yml"}
     # Remove files or rewrite the retention index; they add no capture.
     REMOVES_ONLY = {"scripts/ci/pr_media_privacy.py", "scripts/ci/prune_pr_media.py",
@@ -954,6 +955,7 @@ class FeatWorkflowTests(unittest.TestCase):
         ".github/workflows/cmux-next-iphone-clips.yml": {"publish": "scripts/cmux-next/media/whats-new-clips.py"},
         ".github/workflows/nightly.yml": {"publish-nightly-reel": "scripts/cmux-next/media/reel.py"},
         ".github/workflows/whats-new-gallery.yml": {"publish": "scripts/cmux-next/media/whats-new-gallery.py"},
+        ".github/workflows/cmux-next-hot-verify.yml": {"publish": "scripts/pr-media.py"},
     }
     # Remove files or rewrite the retention index; they add no capture.
     REMOVES_ONLY = {".github/workflows/pr-media-prune.yml"}
