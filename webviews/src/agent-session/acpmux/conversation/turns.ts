@@ -3178,6 +3178,46 @@ function runningBeforeLastRun(rows: readonly AcpmuxRow[]): Set<string> | undefin
   return running;
 }
 
+/// What `codexRuns` made of an activity row that is not the latest run, by that row: the running turn
+/// is shaped again on every record, and each earlier run came back as a new object, so everything
+/// after it that reads a run by its object (messageRuns.ts `member`, which groups the run's calls and
+/// parses each command line again; the layout; the row memos) did its work again for every run of
+/// the turn on every record (bench/live-turn-rows.bench.ts: 28 ms a record at 10,000 records). An
+/// earlier run is a function of its row and of whether the live line names one of its calls, so the
+/// rows made for it are kept while both hold. `named`: the named call, when it is one of the row's.
+type EarlierRun = { named: string | undefined; out: AcpmuxRow[] };
+const earlierRuns = new WeakMap<AcpmuxRow, EarlierRun>();
+/// The rows `codexRuns` makes of a run that keeps its own row (a change waiting for its permission,
+/// a call that keeps its row while it runs), by that row.
+const keptRuns = new WeakMap<AcpmuxRow, AcpmuxRow>();
+
+/// `named` when the live line names one of `row`'s calls, else undefined: all an earlier run's rows
+/// read of the line.
+function namedIn(row: AcpmuxRow, named: string | undefined): string | undefined {
+  if (named === undefined) return undefined;
+  for (const item of row.items ?? []) if (item.tool?.id === named) return named;
+  return undefined;
+}
+
+/// An earlier run's rows (`codexRuns`): what it draws of `row`'s calls, without the ones that have
+/// nothing to show yet and the one the live line names.
+function earlierRun(row: AcpmuxRow, named: string | undefined): AcpmuxRow[] {
+  const own = namedIn(row, named);
+  const kept = earlierRuns.get(row);
+  if (kept && kept.named === own) return kept.out;
+  const out = withoutDrafts(row).flatMap((drawn) => {
+    const items = drawn.items ?? [];
+    const shown = own === undefined ? items : items.filter((item) => item.tool?.id !== own);
+    if (!shown.length) return [];
+    // Its version says whether the line holds its command, which moves without the row's, and
+    // differs from every other state of the run (`RUN_STATES`).
+    const lined = shown.length !== items.length;
+    return [{ ...drawn, items: shown, settled: true, foldRun: true, version: row.version * RUN_STATES + (lined ? 4 : 2) }];
+  });
+  earlierRuns.set(row, { named: own, out });
+  return out;
+}
+
 function codexRuns(rows: AcpmuxRow[], named?: string, lineOnly = false, carried?: ReadonlySet<string>): AcpmuxRow[] {
   // A started chats' card after the run is not a step: the run before it is still in flight.
   let latest = rows.length - 1;
@@ -3193,22 +3233,14 @@ function codexRuns(rows: AcpmuxRow[], named?: string, lineOnly = false, carried?
     // `staysInSight`).
     if (
       (row.items ?? []).some((item) => awaitsPermission(item.tool) || (keepsOwnRow(item.tool) && isRunning(item.tool!)))
-    )
-      return [{ ...row, foldRun: false, version: row.version * RUN_STATES }];
+    ) {
+      let own = keptRuns.get(row);
+      if (!own) keptRuns.set(row, (own = { ...row, foldRun: false, version: row.version * RUN_STATES }));
+      return [own];
+    }
     if (lineOnly && index > ended) return [];
     // An earlier run draws no call that has nothing to show yet; its row comes with its input.
-    if (index !== latest)
-      return withoutDrafts(row).flatMap((kept) => {
-        const items = kept.items ?? [];
-        const shown = named === undefined ? items : items.filter((item) => item.tool?.id !== named);
-        if (!shown.length) return [];
-        // Its version says whether the line holds its command, which moves without the row's, and
-        // differs from every other state of the run (`RUN_STATES`).
-        const lined = shown.length !== items.length;
-        return [
-          { ...kept, items: shown, settled: true, foldRun: true, version: row.version * RUN_STATES + (lined ? 4 : 2) },
-        ];
-      });
+    if (index !== latest) return earlierRun(row, named);
     // The latest run: what is happening now leaves it for the live line, so the run holds only
     // finished steps and never grows a stack of live rows (Leo 2026-10-20: "rows pile up instead
     // of replacing each other").

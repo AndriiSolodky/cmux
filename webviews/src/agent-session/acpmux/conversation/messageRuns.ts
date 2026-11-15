@@ -52,7 +52,19 @@ type Member = {
   running: boolean;
 };
 
+/// Each row's `member`, by the row: a function of the row alone, read for every row of the running
+/// turn on every record, and a run's member groups its calls and parses each command line
+/// (`toolGroups`). The running turn's earlier runs keep their row objects across records (turns.ts
+/// `earlierRun`), so a record reads only the rows it changed.
+const memberOf = new WeakMap<AcpmuxRow, Member | null>();
+
 function member(row: AcpmuxRow): Member | undefined {
+  let kept = memberOf.get(row);
+  if (kept === undefined) memberOf.set(row, (kept = readMember(row) ?? null));
+  return kept ?? undefined;
+}
+
+function readMember(row: AcpmuxRow): Member | undefined {
   if (row.kind === "compaction")
     return {
       lines: 1,
