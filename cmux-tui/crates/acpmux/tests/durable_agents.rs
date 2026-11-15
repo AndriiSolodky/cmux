@@ -37,6 +37,8 @@ mod queue_restore;
 mod reconnect_priority;
 #[path = "durable_agents/restart_fence.rs"]
 mod restart_fence;
+#[path = "durable_agents/restart_exactly_once.rs"]
+mod restart_exactly_once;
 #[path = "durable_agents/restart_reattach.rs"]
 mod restart_reattach;
 #[path = "durable_agents/retry_restore.rs"]
