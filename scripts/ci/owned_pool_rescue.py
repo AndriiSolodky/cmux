@@ -5314,6 +5314,61 @@ def main(argv: Sequence[str] | None = None, env: Mapping[str, str] | None = None
         return 1
 
 
+def long_queue_moves(target: Target, side_label: str) -> bool:
+    """Whether a refusals-only watch of `target` acts on a long queue (long_queue_move()): a cmux-next.yml run, no
+    delivery build, whose bot re-run of failed jobs stays on the minis and takes `side_label` (rerun_side_label())."""
+    return (bool(side_label) and target.path == CMUX_NEXT_WORKFLOW_PATH and not is_delivery_target(target)
+            and not bot_rerun_leaves_owned(target.path, target.attempt))
+
+
+def long_queue_move(api: GitHub, target: Target, side_label: str, *, now: Callable[[], dt.datetime],
+                    sleep: Callable[[float], None], log: Callable[[str], None],
+                    deadline: dt.datetime | None) -> str:
+    """Move a refusals-only watched run's owned jobs queued STALL_QUEUE_SECONDS or more (owned_stalls()) to
+    `side_label`, as the stall move does (rescue() with `stall`), or "" when it stays: nothing queued that long,
+    another job running (stall_blockers()), the jobs already on `side_label`, its queue unknown, or deeper than the
+    labels they leave (deeper_queue()). STALL_QUEUE_SECONDS is the stall move's bound, an owned cmux-next job's p90
+    length. The sweeper's stall scan moves only to Blacksmith, which is off while vars.CI_BLACKSMITH_MACOS is not
+    `on`, and reads only pull request runs and their same-tree dispatches, so a refusals-only watched run waited on its
+    owned label until a refusal or its watch limit (coord-deputy-2, 2026-11-15: "Have the sweeper also act on long
+    queues for watched runs, not only on refusals")."""
+    jobs = read(lambda: api.jobs(target.run_id, target.attempt), sleep, log)
+    at = now()
+    stalls = [stall for stall in owned_stalls(jobs, at) if not stall.step]
+    if not stalls:
+        return ""
+    what = "; ".join(str(stall) for stall in stalls)
+    blocked = stall_blockers(jobs, stalls, target.attempt_started_at)
+    if blocked:
+        log(f"long queue waits: {what}, but {blocked}")
+        return ""
+    sources = {stall.label for stall in stalls}
+    if side_label in sources:
+        log(f"long queue stays: {what}; its re-run would rejoin {side_label}")
+        return ""
+    reader = getattr(api, "pool_snapshot", None)
+    try:
+        snapshot = reader(at) if reader is not None else None
+    except Aborted:
+        raise
+    except Exception as error:  # noqa: BLE001 - an unread snapshot shows no depth, so nothing moves
+        log(f"long queue: could not read the pool snapshot ({type(error).__name__}: {error})")
+        snapshot = None
+    if not isinstance(snapshot, Mapping) or pool_depth(snapshot, side_label) is None:
+        log(f"long queue stays: {what}; {side_label}'s queue is unknown")
+        return ""
+    deeper = deeper_queue(snapshot, sources, side_label)
+    if deeper:
+        log(f"long queue stays on the owned pool: {what}, but {deeper}")
+        return ""
+
+    def check(found: Sequence[Mapping[str, Any]], when: dt.datetime) -> str:
+        again, why = stall_verdict(found, when, target.attempt_started_at)
+        return why or ("" if any(not stall.step for stall in again) else "no owned job has queued long any more")
+    return rescue(api, target, now=now, sleep=sleep, log=log, failed_only=True, deadline=deadline,
+                  stall=f"{what}; its re-run takes {side_label}, a shallower queue", stall_check=check)
+
+
 def follow(client: GitHub, target: Target, *, seconds: int, queue_rounds: str | None,
            now: Callable[[], dt.datetime], sleep: Callable[[float], None], log: Callable[[str], None],
            rescue_sleep: Callable[[float], None] | None = None, latest: dt.datetime | None = None,
@@ -5425,14 +5480,28 @@ def follow(client: GitHub, target: Target, *, seconds: int, queue_rounds: str | 
         if remaining == 0:
             return f"stopped: {reason}; attempt {target.attempt} stays on the minis (refusals only)"
         log(f"queue alarm while refusals-only; continuing until refusal or run finish ({remaining}s left)")
-        outcome, reason = watch(client, target, budget_seconds=max(effective_seconds, remaining),
-                                now=clock, sleep=sleep, log=log, deadline=deadline,
-                                floor_seconds=effective_seconds)
-        if outcome == "resume":
-            # A rescue stopped between its cancel and its re-run while this watch waited: finish its re-run.
-            return settle(outcome, reason)[3]
-        if outcome == "failover":
-            outcome, failover_now = "rescue", True
+        # A long queue is acted on too, like a stall, where the re-run's side label is shallower (long_queue_move()).
+        long_queue = long_queue_moves(target, side_label)
+        while True:
+            outcome, reason = watch(client, target, budget_seconds=STALL_QUEUE_SECONDS if long_queue else max(
+                                        effective_seconds, remaining),
+                                    now=clock, sleep=sleep, log=log, deadline=deadline,
+                                    floor_seconds=effective_seconds)
+            if outcome == "resume":
+                # A rescue stopped between its cancel and its re-run while this watch waited: finish its re-run.
+                return settle(outcome, reason)[3]
+            if outcome == "failover":
+                outcome, failover_now = "rescue", True
+                break
+            if not (long_queue and outcome == "rescue"):
+                break
+            moved = long_queue_move(client, target, side_label, now=clock, sleep=rescue_sleep, log=log,
+                                    deadline=rescue_deadline)
+            if moved:
+                return moved
+            if clock() >= deadline:
+                break
+            sleep(STALL_RECHECK_SECONDS)
     if target.refusals_only and outcome != "refused" and not failover_now:
         return f"stopped: {reason}; attempt {target.attempt} stays on the minis (refusals only)"
     refusal_jobs: list[Mapping[str, Any]] | None = None
