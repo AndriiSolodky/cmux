@@ -646,6 +646,48 @@ export function measure(
   };
 }
 
+type SendProfile = {
+  nodes: { id: number; callFrame: { functionName: string; url: string; lineNumber: number }; children?: number[] }[];
+  samples: number[];
+  timeDeltas: number[];
+};
+const sendProfiles: SendProfile[] = [];
+function printSendProfiles(label: string) {
+  if (!sendProfiles.length) return;
+  const self = new Map<string, number>();
+  const total = new Map<string, number>();
+  for (const profile of sendProfiles) {
+    const byId = new Map(profile.nodes.map((node) => [node.id, node]));
+    const parent = new Map<number, number>();
+    for (const node of profile.nodes) for (const child of node.children ?? []) parent.set(child, node.id);
+    const keyOf = (id: number) => {
+      const frame = byId.get(id)?.callFrame;
+      if (!frame || ["(root)", "(idle)", "(program)"].includes(frame.functionName)) return undefined;
+      return `${frame.functionName || "(anon)"} ${frame.url.split("/").pop() ?? ""}:${frame.lineNumber + 1}`;
+    };
+    profile.samples.forEach((id, index) => {
+      const ms = (profile.timeDeltas[index] ?? 0) / 1000 / sendProfiles.length;
+      const own = keyOf(id);
+      if (own) self.set(own, (self.get(own) ?? 0) + ms);
+      const seen = new Set<string>();
+      for (let at: number | undefined = id; at !== undefined; at = parent.get(at)) {
+        const key = keyOf(at);
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          total.set(key, (total.get(key) ?? 0) + ms);
+        }
+      }
+    });
+  }
+  const top = (map: Map<string, number>, n: number) =>
+    [...map].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, v]) => `${v.toFixed(2)} ${k}`);
+  const busy = [...self.values()].reduce((a, b) => a + b, 0);
+  console.log(`SEND-PROFILE ${label} rounds=${sendProfiles.length} busy_ms=${busy.toFixed(2)}`);
+  for (const line of top(self, 25)) console.log(`SEND-PROFILE ${label} self ${line}`);
+  for (const line of top(total, 40)) console.log(`SEND-PROFILE ${label} total ${line}`);
+  sendProfiles.length = 0;
+}
+
 async function round(browser: Browser, url: string): Promise<Round> {
   events.length = opened;
   status = "idle";
@@ -683,8 +725,21 @@ async function round(browser: Browser, url: string): Promise<Round> {
     );
     await startSampling(page, THOUGHT.split(" ").slice(0, 4).join(" "));
     if (LOAD_MS > 0) await startLoad(page, LOAD_MS);
+    const cdp = process.env.PROFILE_SEND === "1" && browser.browserType().name() === "chromium"
+      ? await page.context().newCDPSession(page)
+      : undefined;
+    if (cdp) {
+      await cdp.send("Profiler.enable");
+      await cdp.send("Profiler.setSamplingInterval", { interval: 100 });
+      await cdp.send("Profiler.start");
+    }
     const sentAt = Date.now();
     await page.keyboard.press("Enter");
+    if (cdp) {
+      await sleep(250);
+      const { profile } = (await cdp.send("Profiler.stop")) as { profile: SendProfile };
+      sendProfiles.push(profile);
+    }
     await sleep(THINK_MS + 200);
     // Under load the prompt request can come late: wait for it, so `turnDone` is this round's turn.
     const until = Date.now() + 15_000;
@@ -749,7 +804,7 @@ if (import.meta.main) {
     const { build } = await import("vite");
     await build({
       configFile: path.join(webviews, "vite.config.acpmux-pane.mjs"),
-      build: { outDir: out, emptyOutDir: true },
+      build: { outDir: out, emptyOutDir: true, ...(process.env.PROFILE_SEND === "1" ? { minify: false } : {}) },
       logLevel: "error",
     });
     console.log(`send-motion-pass: pane built in ${((performance.now() - builtAt) / 1000).toFixed(0)} s`);
@@ -787,6 +842,7 @@ if (import.meta.main) {
       const rounds: Round[] = [];
       try {
         for (let index = 0; index < ROUNDS; index++) rounds.push(await round(browser, url));
+        printSendProfiles(`${engine} history${HISTORY}`);
       } catch (error) {
         failed += 1;
         console.log(`send-motion-pass: ${engine} FAILED: ${error instanceof Error ? error.message : String(error)}`);
