@@ -55,6 +55,28 @@ fn stopped_answer() -> Value {
     json!({"stopReason": "cancelled"})
 }
 
+/// Session `id`'s folder of PDFs under `root` (`<cwd>/.cmux/attachments`); none for an id that is
+/// not one plain path component.
+fn pdf_attachments_dir(root: &Path, id: &str) -> Option<PathBuf> {
+    let plain =
+        !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_');
+    plain.then(|| root.join(id))
+}
+
+/// Deletes the PDFs session `id` saved in its project (`acp_prompt_blocks`): the chat was
+/// deleted. They were never removed, so every PDF sent to a deleted chat stayed in the project.
+/// Never follows a symlink (`remove_dir_all` removes the link). Blocking: run it off the runtime.
+pub(super) fn remove_pdf_attachments(cwd: &Path, id: &str) {
+    let Some(dir) = pdf_attachments_dir(&cwd.join(".cmux").join("attachments"), id) else {
+        return;
+    };
+    match std::fs::remove_dir_all(&dir) {
+        Ok(()) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => tracing::warn!(session = id, "PDF attachments not deleted: {e}"),
+    }
+}
+
 /// ACP v1 does not define a `document` content block. Claude's translator can
 /// turn our internal document block into Anthropic's native document. Strict
 /// ACP adapters (including Codex) instead get a stable workspace file and a
@@ -78,12 +100,16 @@ pub(super) fn acp_prompt_blocks(
             )
             .collect();
         let safe_name = if safe_name.is_empty() { "document.pdf" } else { &safe_name };
-        let dir = session.meta().cwd.join(".cmux").join("attachments");
+        let root = session.meta().cwd.join(".cmux").join("attachments");
+        // The chat's own folder, so deleting the chat deletes its PDFs (`remove_pdf_attachments`).
+        let dir = pdf_attachments_dir(&root, &session.id).ok_or_else(|| {
+            RpcError::internal("cannot create PDF attachment directory: bad session id")
+        })?;
         crate::home_fs::create_dirs(&dir).map_err(|e| {
             RpcError::internal(format!("cannot create PDF attachment directory: {e}"))
         })?;
         // The folder sits in the user's project; keep it out of their commits.
-        let ignore = dir.join(".gitignore");
+        let ignore = root.join(".gitignore");
         if !ignore.exists() {
             let _ = crate::home_fs::write(&ignore, "*\n");
         }
@@ -2615,9 +2641,13 @@ impl Hub {
             // itself comes back under this id.
             if !replaced {
                 let id = session.id.clone();
-                let _ =
-                    tokio::task::spawn_blocking(move || super::file_uploads::remove_session(&id))
-                        .await;
+                let cwd = session.meta().cwd.clone();
+                let _ = tokio::task::spawn_blocking(move || {
+                    super::file_uploads::remove_session(&id);
+                    // And the PDFs it saved in its project (`acp_prompt_blocks`).
+                    remove_pdf_attachments(&cwd, &id);
+                })
+                .await;
             }
             // No awaits follow unregistering: a fixed-ID creator may now publish. Keep the
             // removal, index update and event publication under the same lock so a replacement
