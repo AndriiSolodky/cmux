@@ -1611,8 +1611,8 @@ export const isLiveLine = (row: AcpmuxRow) =>
 export const isLiveStep = (row: AcpmuxRow, prev: AcpmuxRow | undefined) =>
   isLiveLine(row) && prev !== undefined && (isStepRow(prev) || isStatusRow(prev));
 /// A row's kind for the gap rules (transcriptGrid.ts transcriptGap), `prev` the drawn row above it.
-/// A live line under a step keeps the footer's slot and the room under it (MARK_LIVE_STEP), but is not
-/// another step: that would swallow the run gap before Thinking.
+/// A live line under a step keeps the footer's slot, the inner gap over it and the room under it
+/// (MARK_LIVE_STEP); it is not another step, which would sit flush.
 export const gridMark = (row: AcpmuxRow, prev: AcpmuxRow | undefined): number =>
   rowGridMark(row, prev) | (opensBackgroundTurn(row, prev) ? MARK_OPENS_TURN : 0);
 /// Whether `row` is the first drawn row of a turn the agent ran on its own that draws as its own

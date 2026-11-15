@@ -210,8 +210,9 @@ export const TRANSCRIPT_SPACING_KINDS: readonly SpacingRow[] = [
  * 55 to 70 apart, then cramped: "this is pretty bad spacing and formatting" / "i thought we made this
  * stuff smaller"). Each is a one-line row: a run's last call, a subagent's start line and its "finished" line, the live "Thinking"
  * line, the waiting group's "1 message from 1 session", another agent's received line and "Sent to".
- * Activity rows sit flush on the 22 pitch; the live line takes the run gap below activity. Measured over gallery
- * variants `working-bottom`, `reply-received`, `notes-live` and `status-prompt` by test/transcript-spacing-kinds.test.ts. */
+ * Activity rows sit flush on the 22 pitch; the live line keeps the footer's 32 slot below activity, the inner gap
+ * over it. Measured over gallery variants `working-bottom`, `reply-received`, `notes-live` and `status-prompt`
+ * by test/transcript-spacing-kinds.test.ts. */
 export const TRANSCRIPT_STATUS_ROWS: readonly (SpacingRow & {
   variant: "working-bottom" | "reply-received" | "notes-live" | "status-prompt";
 })[] = [

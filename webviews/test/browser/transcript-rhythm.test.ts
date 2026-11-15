@@ -133,7 +133,7 @@ await requireBrowserLane("transcript-rhythm.test.ts", async () => {
               chevron,
               copy,
               gaps: [message.top - header.bottom, group.top - message.bottom],
-              // The live state keeps the scaled run gap below completed activity, its last row.
+              // The live state keeps the scaled inner gap below completed activity, its last row.
               liveUnderRun: live.top - run.bottom,
               inner: paragraphs[1]!.top - paragraphs[0]!.bottom,
               composerGap: composer.top - live.bottom,
