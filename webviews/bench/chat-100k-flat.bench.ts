@@ -540,6 +540,23 @@ try {
         row("main_frames_per_s", paint.mainFramesPerS, "count");
         row("paints_per_s", paint.paintsPerS, "count");
         row("main_ms_per_s", paint.taskMsPerS, "ms");
+        // A trickle: the open turn takes one reply chunk a second (a coordinator's slow stream), so what one record
+        // costs in frames and paints shows beside the window above.
+        let trickling = true;
+        const trickle = (async () => {
+          for (let n = 0; trickling; n++) {
+            said({ sessionUpdate: "agent_message_chunk", content: { type: "text", text: `still waiting ${n}. ` } });
+            // fixed-wait: the trickle's own pacing.
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        })();
+        const trickled = await paintWindow(page, cdp, IDLE_S);
+        trickling = false;
+        await trickle;
+        console.log(describePaintWindow(`${name} turn open, a chunk a second`, trickled));
+        row("trickle_frames_per_s", trickled.framesPerS, "count");
+        row("trickle_paints_per_s", trickled.paintsPerS, "count");
+        row("trickle_main_ms_per_s", trickled.taskMsPerS, "ms");
         said({
           sessionUpdate: "tool_call_update",
           toolCallId: "paint-wait",
