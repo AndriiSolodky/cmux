@@ -661,6 +661,52 @@ class Refusal(unittest.TestCase):
         self.assertNotIn("waiting for the rest of the run to finish", summary)
         self.assertIn("no other job of the run is running", summary)
 
+    def test_a_sibling_starting_before_the_refusal_cancel_keeps_the_watch_until_the_run_ends(self):
+        # The sibling only waits at the look, then takes a runner just before the cancel (refusal_guard() reads it
+        # running). Nothing is cancelled, and the watch goes on: the refused job is still re-run once the run ends,
+        # as before the re-run-now path. Without the watch going on, the refused job stayed red for good.
+        started = []
+
+        def jobs(seconds):
+            if not started and "pull" in api.calls and api.calls[-1] == "run":
+                started.append(seconds)  # the guard's read, right before the cancel
+            running = bool(started) and seconds < 3600
+            sibling = job("macos / app-host unit tests (1/7)", labels=[MINI], created=40,
+                          status="completed" if seconds >= 3600 else "in_progress" if running else "queued",
+                          runner="mini-2" if started else "")
+            if started:
+                sibling["started_at"] = stamp(started[0])
+            if seconds >= 3600:
+                sibling.update(conclusion="success", completed_at=stamp(3600))
+            return [changes()(seconds), refused_job("macos / app-host unit tests (2/7)"), sibling]
+
+        clock = Clock()
+        api = FakeAPI(clock, jobs, marker=True, finished=lambda seconds: seconds >= 3600)
+        _, summary = run_main(api, clock)
+        self.assertTrue(started)
+        self.assertNotIn("cancel", api.calls)
+        self.assertNotIn("force-cancel", api.calls)
+        self.assertIn(rescue.REFUSAL_LEFT, summary)
+        self.assertEqual(api.calls.count("rerun-failed"), 1)
+        self.assertGreaterEqual(api.rerun_at, 3600)
+
+    def test_a_refusal_without_a_pull_request_still_waits_for_the_run(self):
+        # The re-run-now path is a pull request run's: an E2E dispatch (pr_number 0) keeps waiting for the run to
+        # end, as before, rather than being cancelled at the refusal with no re-check before the cancel.
+        def jobs(seconds):
+            sibling = job("e2e / sibling", labels=[MINI], created=40,
+                          status="completed" if seconds >= 3600 else "queued")
+            if seconds >= 3600:
+                sibling.update(conclusion="success", completed_at=stamp(3600), runner_name="mini-2")
+            return [e2e_runner()(seconds), refused_job("e2e / refused"), sibling]
+
+        clock = Clock()
+        api = FakeAPI(clock, jobs, marker=True, finished=lambda seconds: seconds >= 3600)
+        _, summary = run_main(api, clock, payload=e2e_event())
+        self.assertNotIn("no other job of the run is running", summary)
+        cancels = [index for index, call in enumerate(api.calls) if call == "cancel"]
+        self.assertEqual(cancels, [], summary[-2000:])
+
     def test_a_finished_run_with_a_refusal_needs_no_cancel(self):
         clock = Clock()
         api = FakeAPI(clock, refusing_run(), marker=True, finished=lambda seconds: seconds >= 60)
