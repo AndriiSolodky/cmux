@@ -187,8 +187,9 @@ final class CloudService {
         shareInstalls = ShareInstalls(root: paths.root, given: [(ownerAPI, identity), (shareAPI, shareDefault)], fallback: shareDefault,
                                      accepts: { [configuration] in configuration.acceptsShareAPI($0) }, make: install)
         let machineIO = CloudMachineIO(bundleResources: Bundle.main.resourceURL, cloudRoot: paths.root, work: work)
+        let machineTeam: @Sendable () async -> String? = { (try? await identity.installToken()).flatMap(MacInstallIdentity.team(ofToken:)) }
         machineAPI = CloudAPIClient.workerMachines(baseURL: configuration.ownerAPIBaseURL(), accessToken: { try await auth.tokens().access },
-                                                   teamID: { (try? await identity.installToken()).flatMap(MacInstallIdentity.team(ofToken:)) },
+                                                   teamID: machineTeam,
                                                    machineIO: machineIO, installToken: { try await identity.installToken() })
         let build = LaunchIdentity.current().build
         let bin = Bundle.main.resourceURL?.appendingPathComponent("bin", isDirectory: true)
@@ -213,7 +214,8 @@ final class CloudService {
                     guard let link = machines?.session(machineID)?.appLink else { return false }
                     return await link.ownerLink != nil
                 },
-                isLive: { [weak machines] machineID in machines?.session(machineID)?.machine.status.isLive ?? false }))
+                isLive: { [weak machines] machineID in machines?.session(machineID)?.machine.status.isLive ?? false },
+                machineTeam: machineTeam)) // the machine routes' cmux team, the one `machineAPI` (Claude's transfer) sends
         hostReplica = CloudHostReplicaFollower(origin: HomeCloudLease.origin(configuration.ownerAPIBaseURL()), clientVersion: clientVersion,
             installToken: { [installIdentity] in let token = try await installIdentity.installToken(); return (token, HomeCloudLease.expiry(ofJWT: token) ?? HomeCloudLease.fallbackExpiry(now: Date())) },
             invalidate: { [installIdentity] in await installIdentity.invalidate() })

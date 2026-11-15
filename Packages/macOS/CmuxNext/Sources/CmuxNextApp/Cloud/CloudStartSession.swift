@@ -257,6 +257,12 @@ struct CloudStartSession {
         steps.done("approvals")
         let copy = try await copied, cwd = copy?.chat ?? request.cwd // before the session starts in it; the account is checked again past the anchor
         if let refusal = session.harnessLogin?.refusal { throw ActionFailure(message: CloudStartSessionStrings.loginRefused(Self.loginRefusal(refusal), request.asked(machine: name))) }
+        // The Codex login the start chose did not arrive: a chat started now would fail its first turn on a missing
+        // OPENAI_API_KEY, so the start stops here and says why (Leo's NIGHTLY, 2026-11-15).
+        if let why = session.harnessLogin?.undeliveredReason {
+            let macSignedIn = await services.cloud.codexBroker.hasMacCodexAccess()
+            throw ActionFailure(message: CloudStartSessionStrings.codexNotDelivered(why, macSignedIn: macSignedIn, request.asked(machine: name)))
+        }
         guard let host = AgentTabStore.registryHost(of: session.daemon) else { throw ActionFailure(message: CloudStartSessionStrings.notConnected(name, id: id, agent: agent)) }
         let (found, foundEpoch) = try await anchored // the copy (an older daemon's update) or the login may have relinked since: its pane is the old link's, so find it again
         let anchor = if session.daemon.store.connectionEpoch == foundEpoch { found } else { try await self.anchor(session, request, context, account: account, byPerson: byPerson).0 }
