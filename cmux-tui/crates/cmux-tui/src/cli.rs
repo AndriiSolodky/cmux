@@ -22,6 +22,7 @@ mod agents;
 mod agents_doctor;
 #[cfg(unix)]
 mod app;
+mod app_action_help;
 #[cfg(unix)]
 mod app_browser_route;
 #[cfg(unix)]
@@ -1111,6 +1112,9 @@ fn parse_command(
             Some(scope) if surface.accepts(shorthand::scope(scope)) => {
                 Ok(ParsedCommand::Help(Some(shorthand::scope(scope).to_string())))
             }
+            Some(scope) if app_action_help::has_section(scope) => {
+                Ok(ParsedCommand::Help(Some(scope.clone())))
+            }
             Some(scope) => Err(unknown_scope(scope, surface)),
         };
     }
@@ -1139,7 +1143,9 @@ fn parse_command(
             [scope @ ("workspace" | "screen" | "pane" | "tab"), .., "rename"] => {
                 Some(format!("{scope} rename"))
             }
-            [scope, ..] if surface.accepts(scope) => Some((*scope).to_string()),
+            [scope, ..] if surface.accepts(scope) || app_action_help::has_section(scope) => {
+                Some((*scope).to_string())
+            }
             _ => None,
         };
         return Ok(ParsedCommand::Help(topic));
@@ -1485,7 +1491,8 @@ fn print_scope_help(scope: Option<&str>, surface: Surface) {
     let catalog = crate::localization::catalog();
     let text = match (scope, surface) {
         (Some("machine"), Surface::Cmux) => {
-            Cow::Owned(format!("{MACHINE_CATALOG_HELP}\n{}", surface::VM_POINTER))
+            let text = format!("{MACHINE_CATALOG_HELP}\n{}", surface::VM_POINTER);
+            Cow::Owned(app_action_help::append("machine", &text).unwrap_or(text))
         }
         (Some(scope), _) => scope_help(scope),
         // The root help lists `vm` itself, with `cloud` as its old name, in each language.
@@ -1567,8 +1574,13 @@ fn scope_help_with_keys(
         "raw" => Cow::Borrowed(RAW_HELP),
         #[cfg(unix)]
         "workflow" => Cow::Borrowed(workflow::HELP),
-        _ => Cow::Owned(root_help(&catalog.local_server)),
+        _ => Cow::Owned(
+            app_action_help::scope_only_usage(scope)
+                .unwrap_or_else(|| root_help(&catalog.local_server)),
+        ),
     });
+    // Every scope lists the catalog's app verbs for it (cli/app_action_help.rs).
+    let text = app_action_help::append(scope, &text).map_or(text, Cow::Owned);
     docs::append_scope_help(scope, text)
 }
 
