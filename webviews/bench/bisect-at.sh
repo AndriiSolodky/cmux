@@ -23,12 +23,15 @@ for sha in "$@"; do
   [[ -f "$tree/webviews/src/gallery/shift.ts" ]] || cp "$here/src/gallery/shift.ts" "$tree/webviews/src/gallery/shift.ts"
   for spec in "${specs[@]}"; do
     name="${spec%%:*}"
-    read -r -a cmd <<<"${spec#*:}"
+    rest="${spec#*:}"
+    envs=()
+    if [[ "$rest" == *"|"* ]]; then read -r -a envs <<<"${rest%%|*}"; rest="${rest#*|}"; fi
+    read -r -a cmd <<<"$rest"
     log="$root/${full:0:11}-$name.log"
-    (cd "$tree/webviews" && timeout 900 bun "bench/${cmd[0]}" "${cmd[@]:1}") >"$log" 2>&1
+    (cd "$tree/webviews" && env "${envs[@]}" timeout 900 bun "bench/${cmd[0]}" "${cmd[@]:1}") >"$log" 2>&1
     echo "BISECT ${full:0:11} $name exit $?"
-    grep -E 'PERF_ROW|live shift|BUDGET MISS|^[0-9] \||turn-end-shift: .*FAILED|^  (layout-shift|box move)' "$log" \
-      | sed "s/^/BISECT ${full:0:11} $name /" | head -60
+    grep -E 'DETAIL|PERF_ROW|live shift|BUDGET MISS|^[0-9] \||turn-end-shift: .*FAILED|^  (layout-shift|box move)' "$log" \
+      | sed "s/^/BISECT ${full:0:11} $name /" | head -120
     [[ -n "${FAST_CHECKS_OUT:-}" ]] && cp "$log" "$FAST_CHECKS_OUT/" 2>/dev/null
   done
   git -C "$repo" worktree remove --force "$tree"

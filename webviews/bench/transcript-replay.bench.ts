@@ -191,14 +191,22 @@ export function instrument(start: number) {
         startTime: number;
         value: number;
         hadRecentInput: boolean;
-        sources?: { node?: Node | null }[];
-      }[])
+        sources?: { node?: Node | null; previousRect?: DOMRectReadOnly; currentRect?: DOMRectReadOnly }[];
+      }[]) {
+        const sc = document.querySelector<HTMLElement>(".acpmux-scroll");
         w.__shifts.push({
           at: entry.startTime,
           value: entry.value,
           input: entry.hadRecentInput,
           sources: (entry.sources ?? []).map((source) => describe(source.node)),
-        });
+          // DIAG (cmux#24569 g1, temporary): where each source was and is, and the scroller.
+          rects: (entry.sources ?? []).map(
+            (source) =>
+              `${describe(source.node)} y ${Math.round(source.previousRect?.y ?? -1)}->${Math.round(source.currentRect?.y ?? -1)} h ${Math.round(source.previousRect?.height ?? -1)}->${Math.round(source.currentRect?.height ?? -1)} x ${Math.round(source.previousRect?.x ?? -1)}->${Math.round(source.currentRect?.x ?? -1)}`,
+          ),
+          scroll: sc ? `${Math.round(sc.scrollTop)}/${sc.scrollHeight}/${sc.clientHeight}` : "none",
+        } as never);
+      }
     }).observe({ type: "layout-shift", buffered: true });
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) w.__long.push({ at: entry.startTime, ms: entry.duration });
@@ -381,6 +389,15 @@ async function openPage(ctx: Ctx, log: ReplayLog, served: number, status: string
   play = { log, served, status };
   const page = await ctx.browser.newPage({ viewport: { width: 900, height: 700 } });
   await page.addInitScript(instrument, start);
+  // DIAG (cmux#24569 g1, temporary): PIN_ARMS='{"id":"arm"}' pins experiment arms.
+  if (process.env.PIN_ARMS)
+    await page.addInitScript(
+      (pinned) => {
+        const host = globalThis as { cmuxExperiments?: Record<string, string> };
+        host.cmuxExperiments = { ...host.cmuxExperiments, ...pinned };
+      },
+      JSON.parse(process.env.PIN_ARMS) as Record<string, string>,
+    );
   await installPaintedFrames(page);
   if (PROBE) await installFoldProbe(page);
   const cdp = await page.context().newCDPSession(page);
@@ -689,7 +706,18 @@ async function liveRound(ctx: Ctx, log: ReplayLog, measureIdle: boolean): Promis
       heapMb: Math.round((heapAfter - heapBefore) * 10) / 10,
       idleMsPerS: Math.round(idleMsPerS * 100) / 100,
       seconds: Math.round((performance.now() - started) / 100) / 10,
-      shiftNotes: shiftSources(shifts),
+      shiftNotes: [
+        ...shiftSources(shifts),
+        ...(process.env.SHIFT_DETAIL === "1" && log.name === "long"
+          ? (shifts as unknown as { at: number; value: number; rects: string[]; scroll: string }[])
+              .filter((shift) => shift.value > 0.005)
+              .slice(0, 25)
+              .map(
+                (shift) =>
+                  `DETAIL at ${Math.round(shift.at)} v ${shift.value.toFixed(4)} scroll ${shift.scroll} | ${shift.rects.join(" ; ")}`,
+              )
+          : []),
+      ],
     };
   } finally {
     await page.close();
