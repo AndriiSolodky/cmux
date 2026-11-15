@@ -116,6 +116,7 @@ import os
 import platform
 import plistlib
 import re
+import tempfile
 import shutil
 import subprocess
 import sys
@@ -326,16 +327,36 @@ def app_abi(app: Path) -> int | None:
         return None
 
 
+KEY_FILES = ("scripts/ci/cmux_tui_tree_key.py", "scripts/cmux-next/cmux-tui-tree-inputs.txt")
+
+
 def tree_key(repo: Path, sha: str) -> str:
-    # Keyed by the key script too: a new version of the script may compute another key for the same commit.
-    script = sha256_file(ROOT / "scripts/ci/cmux_tui_tree_key.py")[:16]
+    # SHA's own key script and inputs decide it (_tree_key), so a commit's key never changes: kept by commit alone.
     with PHASES("key"):
-        return remembered(f"tree-v2-{script}", sha, lambda: _tree_key(repo, sha))
+        return remembered("tree-v2-own", sha, lambda: _tree_key(repo, sha))
 
 
 def _tree_key(repo: Path, sha: str) -> str:
-    done = subprocess.run([sys.executable, str(ROOT / "scripts/ci/cmux_tui_tree_key.py"), "--version", "v2", sha],
-                          cwd=repo, capture_output=True, text=True)
+    """SHA's tree key as CI published it: cmux-tui-artifacts.yml runs the key script in a checkout of SHA, so
+    SHA's own copy of the script reads SHA's own inputs list. This checkout's copy can differ: #43477 added an
+    input, which gave every commit before it another key here, one nothing was published under (hot-apply
+    then found no build for it). SHA's two files run from a scratch folder against REPO's objects (GIT_DIR);
+    a commit without them falls back to this checkout's."""
+    git_dir = git(repo, "rev-parse", "--absolute-git-dir")
+    with tempfile.TemporaryDirectory(prefix="hot-apply-key-") as tmp:
+        script = ROOT / KEY_FILES[0]
+        own = subprocess.run(["git", "-C", str(repo), "cat-file", "-e", f"{sha}:{KEY_FILES[0]}"],
+                             capture_output=True).returncode == 0
+        if own:
+            for rel in KEY_FILES:
+                body = subprocess.run(["git", "-C", str(repo), "show", f"{sha}:{rel}"], capture_output=True,
+                                      check=True).stdout
+                (Path(tmp) / rel).parent.mkdir(parents=True, exist_ok=True)
+                (Path(tmp) / rel).write_bytes(body)
+            script = Path(tmp) / KEY_FILES[0]
+        env = dict(os.environ, GIT_DIR=git_dir) if own else None
+        done = subprocess.run([sys.executable, str(script), "--version", "v2", sha], cwd=repo, capture_output=True,
+                              text=True, env=env)
     key = done.stdout.strip()
     if done.returncode != 0 or not SHA.fullmatch(key):
         raise RuntimeError(f"no cmux-tui tree key for {sha}: {done.stderr.strip()[:300]}")
