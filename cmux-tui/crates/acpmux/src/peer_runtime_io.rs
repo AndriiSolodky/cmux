@@ -502,6 +502,12 @@ impl Peer {
         self.facts.lock_or_recover().refused = false;
         #[cfg(test)]
         if test_dial::refused() {
+            if test_dial::login_refused() {
+                let reason =
+                    ssh_errors::reason(b"leo@box: Permission denied (publickey,password).");
+                self.note_ssh_failure(reason);
+                return Err(ssh_errors::describe("ssh to box failed (test)".into(), reason));
+            }
             return Err("refused (test)".into());
         }
         let (via, opened) = self.open_first().await?;
