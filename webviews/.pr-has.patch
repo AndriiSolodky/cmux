@@ -1,0 +1,215 @@
+diff --git a/webviews/src/agent-session/acpmux/App.tsx b/webviews/src/agent-session/acpmux/App.tsx
+index 9a053241cab..30f552614f7 100644
+--- a/webviews/src/agent-session/acpmux/App.tsx
++++ b/webviews/src/agent-session/acpmux/App.tsx
+@@ -223,6 +223,7 @@ import type { Project } from "./ProjectChooser";
+ import { byRecentUse, parseProjectRepos } from "./projectRepos";
+ import { answerFromHome, replyElsewhere } from "./homeInboxModel";
+ import { HomeLists } from "./HomeLists";
++import { homeListsShown } from "./homeListsModel";
+ import { lastChange, turnFiles, turnPathsOnly, turnRows, type PathRef, type TurnFile } from "./diff";
+ import { opensTurn } from "./turnStart";
+ import type { TrustSource } from "./folderTrust";
+@@ -11865,6 +11866,17 @@ function AcpmuxPane({ initialChat }: { initialChat?: InitialChat }) {
+   // Pinned questions join the stack but never take the composer's keys (waitingAskStore.ts).
+   const bottomStack = bottomAsks(liveBottomAsk, pinnedAsks.length);
+   const hasBottomAsk = bottomStack.holdsKeys;
++  // A new chat's home area (HomeLists, under the composer), and whether its lists draw anything: then
++  // the hero keeps its room (styles.css `data-home-lists`). An attribute, not a `:has()` over the pane,
++  // like `data-asks`. Asked only while the home area shows.
++  const homeAreaShown = freshView && !sandboxHoldsChat && !viewedSandbox && !(cloudStart && !snapshot.sessionId);
++  const homeListed = useMemo(
++    () => homeAreaShown && homeListsShown(snapshot.sessions, snapshot.sessionId, snapshot.asks, needsYou.attentionTabs),
++    [homeAreaShown, snapshot.sessions, snapshot.sessionId, snapshot.asks, needsYou.attentionTabs],
++  );
++  // The stage shows the chat's loading layout (ChatUnavailableState reports it): the dock reserves its
++  // room (styles.css `data-stage-loading`).
++  const [stageLoading, setStageLoading] = useState(false);
+   // A folder confirmation can be pending while the New Tab stays mounted. Keep the same ask in
+   // that surface too: the regular composer is deliberately hidden behind the New Tab, so leaving
+   // the ask there would strand the prompt with no Use or Cancel action.
+@@ -13322,6 +13334,9 @@ function AcpmuxPane({ initialChat }: { initialChat?: InitialChat }) {
+           // `:has()` over the pane: that would be checked again for every node a streamed chunk inserts
+           // into the transcript, and restyle the composer each time.
+           data-asks={hasBottomAsk ? "" : undefined}
++          // The same for a new chat's home lists and the chat's loading layout (styles.css).
++          data-home-lists={homeListed ? "" : undefined}
++          data-stage-loading={stageLoading ? "" : undefined}
+           // data-jump-latest: Jump to latest is up (hidden under the inspector), set by setJumpLatestShown.
+           ref={setPaneMain}
+         >
+@@ -13940,6 +13955,7 @@ function AcpmuxPane({ initialChat }: { initialChat?: InitialChat }) {
+                 ) : cloudUnavailable && !missingRows ? (
+                   // The tab's chat is not here: which case it is, centered where the chat would be.
+                   <ChatUnavailableState
++                    onLoadingLayout={setStageLoading}
+                     unavailable={cloudUnavailable}
+                     onResumeMachine={cloudRecovery.resume}
+                     resuming={cloudRecovery.resuming}
+@@ -14019,7 +14035,7 @@ function AcpmuxPane({ initialChat }: { initialChat?: InitialChat }) {
+                 {/* Between the hero and the docked composer. */}
+                 {/* A Sandboxed send holds the new chat: no recent chat replaces it while it is out.
+                     Neither does a Cloud start's chat, which shows its sent message (CloudStartView). */}
+-                {freshView && !sandboxHoldsChat && !viewedSandbox && !(cloudStart && !snapshot.sessionId) && (
++                {homeAreaShown && (
+                   <div className="acpmux-home-area">
+                     <HomeLists
+                       sessions={snapshot.sessions}
+diff --git a/webviews/src/agent-session/acpmux/ChatUnavailableState.tsx b/webviews/src/agent-session/acpmux/ChatUnavailableState.tsx
+index e298c123590..ff7d0a300aa 100644
+--- a/webviews/src/agent-session/acpmux/ChatUnavailableState.tsx
++++ b/webviews/src/agent-session/acpmux/ChatUnavailableState.tsx
+@@ -1,3 +1,5 @@
++import { useLayoutEffect } from "react";
++
+ import { RESUME_NOTE_DELAY_MS, useAfterDelay, useLinkDownSaid } from "./afterDelay";
+ import type { ChatUnavailable } from "./chatUnavailable";
+ import { Spinner } from "./conversation/icons";
+@@ -38,6 +40,7 @@ export function ChatUnavailableState({
+   noteDelayMs = RESUME_NOTE_DELAY_MS,
+   offlineDelayMs,
+   line = false,
++  onLoadingLayout,
+ }: {
+   unavailable: ChatUnavailable;
+   /// The session the tab recorded (`missingSession`); its first 13 characters show under the detail.
+@@ -61,6 +64,9 @@ export function ChatUnavailableState({
+   offlineDelayMs?: number;
+   /// Over the chat's last-read rows: a line under the header, not the centered state.
+   line?: boolean;
++  /// Told whether the centered loading layout is drawn (never for `line`), in the commit that draws
++  /// it: the pane's `data-stage-loading` (App.tsx), which a pane-level `:has()` used to read.
++  onLoadingLayout?(loading: boolean): void;
+ }) {
+   const t = useT();
+   // A pause is invisible at first, as a resume is (Leo, 2026-11-03: the wait "you mostly perceive as
+@@ -80,11 +86,17 @@ export function ChatUnavailableState({
+   );
+   // Still loading, or paused or offline for less than the threshold: nothing shows, in the loading
+   // layout, until the chat opens or the wait goes on (then offline or paused, below).
+-  if (
++  const loading =
+     unavailable.reason === "connecting" ||
+     (unavailable.reason === "paused" && !pausedShown) ||
+-    (unavailable.reason === "offline" && !offlineShown)
+-  )
++    (unavailable.reason === "offline" && !offlineShown);
++  // The pane marks the loading layout (`data-stage-loading`, styles.css) before the frame paints.
++  const loadingLayout = loading && !line;
++  useLayoutEffect(() => {
++    onLoadingLayout?.(loadingLayout);
++  }, [onLoadingLayout, loadingLayout]);
++  useLayoutEffect(() => () => onLoadingLayout?.(false), [onLoadingLayout]);
++  if (loading)
+     return line ? null : (
+       <div className="acpmux-empty acpmux-unavailable" data-unavailable="connecting" aria-busy="true" />
+     );
+diff --git a/webviews/src/agent-session/acpmux/HomeLists.gallery.tsx b/webviews/src/agent-session/acpmux/HomeLists.gallery.tsx
+index 8004cefe288..574387dbbba 100644
+--- a/webviews/src/agent-session/acpmux/HomeLists.gallery.tsx
++++ b/webviews/src/agent-session/acpmux/HomeLists.gallery.tsx
+@@ -15,6 +15,7 @@ import type { WatchedAsk } from "./needsYou/model";
+ import { Composer } from "./Composer";
+ import { EmptyState } from "./EmptyState";
+ import { HomeLists } from "./HomeLists";
++import { homeListsShown } from "./homeListsModel";
+ 
+ type Props = ComponentProps<typeof HomeLists>;
+ 
+@@ -301,7 +302,11 @@ function withReceipt(Component: typeof HomeLists) {
+         data-home-selection={selected ?? ""}
+         data-home-answer={answered ?? ""}
+       >
+-        <div className="acpmux-main" data-new-chat="">
++        <div
++          className="acpmux-main"
++          data-new-chat=""
++          data-home-lists={homeListsShown(props.sessions, props.currentId, props.asks, props.tabs) ? "" : undefined}
++        >
+           <div className="acpmux-stage">
+             <EmptyState project="atlas-web" />
+           </div>
+diff --git a/webviews/src/agent-session/acpmux/HomeLists.tsx b/webviews/src/agent-session/acpmux/HomeLists.tsx
+index fd1a2b7ebd3..16c598bfb9f 100644
+--- a/webviews/src/agent-session/acpmux/HomeLists.tsx
++++ b/webviews/src/agent-session/acpmux/HomeLists.tsx
+@@ -37,6 +37,7 @@ export function HomeLists({
+ }) {
+   const { waiting, review } = homeLists(sessions, currentId, asks, tabs);
+   const t = useT();
++  // homeListsShown (homeListsModel.ts) answers the same question for the pane's `data-home-lists`.
+   if (waiting.length === 0 && review.length === 0) return null;
+   return (
+     <div className="acpmux-home">
+diff --git a/webviews/src/agent-session/acpmux/homeListsModel.ts b/webviews/src/agent-session/acpmux/homeListsModel.ts
+index abaa954f046..1e90d11fe7f 100644
+--- a/webviews/src/agent-session/acpmux/homeListsModel.ts
++++ b/webviews/src/agent-session/acpmux/homeListsModel.ts
+@@ -15,6 +15,19 @@ export const HOME_LABELS = {
+ /// Each list shows at most this many rows, newest first.
+ export const HOME_ROWS = 3;
+ 
++/// Whether HomeLists draws anything for these inputs (it draws nothing when both lists are empty).
++/// The pane marks it (`data-home-lists`, App.tsx) so the hero keeps its room without a pane-level
++/// `:has()` (styles.css).
++export function homeListsShown(
++  sessions: AcpmuxSessionEntry[],
++  currentId?: string,
++  asks: readonly WatchedAsk[] = [],
++  tabs: readonly AttentionTab[] = [],
++): boolean {
++  const { waiting, review } = homeLists(sessions, currentId, asks, tabs);
++  return waiting.length > 0 || review.length > 0;
++}
++
+ /// What a new chat's home offers besides the composer (its welcome screen): every ask waiting on
+ /// the person (the inbox, HomeInbox.tsx: each open request of every other chat, newest first, none
+ /// capped, so no ask is left to find in its chat), and the open pull requests ready for review. A
+diff --git a/webviews/src/agent-session/acpmux/newtab/screen.css b/webviews/src/agent-session/acpmux/newtab/screen.css
+index c1067cdad36..bc672bf9546 100644
+--- a/webviews/src/agent-session/acpmux/newtab/screen.css
++++ b/webviews/src/agent-session/acpmux/newtab/screen.css
+@@ -872,8 +872,11 @@
+    dots (a widget, off by default, App.tsx) sit absolutely at the page's foot, 2 px up and 24 px
+    tall: with them on, the page keeps their room under the row (less the row's 4 px margin). */
+ .nt-screen[data-layout="stage"]:has(.nt-foot) { --nt-stage-foot: 0px; }
+-/* The template dots sit in the page's dots row (PageDots.tsx) beside the look dots, which keep no band. */
+-.acpmux-main:has(> .nt-page-dots > .nt-style:not(.nt-look-dots)) .nt-screen[data-layout="stage"]:has(.nt-foot) {
++/* The template dots sit in the page's dots row (PageDots.tsx) beside the look dots, which keep no band.
++   The page follows the dots row in the pane (App.tsx), so the dots row carries the `:has()`, not the
++   pane: a pane-level `:has()` restyles every row on screen at each composer edit (paneAncestorHas.test.ts). */
++.acpmux-main > .nt-page-dots:has(> .nt-style:not(.nt-look-dots)) ~ .nt-screen[data-layout="stage"]:has(.nt-foot),
++.acpmux-main > .nt-page-dots:has(> .nt-style:not(.nt-look-dots)) ~ * .nt-screen[data-layout="stage"]:has(.nt-foot) {
+   --nt-stage-foot: 22px;
+ }
+ .nt-screen[data-layout="stage"] .nt-stage {
+diff --git a/webviews/src/agent-session/acpmux/styles.css b/webviews/src/agent-session/acpmux/styles.css
+index 1ac8b8bd5f1..e39c79542a6 100644
+--- a/webviews/src/agent-session/acpmux/styles.css
++++ b/webviews/src/agent-session/acpmux/styles.css
+@@ -400,8 +400,11 @@
+    under it and one quiet button. */
+ .acpmux-unavailable{gap:10px}
+ /* Loading has no transcript under the dock. Keep the existing dock height/shrink rules, but let
+-   its actual height reserve the stage's room (including a growing draft in a short pane). */
+-.acpmux-main[data-dock="float"]:has(>.acpmux-stage>.acpmux-unavailable[data-unavailable="connecting"])>.acpmux-dock{position:relative;flex:none;max-height:calc(100% - 44px - var(--acpmux-transcript-min,96px))}
++   its actual height reserve the stage's room (including a growing draft in a short pane).
++   `data-stage-loading` (App.tsx, from ChatUnavailableState), not a `:has()` over the pane: a pane-level
++   `:has()` restyles every row on screen at each composer edit (paneAncestorHas.test.ts). The doubled
++   class keeps it over bottomStack.css's `.acpmux-dock:has(.acpmux-composer-foot)`, as the `:has()` did. */
++.acpmux-main[data-dock="float"][data-stage-loading]>.acpmux-dock.acpmux-dock{position:relative;flex:none;max-height:calc(100% - 44px - var(--acpmux-transcript-min,96px))}
+ /* Equal upper/lower tracks keep the spinner centered. Its 28px square needs 40px while rotating.
+    Copy stretches to its track instead of overflowing an intrinsically sized, centered grid item. */
+ .acpmux-unavailable[data-unavailable="connecting"]{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) 40px minmax(0,1fr);gap:8px;padding-bottom:0}
+@@ -555,8 +558,9 @@
+ .acpmux-main[data-new-chat] .acpmux-empty{justify-content:center;padding-bottom:6%}
+ /* Home lists (HomeLists.tsx): the welcome lists between the hero and the docked composer, in its column; they scroll when tall. */
+ .acpmux-main[data-new-chat]>.acpmux-dock>.acpmux-home-area{flex:0 1 auto;min-height:0;max-height:50%}
+-/* The hero (header, glyph and title) keeps its room on a short pane; the lists, which scroll, give way first. */
+-.acpmux-main[data-new-chat]:has(>.acpmux-dock>.acpmux-home-area:not(:empty))>.acpmux-stage{min-height:128px}
++/* The hero (header, glyph and title) keeps its room on a short pane; the lists, which scroll, give way first.
++   `data-home-lists` (App.tsx, homeListsShown) marks lists drawn, not a pane-level `:has()` (paneAncestorHas.test.ts). */
++.acpmux-main[data-new-chat][data-home-lists]>.acpmux-stage{min-height:128px}
+ /* No lists to show: no wrapper either, so the hero centers exactly as without this feature. */
+ .acpmux-home-area:empty{display:none}
+ .acpmux-home-area{overflow:auto;padding:0 max(16px,calc((100% - 760px)/2)) 12px;font-family:var(--font-ui);-webkit-font-smoothing:antialiased}
