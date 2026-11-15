@@ -20,6 +20,8 @@
 pub mod blobs;
 pub mod checkpoint;
 pub mod folds;
+#[cfg(any(test, feature = "gate-rounds"))]
+pub mod gate_rounds;
 mod fsio;
 pub mod index;
 mod json;
