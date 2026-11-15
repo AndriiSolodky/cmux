@@ -17,6 +17,7 @@
 // Cost: each row's findings are kept per row object (a row is replaced, never changed, when it grows;
 // direct.ts bumps its version), so an update reads only its new and changed rows, and a streaming
 // reply is not read until it settles.
+import { PrefixFold } from "../conversation/prefixFlatMap";
 import type { AcpmuxActivity, AcpmuxRow } from "../model";
 import { mcpCall } from "../conversation/mcpCalls";
 import { pullRequestSourceCommand } from "../summary/transcriptPullRequests";
@@ -235,11 +236,24 @@ export function producedLabel(link: ProducedLink, pullRequest: (n: number) => st
 
 /// The pull requests, issues and commits the chat produced, in the order it first produced each, each
 /// once (a pull request it opened and then merged is one row, merged). `repository` is the chat
-/// folder's `owner/name`, for a bare number.
+/// folder's `owner/name`, for a bare number. Read on every update while Session Info shows: the rows
+/// again only past the prefix an update kept, and the links listed again only when the findings
+/// changed (PrefixFold), one fold per folder.
 export function producedLinks(rows: readonly AcpmuxRow[], repository?: string | null): ProducedLink[] {
+  const key = repository ?? "";
+  let fold = folds.get(key);
+  if (!fold) {
+    // A page shows a few folders' chats: the folds stay few, and each holds its rows weakly.
+    if (folds.size >= 8) folds.clear();
+    folds.set(key, (fold = new PrefixFold((row: AcpmuxRow) => rowFindings(row), (found) => linksOf(found, repository))));
+  }
+  return fold.read(rows);
+}
+const folds = new Map<string, PrefixFold<AcpmuxRow, Finding, ProducedLink[]>>();
+
+function linksOf(findings: readonly Finding[], repository?: string | null): ProducedLink[] {
   const found = new Map<string, ProducedLink>();
-  for (const row of rows)
-    for (const finding of rowFindings(row)) {
+  for (const finding of findings) {
       if (finding.kind === "commit") {
         const key = `commit:${finding.repo.toLowerCase()}@${finding.sha.slice(0, 7)}`;
         if (!found.has(key))
