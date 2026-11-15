@@ -86,6 +86,11 @@ public final class DeviceHubService {
     public var makeRemoteHub: (@MainActor (URL, String) async throws -> DeviceHub?)?
     /// The running hub, its account and address after every change (the App anchors cmux Remote).
     public var hubChanged: (@MainActor (DeviceHub?, String?, URL?) -> Void)?
+    /// This Mac's kind as its daemon reports it (`identify` `machine_device`: `macbook`, `mac-mini`),
+    /// which the hub records so the other devices draw what it is. The App sets it.
+    public var deviceKind: String? {
+        didSet { hub?.reportKind(deviceKind) }
+    }
 
     public init(pages: MacScreenPages, account: Account, bundleIdentifier: String?, loginKeychain: LoginKeychain, selectedBaseURL: URL? = nil,
                 retryClock: any Clock<Duration> = ContinuousClock(), makeAppHub: AppHubFactory? = nil) {
@@ -222,6 +227,7 @@ public final class DeviceHubService {
     private func install(_ hub: DeviceHub, url: URL, user: String) {
         self.hub = hub
         running = (url, user)
+        hub.deviceKind = deviceKind
         pages.hub = hub
         // task-owner: one registration and socket start; stop() cancels the socket
         trackHubStart(Task { await hub.start() })

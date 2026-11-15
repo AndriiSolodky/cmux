@@ -237,8 +237,22 @@ extension AppServices {
     func startDeviceHub(_ settings: SettingsController) {
         // cmux Remote first: the hub it serves is made with its device identity.
         startCmuxRemote(settings)
+        followDeviceKind()
         deviceHub.start(settings: settings)
         cloud.willSignOut.append { [weak self] in self?.deviceHub.willSignOut() }
+    }
+
+    /// The hub records what kind of Mac this is (a MacBook, a Mac mini), as the local daemon reads its
+    /// hardware model (`identify` `machine_device`), so Screen Sharing on the other devices draws it.
+    private func followDeviceKind() {
+        // task-owner: lives with the app; follows the local daemon's identity across reconnects.
+        Task { [weak self] in
+            guard let daemon = self?.daemon else { return }
+            for await kind in ObservationStream({ daemon.identity?.machineDevice }) {
+                guard let self else { return }
+                if let kind { deviceHub.deviceKind = kind }
+            }
+        }
     }
 
     /// `debug.device_hub` (DEV builds).
