@@ -62,103 +62,116 @@ await requireBrowserLane("transcript-live-line-holds-browser.test.ts", async () 
 
     const trace = await page.evaluate(
       () =>
-        new Promise<Array<{ step: string; over: string; height: number; fromBottom: number; atEnd: number }>>(
-          (done) => {
-            type Row = Record<string, unknown>;
-            const show = (rows: Row[]) =>
-              (window as unknown as { __showLiveRows(rows: Row[]): void }).__showLiveRows(rows);
-            const sent = Date.now() - 30_000;
-            const user = {
-              id: "u",
-              kind: "user",
-              version: 1,
-              at: sent,
-              text: "Find every retry loop and fix the cap.",
-            };
-            // Taller than the view, so the view follows the latest row from the first step.
-            const earlier = {
-              id: "a0",
-              kind: "assistant",
-              version: 1,
-              at: sent + 500,
-              text: Array.from(
-                { length: 14 },
-                (_, index) =>
-                  `Call site ${index + 1} retries on every error and sleeps a fixed second between attempts, so ` +
-                  "the cap has to apply here as well.",
-              ).join("\n\n"),
-            };
-            const call = (id: string) => ({
-              kind: "tool",
-              text: "",
-              tool: {
-                id,
-                title: `rg retry ${id}`,
-                kind: "execute",
-                status: "completed",
-                command: `rg retry ${id}`,
-                startedAt: sent + 1_000,
-              },
-            });
-            const run = (id: string, at: number, calls: string[]) => ({
+        new Promise<
+          Array<{ step: string; over: string; height: number; fromBottom: number; atEnd: number; spare: number }>
+        >((done) => {
+          type Row = Record<string, unknown>;
+          const show = (rows: Row[]) =>
+            (window as unknown as { __showLiveRows(rows: Row[]): void }).__showLiveRows(rows);
+          const sent = Date.now() - 30_000;
+          const user = {
+            id: "u",
+            kind: "user",
+            version: 1,
+            at: sent,
+            text: "Find every retry loop and fix the cap.",
+          };
+          // Far taller than the view at any font, so the view follows the latest row from the first step (a CI
+          // web job once read the first step with the column shorter than the view: words 40.8 px up, not 30).
+          const earlier = {
+            id: "a0",
+            kind: "assistant",
+            version: 1,
+            at: sent + 500,
+            text: Array.from(
+              { length: 40 },
+              (_, index) =>
+                `Call site ${index + 1} retries on every error and sleeps a fixed second between attempts, so ` +
+                "the cap has to apply here as well.",
+            ).join("\n\n"),
+          };
+          const call = (id: string) => ({
+            kind: "tool",
+            text: "",
+            tool: {
               id,
-              kind: "activity",
-              version: 1,
-              at,
-              items: calls.map(call),
-            });
-            const reply = (id: string, at: number, text: string) => ({ id, kind: "assistant", version: 1, at, text });
-            // Each step lands one more row over the live line: a run, a reply, a run, a reply.
-            const steps: Array<[string, Row[]]> = [];
-            const rows: Row[] = [user, earlier];
+              title: `rg retry ${id}`,
+              kind: "execute",
+              status: "completed",
+              command: `rg retry ${id}`,
+              startedAt: sent + 1_000,
+            },
+          });
+          const run = (id: string, at: number, calls: string[]) => ({
+            id,
+            kind: "activity",
+            version: 1,
+            at,
+            items: calls.map(call),
+          });
+          const reply = (id: string, at: number, text: string) => ({ id, kind: "assistant", version: 1, at, text });
+          // Each step lands one more row over the live line: a run, a reply, a run, a reply.
+          const steps: Array<[string, Row[]]> = [];
+          const rows: Row[] = [user, earlier];
+          steps.push(["reply", [...rows]]);
+          for (let index = 0; index < 3; index += 1) {
+            rows.push(run(`r${index}`, sent + 2_000 + index * 2_000, [`c${index}a`, `c${index}b`]));
+            steps.push(["run", [...rows]]);
+            rows.push(reply(`a${index + 1}`, sent + 3_000 + index * 2_000, `Call site ${index + 15} also retries.`));
             steps.push(["reply", [...rows]]);
-            for (let index = 0; index < 3; index += 1) {
-              rows.push(run(`r${index}`, sent + 2_000 + index * 2_000, [`c${index}a`, `c${index}b`]));
-              steps.push(["run", [...rows]]);
-              rows.push(reply(`a${index + 1}`, sent + 3_000 + index * 2_000, `Call site ${index + 15} also retries.`));
-              steps.push(["reply", [...rows]]);
-            }
-            const out: Array<{ step: string; over: string; height: number; fromBottom: number; atEnd: number }> = [];
-            let frame = 0;
-            let step = -1;
-            const FRAMES_PER_STEP = 24;
-            window.cmuxAfterPaint(
-              () => {
-                const scroller = document.querySelector<HTMLElement>(".acpmux-scroll");
-                const line = document.querySelector<HTMLElement>('[data-row-id="thinking-live"]');
-                const words = line?.querySelector<HTMLElement>(".cv-thinking");
-                if (scroller && line && words && step >= 0) {
-                  const view = scroller.getBoundingClientRect();
-                  const box = line.getBoundingClientRect();
-                  out.push({
-                    step: `${step} ${steps[step]![0]}`,
-                    over: (line.previousElementSibling as HTMLElement | null)?.dataset.rowId ?? "?",
-                    height: Math.round(box.height * 10) / 10,
-                    fromBottom: Math.round((view.bottom - words.getBoundingClientRect().bottom) * 10) / 10,
-                    atEnd: Math.round(scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop),
-                  });
-                }
-                frame += 1;
-                if (frame >= steps.length * FRAMES_PER_STEP) {
-                  done(out);
-                  return false;
-                }
-              },
-              () => {
-                if (frame % FRAMES_PER_STEP === 0 && step < steps.length - 1) {
-                  step += 1;
-                  show(steps[step]![1]);
-                }
-              },
-            );
-          },
-        ),
+          }
+          const out: Array<{
+            step: string;
+            over: string;
+            height: number;
+            fromBottom: number;
+            atEnd: number;
+            spare: number;
+          }> = [];
+          let frame = 0;
+          let step = -1;
+          const FRAMES_PER_STEP = 24;
+          window.cmuxAfterPaint(
+            () => {
+              const scroller = document.querySelector<HTMLElement>(".acpmux-scroll");
+              const line = document.querySelector<HTMLElement>('[data-row-id="thinking-live"]');
+              const words = line?.querySelector<HTMLElement>(".cv-thinking");
+              if (scroller && line && words && step >= 0) {
+                const view = scroller.getBoundingClientRect();
+                const box = line.getBoundingClientRect();
+                out.push({
+                  step: `${step} ${steps[step]![0]}`,
+                  over: (line.previousElementSibling as HTMLElement | null)?.dataset.rowId ?? "?",
+                  height: Math.round(box.height * 10) / 10,
+                  fromBottom: Math.round((view.bottom - words.getBoundingClientRect().bottom) * 10) / 10,
+                  atEnd: Math.round(scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop),
+                  spare: Math.round(scroller.scrollHeight - scroller.clientHeight),
+                });
+              }
+              frame += 1;
+              if (frame >= steps.length * FRAMES_PER_STEP) {
+                done(out);
+                return false;
+              }
+            },
+            () => {
+              if (frame % FRAMES_PER_STEP === 0 && step < steps.length - 1) {
+                step += 1;
+                show(steps[step]![1]);
+              }
+            },
+          );
+        }),
     );
     await context.close();
 
     console.log(
-      ["step | row over the line | line height | words from the view's bottom | px from the end"]
-        .concat(trace.map((row) => `${row.step} | ${row.over} | ${row.height} | ${row.fromBottom} | ${row.atEnd}`))
+      ["step | row over the line | line height | words from the view's bottom | px from the end | px it scrolls"]
+        .concat(
+          trace.map(
+            (row) => `${row.step} | ${row.over} | ${row.height} | ${row.fromBottom} | ${row.atEnd} | ${row.spare}`,
+          ),
+        )
         .join("\n"),
     );
     // Each step's last frame, once the arrival's glide (tailGlide.ts, a translate the reader sees as the new row
@@ -166,6 +179,8 @@ await requireBrowserLane("transcript-live-line-holds-browser.test.ts", async () 
     const rested = [...new Map(trace.map((row) => [row.step, row])).values()];
     expect(rested.length).toBe(7);
     for (const row of rested) expect(row.atEnd).toBeLessThanOrEqual(1);
+    // The column overflows the view at every step, so the view sits at the latest row rather than at the top.
+    for (const row of rested) expect(row.spare).toBeGreaterThan(100);
     expect(new Set(rested.map((row) => row.over))).toEqual(new Set(["a0", "r0", "a1", "r1", "a2", "r2", "a3"]));
     // One box and one place for its words, whichever row is over it.
     expect(new Set(rested.map((row) => row.height)).size).toBe(1);

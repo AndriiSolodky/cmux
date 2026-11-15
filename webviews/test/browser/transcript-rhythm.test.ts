@@ -162,9 +162,10 @@ await requireBrowserLane("transcript-rhythm.test.ts", async () => {
           // A run and the prose by it: the run gap (design/transcript-spacing.md rule 4).
           for (const gap of state.gaps)
             expect(Math.abs(gap - gridLength("gap-run") * scale), "run gap").toBeLessThanOrEqual(0.5);
-          expect(Math.abs(state.liveUnderRun - gridLength("gap-run") * scale), "live line run gap").toBeLessThanOrEqual(
-            0.5,
-          );
+          // The live line under a run keeps the footer's 32 slot a reply gives it, over the inner gap (12, a token),
+          // so the row over it changing moves neither its box nor its words (transcriptGrid.ts MARK_LIVE_STEP,
+          // cmux#24569); its words still sit about the run gap under the run.
+          expect(Math.abs(state.liveUnderRun - 12 * scale), "live line gap under a run").toBeLessThanOrEqual(0.5);
           expect(Math.abs(state.inner - 12 * scale), "paragraph gap").toBeLessThanOrEqual(0.5);
           // Over a floating stack the newest line rests the rest gap over it (model.ts REST_GAP, Leo
           // 2026-11-01: "more space between composer and latest messages"); docked in flow, the
