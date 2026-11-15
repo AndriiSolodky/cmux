@@ -1,8 +1,8 @@
 //! `window_*` through the C ABI: the app sends its facts and acts on the
 //! answer (cmux-window-rules holds the rules and their cases).
 
-use cmux_layout_reducer_ffi::{ERR_INVALID, OK, cmux_layout_reducer_json};
-use serde_json::{Value, json};
+use cmux_layout_reducer_ffi::{cmux_layout_reducer_json, ERR_INVALID, OK};
+use serde_json::{json, Value};
 use std::ffi::CStr;
 
 fn call(operation: &CStr, request: &[u8]) -> (i32, Value) {
@@ -779,4 +779,28 @@ fn remote_connect_step_opens_recovery_for_the_current_attempt_only() {
         &json!({"failureAttempt": 1, "currentAttempt": 2, "hasWindow": true}),
     );
     assert_eq!(body["recovery"], json!(false));
+}
+
+#[test]
+fn toggle_terminal_and_chat_places_answer_over_the_channel() {
+    let screen = "> fix the bug\n\n⏺ Done.\n\n> add a test\n\n⏺ Added.\n> ";
+    let prompts = json!(["fix the bug", "add a test"]);
+    let (_, body) = call_json(
+        c"window_tabs_terminal_place",
+        &json!({"prompts": prompts, "at": 1, "screen": screen, "columns": 80}),
+    );
+    assert_eq!(body, json!({"place": "row", "row": 4}));
+    let (_, body) =
+        call_json(c"window_tabs_terminal_place", &json!({"prompts": prompts, "screen": screen}));
+    assert_eq!(body, json!({"place": "latest"}));
+    let (_, body) = call_json(
+        c"window_tabs_chat_place",
+        &json!({"prompts": prompts, "screen": screen, "columns": 80, "top": 2}),
+    );
+    assert_eq!(body, json!({"place": "turn", "index": 0}));
+    let (_, body) = call_json(
+        c"window_tabs_chat_place",
+        &json!({"prompts": prompts, "screen": screen, "top": 2, "atBottom": true}),
+    );
+    assert_eq!(body, json!({"place": "latest"}));
 }
