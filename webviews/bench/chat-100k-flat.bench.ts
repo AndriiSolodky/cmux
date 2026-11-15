@@ -238,6 +238,10 @@ try {
         message(ws, raw) {
           const message = JSON.parse(String(raw)) as { id?: number; method: string; params?: Record<string, unknown> };
           if (message.id === undefined) return;
+          const phase = (globalThis as { __phase?: string }).__phase ?? "open";
+          const key = `${phase} ${message.method}`;
+          const counts = ((globalThis as { __counts?: Map<string, number> }).__counts ??= new Map());
+          counts.set(key, (counts.get(key) ?? 0) + 1);
           ws.send(
             JSON.stringify({
               jsonrpc: "2.0",
@@ -354,6 +358,7 @@ try {
           `  ${name}: ran ${runGrow} steps into one open turn in ${((performance.now() - began) / 1000).toFixed(1)} s`,
         );
       }
+      (globalThis as { __phase?: string }).__phase = "grow";
       if (grow > 0) {
         // Grown: each chat takes `grow` finished turns live, GROW_BATCH records at a time, a frame apart.
         const began = performance.now();
@@ -391,6 +396,7 @@ try {
           `  ${name}: grew ${grow} turns a chat live in ${((performance.now() - began) / 1000).toFixed(1)} s`,
         );
       }
+      (globalThis as { __phase?: string }).__phase = "settle";
       // The pages' own settling (read-ahead, fonts, the first paints) is not idle.
       await new Promise((resolve) => setTimeout(resolve, 3000));
       for (const { page } of pages) await settledAt(page).catch(() => undefined);
@@ -417,6 +423,7 @@ try {
       // Each reading is the median of REPEAT windows, so one noisy window on a shared runner cannot set the run's max
       // (single windows swung the worst ratio 3.1x to 15.8x between runs of the same commit). Only the first window of
       // each kind is profiled.
+      (globalThis as { __phase?: string }).__phase = "idle";
       const idleWindows: number[] = [];
       for (let round = 0; round < REPEAT; round++) {
         if (profile && round === 0) {
@@ -482,6 +489,12 @@ try {
         }
       }
       const streamPct = median(streamWindows);
+      {
+        const counts = (globalThis as { __counts?: Map<string, number> }).__counts ?? new Map<string, number>();
+        console.log(`  ${name}: methods ${JSON.stringify(Object.fromEntries([...counts].sort((a, b) => b[1] - a[1])))}`);
+        counts.clear();
+        (globalThis as { __phase?: string }).__phase = "open";
+      }
       console.log(
         `  ${name}: idle windows ${idleWindows.map((v) => v.toFixed(2)).join(", ")}; streaming ${streamWindows.map((v) => v.toFixed(2)).join(", ")}`,
       );
