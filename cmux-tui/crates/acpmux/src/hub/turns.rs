@@ -1788,6 +1788,15 @@ impl Hub {
             };
             signed_out = true;
         }
+        // A Codex with no sign-in and no team plane: say so, typed as a sign-in failure, never
+        // codex's bare missing env var (`codex_cloud_auth::explain_missing_key`).
+        if let Err(e) = &mut result
+            && let Some(text) = crate::codex_cloud_auth::explain_missing_key(&e.message)
+        {
+            tracing::warn!(session = %session.id, "Codex agent is not signed in");
+            e.message = text;
+            signed_out = true;
+        }
         if let (Err(e), Some(Value::Object(info))) = (&mut result, &route_info) {
             match &mut e.data {
                 Some(Value::Object(data)) => data.extend(info.clone()),
