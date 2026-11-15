@@ -3,13 +3,15 @@
    text, the chip radius) with a flask and a quiet Turn Off, as SidebarExperimentsMarkView draws it. */
 .xm-sidebar {
   --xm-chip: 22px;
+  --xm-glyph: 10px;
+  --xm-lights: 8px;
 }
 .xm-chip svg,
 .xm-pill svg,
 .xm-avatar svg {
   flex: none;
-  width: 10px;
-  height: 10px;
+  width: var(--xm-glyph);
+  height: var(--xm-glyph);
 }
 /* Above app health's chip when both float there: one chip height and the gap higher. */
 .xm-chip[data-stacked] {
@@ -26,7 +28,7 @@
   padding: 0 var(--ds-space-1);
   border-radius: var(--ds-radius-sm);
   color: var(--ds-color-muted);
-  font-weight: 500;
+  font-weight: var(--weight-emphasis);
 }
 .xm-in-row {
   flex: none;
@@ -51,7 +53,7 @@
 }
 .xm-lights {
   width: 40px;
-  height: 8px;
+  height: var(--xm-lights);
   border-radius: 999px;
   background: var(--ds-color-faint);
 }

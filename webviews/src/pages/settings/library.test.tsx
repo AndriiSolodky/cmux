@@ -112,7 +112,7 @@ test("a refused toggle (a preview is open) shows the CLI's words and changes not
 test("an empty library says how entries get there", async () => {
   await open({ library: mockEmptyLibrary() });
   expect(names()).toEqual([]);
-  expect(card()!.querySelector("[data-library-empty]")!.textContent).toContain("Everything you apply");
+  expect(card()!.querySelector("[data-library-empty]")!.textContent).toContain("Whatever you apply");
 });
 
 test("fifty entries draw as fifty rows in order", async () => {
@@ -142,13 +142,15 @@ test("with no PR entry the card draws exactly as before: no PR row, nothing coun
   // A PR entry that is off is not an experiment that is on: the mark counts nothing.
   expect(experimentsOn(mockLibraryWithExperiments([]))).toEqual([]);
   await open();
-  const before = card()!.innerHTML;
+  // React's generated ids differ per render; everything else must match.
+  const markup = () => card()!.innerHTML.replace(/(id|aria-labelledby)="[^"]*"/g, "$1");
+  const before = markup();
   expect(card()!.querySelector("[data-library-code]")).toBeNull();
   expect(card()!.querySelector("[data-library-pr-link], [data-library-needs-build], [data-library-note]")).toBeNull();
   page!.unmount();
   // The same listing drawn again gives the same markup: the PR row adds nothing to an entry without `code`.
   await open({ library: mockLibrary() });
-  expect(card()!.innerHTML).toBe(before);
+  expect(markup()).toBe(before);
 });
 
 test("a PR row names the PR, its short head, a link to it, what needs a build and the refresh's note", async () => {

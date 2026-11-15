@@ -358,7 +358,7 @@ function EntryDetail({ entry }: { entry: LibraryEntry }) {
 
 /** A PR entry's lines. The note is the CLI's own words ("merged: in your build", "no longer
  * applies: ..."), shown as it says them, as a refusal is. */
-export function CodeLines({ code }: { code: LibraryCode }) {
+function CodeLines({ code }: { code: LibraryCode }) {
   return (
     <>
       <div className="row-help library-detail">
