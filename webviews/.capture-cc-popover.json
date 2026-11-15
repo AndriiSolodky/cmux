@@ -1,0 +1,6 @@
+{ "envs": [["dark","none"],["light","none"]],
+  "shots": [
+    { "name": "release", "entry": "pages.changelog.update-surfaces", "variant": "notes-release", "width": 400, "height": 460, "deviceScaleFactor": 2, "arms": { "now": "" } },
+    { "name": "sections-mono", "entry": "pages.changelog.update-surfaces", "variant": "notes-sections-mono", "width": 400, "height": 460, "deviceScaleFactor": 2, "arms": { "now": "" } },
+    { "name": "sections-accent", "entry": "pages.changelog.update-surfaces", "variant": "notes-sections-accent", "width": 400, "height": 460, "deviceScaleFactor": 2, "arms": { "now": "" } }
+  ] }
