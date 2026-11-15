@@ -834,6 +834,74 @@
   ) {
   display: none;
 }
+/* The icon-treatment arms (Leo 2026-11-15: "theese are kinda crappy looking icons and stuff"). The
+   shipped column is thin 16 px line glyphs in the muted text color, the same weight and size as every
+   other control, so nothing in it reads as an icon. These arms change the glyph's carrier, not the
+   glyph or its place: each tile is drawn around the glyph's own box (a fill and a spread shadow, no
+   padding), so its center stays on the column (newtab-icon-column.test.ts) and only the label steps
+   out by the tile's extra room. One stroke for all of them (the 16 grid's 1.25).
+   - tiles: line glyphs in the text color on soft square tiles, as a macOS Settings sidebar; names stay.
+   - appicon: app-icon squircles. The folder is the hero, on the accent's tile with the glyph in the
+     accent's ink; the machine and the shield sit on neutral tiles, + on a round one; the project's
+     name in the text color and emphasis weight.
+   - dock: icons only on larger tiles, a dock-like column with the names in the accessible name. */
+.nt-composer:is([data-icon-column="tiles"], [data-icon-column="appicon"], [data-icon-column="dock"]) {
+  --nt-tile-pad: calc(4px * var(--nt-density));
+  --nt-tile-core-radius: 2px;
+  --nt-tile-fill: var(--acpmux-pill-hover);
+  --nt-tile-edge: var(--acpmux-pill-edge);
+}
+.nt-composer[data-icon-column="appicon"] {
+  --nt-tile-pad: calc(5px * var(--nt-density));
+  --nt-tile-core-radius: 3px;
+}
+.nt-composer[data-icon-column="dock"] {
+  --nt-tile-pad: calc(6px * var(--nt-density));
+  --nt-tile-core-radius: 3px;
+}
+.nt-composer:is([data-icon-column="tiles"], [data-icon-column="appicon"], [data-icon-column="dock"]) :is(
+    .nt-above .acpmux-location-button > svg:first-child,
+    .nt-box .acpmux-composer-plus svg,
+    .nt-foot .acpmux-access-trigger > .acpmux-icon:first-child
+  ) {
+  overflow: visible;
+  stroke-width: 1.25;
+  color: var(--agent-text);
+  border-radius: var(--nt-tile-core-radius);
+  background: var(--nt-tile-fill);
+  box-shadow:
+    0 0 0 var(--nt-tile-pad) var(--nt-tile-fill),
+    0 0 0 calc(var(--nt-tile-pad) + var(--cmux-hairline, .5px)) var(--nt-tile-edge);
+}
+/* The label steps out by the tile's room; the glyph's own box, and so the column, does not move. */
+.nt-composer:is([data-icon-column="tiles"], [data-icon-column="appicon"]) .nt-above .acpmux-location-button > svg:first-child {
+  margin-inline-end: calc(var(--acpmux-location-room) + var(--nt-tile-pad));
+}
+.nt-composer:is([data-icon-column="tiles"], [data-icon-column="appicon"]) .nt-foot .acpmux-access-trigger > .acpmux-icon:first-child {
+  margin-inline-end: calc(var(--acpmux-shield-room) + var(--nt-tile-pad));
+}
+.nt-composer[data-icon-column="appicon"] .nt-above .acpmux-location-leading > .acpmux-location-picker:first-child .acpmux-location-button > svg:first-child {
+  --nt-tile-fill: var(--agent-accent);
+  --nt-tile-edge: transparent;
+  color: var(--agent-on-accent, var(--cmux-on-accent, var(--acpmux-base)));
+}
+.nt-composer[data-icon-column="appicon"] .nt-box .acpmux-composer-plus svg { border-radius: 50%; }
+.nt-composer[data-icon-column="appicon"] .nt-above .acpmux-location-leading > .acpmux-location-picker:first-child .acpmux-location-label {
+  color: var(--agent-text);
+  font-weight: var(--weight-emphasis);
+}
+.nt-composer[data-icon-column="dock"] :is(.nt-above .acpmux-location-label, .nt-foot .acpmux-mode-text) {
+  position: absolute;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.nt-composer[data-icon-column="dock"] :is(
+    .nt-above .acpmux-location-button > .ui-ghost-icon:last-child:not(:first-child),
+    .nt-foot .acpmux-access-trigger > .acpmux-icon:last-child:not(:first-child)
+  ) {
+  display: none;
+}
 /* A top strip variant (Debug Settings) draws the strip as the card's own top, spanning it. */
 :root[data-top-strip] .nt-above {
   flex-direction: column;
