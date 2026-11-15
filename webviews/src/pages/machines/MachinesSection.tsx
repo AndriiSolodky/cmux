@@ -273,14 +273,16 @@ const JoinedRow = memo(function JoinedRow({
           <HealthMark health={row.health} />
         </span>
         <span className="machines-state-line">
-          <span
-            className="machines-state"
-            data-failed={failed && !inCaption ? "" : undefined}
-            data-dial={inCaption ? dial : undefined}
-            role={inCaption ? "status" : undefined}
-          >
-            {inCaption ? dialWords : caption}
-          </span>
+          {inCaption ? (
+            // An <output> is a status: a screen reader reads each new word of the ask as it lands.
+            <output className="machines-state" data-dial={dial}>
+              {dialWords}
+            </output>
+          ) : (
+            <span className="machines-state" data-failed={failed ? "" : undefined}>
+              {caption}
+            </span>
+          )}
           {stopped && dialLayout === "caption" && (
             <button type="button" className="machines-retry" onClick={open}>
               {retry}
@@ -289,9 +291,9 @@ const JoinedRow = memo(function JoinedRow({
         </span>
       </span>
       {dialWords !== undefined && dialLayout === "trailing" && (
-        <span className="machines-state machines-state-trailing" data-dial={dial} role="status">
+        <output className="machines-state machines-state-trailing" data-dial={dial}>
           {dialWords}
-        </span>
+        </output>
       )}
       {busy ? (
         <Spinner size={SMALL_ICON} className="machines-spinner machines-joined-spinner" loading />

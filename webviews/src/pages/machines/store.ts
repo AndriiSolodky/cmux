@@ -29,13 +29,22 @@ export const DIAL_RECHECK_MS: readonly number[] = [2000, 3000, 5000, 8000, 13000
  * Mac answers a session hello `service.unknown`; one with no session gate `service.off`). */
 const UPDATE_REASONS = new Set(["service.unknown", "service.off"]);
 
+/** Runs `run` once after `ms`; the answer cancels it. A test hands its own to run the asks itself. */
+export type DialSchedule = (run: () => void, ms: number) => () => void;
+
+const afterDelay: DialSchedule = (run, ms) => {
+  const timer = setTimeout(run, ms);
+  return () => clearTimeout(timer);
+};
+
 export class MachinesStore {
   private state: MachinesState = { removed: new Set(), dials: {} };
   /** Each waiting row's next ask. */
-  private readonly rechecks = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly rechecks = new Map<string, () => void>();
   /** Bumped by each ask the person starts on a row, so an older one's late answer is dropped. */
   private readonly dialRuns = new Map<string, number>();
   private readonly recheck: readonly number[];
+  private readonly schedule: DialSchedule;
   private readonly listeners = new Set<() => void>();
   /** Bumped by every snapshot that lands, so a read that started before it is dropped. */
   private version = 0;
@@ -44,9 +53,10 @@ export class MachinesStore {
 
   constructor(
     private readonly client: PageClient | null,
-    options: { recheck?: readonly number[] } = {},
+    options: { recheck?: readonly number[]; schedule?: DialSchedule } = {},
   ) {
     this.recheck = options.recheck ?? DIAL_RECHECK_MS;
+    this.schedule = options.schedule ?? afterDelay;
   }
 
   subscribe = (listener: () => void) => {
@@ -75,7 +85,7 @@ export class MachinesStore {
     this.stopped = true;
     this.stopChanges?.();
     this.stopChanges = undefined;
-    for (const timer of this.rechecks.values()) clearTimeout(timer);
+    for (const cancel of this.rechecks.values()) cancel();
     this.rechecks.clear();
   }
 
@@ -162,7 +172,7 @@ export class MachinesStore {
         this.setDial(row, "waiting");
         this.rechecks.set(
           row,
-          setTimeout(() => {
+          this.schedule(() => {
             this.rechecks.delete(row);
             void this.ask(row, run, attempt + 1);
           }, delay),
