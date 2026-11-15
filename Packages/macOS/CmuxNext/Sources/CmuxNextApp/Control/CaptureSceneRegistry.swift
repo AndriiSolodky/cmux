@@ -120,6 +120,12 @@ final class CaptureSceneRegistry {
         if definition.name == Self.cloudMachineDisconnectedScene {
             return await renderCloudMachineDisconnected(params, definition: definition, windowID: targetWindowID)
         }
+        #if DEBUG
+        // The Machines page on top is its picture, with no agent turn.
+        if definition.name == Self.machinesPageScene {
+            return await renderMachinesPage(params, definition: definition, windowID: targetWindowID)
+        }
+        #endif
 
         let turn = await DebugAgentPane.handle(["action": .string("seed_rows"), "fixture": .string("worked-turn")], services)
         guard case .object(let turnReport) = turn,
@@ -287,6 +293,8 @@ final class CaptureSceneRegistry {
         // A literal name: cmux-ci capture finds scenes by `CaptureSceneDefinition(name: "…")`.
         CaptureSceneDefinition(name: "cloud-machine-disconnected",
                                description: "Two Cloud machine headers: a running machine whose app link dropped, and one whose connect the provider refused."),
+        CaptureSceneDefinition(name: "machines-page",
+                               description: "The Machines page opened from the sidebar's Machines item: this Mac, sample Cloud, SSH and server machines, and joined machines, with the joined Mac studio-mini's New Workspace shown."),
         CaptureSceneDefinition(name: "permission-feed-peer", description: "Chief Home's Needs you lists a peer's prompt the feed bridge found at recovery. Regression: before #41240 the bridge reads the peer's prompts by its raw id and finds none."),
         CaptureSceneDefinition(name: "permission-feed-peer-resolved", description: "permission-feed-peer, then the prompt is answered elsewhere: the bridge withdraws it. Regression: cfcd0c55d64f (#41240's head) keeps it; #41295 withdraws it."),
         CaptureSceneDefinition(name: "home-chief-long-draft",
