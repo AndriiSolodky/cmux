@@ -151,7 +151,7 @@ try {
   const { build } = await import("vite");
   await build({
     configFile: path.join(webviews, "vite.config.acpmux-pane.mjs"),
-    build: { outDir: out, emptyOutDir: true },
+    build: { outDir: out, emptyOutDir: true, ...(process.env.HEAPSAMPLE === "1" ? { minify: false } : {}) },
     logLevel: "error",
   });
   const statics = Bun.serve({
@@ -287,8 +287,15 @@ try {
         `${origin}/#endpoint=${encodeURIComponent(`ws://127.0.0.1:${daemon.port}/`)}&token=t&session=${sessionId(index)}`;
       const firstText = `Answer ${chat.turns}:`;
       const pages: { page: Page; cdp: CDPSession }[] = [];
+      let heapCdp: CDPSession | undefined;
       for (let index = 0; index < count; index++) {
         const page = await context.newPage();
+        if (process.env.HEAPSAMPLE === "1" && count === 1) {
+          const early = await context.newCDPSession(page);
+          await early.send("HeapProfiler.enable");
+          await early.send("HeapProfiler.startSampling", { samplingInterval: 8192 });
+          heapCdp = early;
+        }
         await page.goto(urlFor(index));
         await page.waitForFunction((text) => document.body.textContent?.includes(text), firstText, {
           timeout: 180_000,
@@ -400,6 +407,40 @@ try {
       // The pages' own settling (read-ahead, fonts, the first paints) is not idle.
       await new Promise((resolve) => setTimeout(resolve, 3000));
       for (const { page } of pages) await settledAt(page).catch(() => undefined);
+      if (heapCdp) {
+        type Node = {
+          callFrame: { functionName: string; url: string; lineNumber: number; columnNumber: number };
+          selfSize: number;
+          children: Node[];
+        };
+        await heapCdp.send("HeapProfiler.collectGarbage");
+        const { profile: sampled } = (await heapCdp.send("HeapProfiler.getSamplingProfile")) as {
+          profile: { head: Node };
+        };
+        await heapCdp.send("HeapProfiler.stopSampling");
+        const bySite = new Map<string, number>();
+        const byStack = new Map<string, number>();
+        let total = 0;
+        const walk = (node: Node, stack: string[]) => {
+          const f = node.callFrame;
+          const site = `${f.functionName || "(anon)"} ${f.url.split("/").pop()}:${f.lineNumber + 1}:${f.columnNumber + 1}`;
+          const next = [...stack, site].slice(-6);
+          if (node.selfSize > 0) {
+            total += node.selfSize;
+            bySite.set(site, (bySite.get(site) ?? 0) + node.selfSize);
+            const key = next.join(" < ");
+            byStack.set(key, (byStack.get(key) ?? 0) + node.selfSize);
+          }
+          for (const child of node.children) walk(child, next);
+        };
+        walk(sampled.head, []);
+        const mb = (n: number) => (n / 1048576).toFixed(1);
+        console.log(`  ${name}: HEAP live sampled ${mb(total)} MB`);
+        for (const [site, size] of [...bySite].sort((a, b) => b[1] - a[1]).slice(0, 30))
+          console.log(`  ${name}: HEAPSITE ${mb(size)} MB ${site}`);
+        for (const [key, size] of [...byStack].sort((a, b) => b[1] - a[1]).slice(0, 15))
+          console.log(`  ${name}: HEAPSTACK ${mb(size)} MB ${key.split(" < ").reverse().join(" < ")}`);
+      }
       if (HIDDEN) {
         // A chat tab that is not shown: its document turns hidden, as CEF's WasHidden makes it in the app.
         for (const { page } of pages.slice(0, -1))
