@@ -185,52 +185,20 @@ export function instrument(start: number) {
     const cls = typeof node.className === "string" ? node.className.split(" ").filter(Boolean)[0] : undefined;
     return `${node.tagName.toLowerCase()}${cls ? `.${cls}` : ""}${row ? ` (row ${row})` : ""}`;
   };
-  // DIAG (cmux#24569 g1, temporary): the live row's state over the last frames, kept with each shift.
-  const ring: string[] = [];
-  const sampleLive = () => {
-    const row = document.querySelector<HTMLElement>("[data-row-id='thinking-live']");
-    if (row) {
-      const box = row.getBoundingClientRect();
-      const style = getComputedStyle(row);
-      const worked = row.querySelector<HTMLElement>(".cv-worked");
-      const wbox = worked?.getBoundingClientRect();
-      const wstyle = worked ? getComputedStyle(worked) : undefined;
-      const prev = row.previousElementSibling as HTMLElement | null;
-      const scroller = document.querySelector<HTMLElement>(".acpmux-scroll");
-      ring.push(
-        `t${Math.round(performance.now())} sc ${Math.round(scroller?.scrollTop ?? -1)}/${scroller?.scrollHeight} row y${Math.round(box.y)} h${Math.round(box.height)} tr[${style.translate}] tf[${style.transform}] clip[${style.clipPath}] op${style.opacity} vis${style.visibility} disp${style.display} cv[${style.contentVisibility}] cls[${row.className}] attrs[${[...row.attributes].map((a) => a.name + "=" + a.value.slice(0, 40)).join(" ")}] | worked y${Math.round(wbox?.y ?? -1)} h${Math.round(wbox?.height ?? -1)} op${wstyle?.opacity} tr[${wstyle?.translate}] clip[${wstyle?.clipPath}] cls[${worked?.className}] | prev ${prev?.dataset.rowId ?? prev?.className}`,
-      );
-    } else ring.push(`t${Math.round(performance.now())} no live row`);
-    if (ring.length > 6) ring.shift();
-    requestAnimationFrame(afterPaint);
-  };
-  const channel = new MessageChannel();
-  channel.port1.onmessage = () => sampleLive();
-  const afterPaint = () => channel.port2.postMessage(0);
-  requestAnimationFrame(afterPaint);
   try {
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries() as unknown as {
         startTime: number;
         value: number;
         hadRecentInput: boolean;
-        sources?: { node?: Node | null; previousRect?: DOMRectReadOnly; currentRect?: DOMRectReadOnly }[];
-      }[]) {
-        const sc = document.querySelector<HTMLElement>(".acpmux-scroll");
+        sources?: { node?: Node | null }[];
+      }[])
         w.__shifts.push({
           at: entry.startTime,
           value: entry.value,
           input: entry.hadRecentInput,
           sources: (entry.sources ?? []).map((source) => describe(source.node)),
-          // DIAG (cmux#24569 g1, temporary): where each source was and is, and the scroller.
-          rects: (entry.sources ?? []).map(
-            (source) =>
-              `${describe(source.node)} y ${Math.round(source.previousRect?.y ?? -1)}->${Math.round(source.currentRect?.y ?? -1)} h ${Math.round(source.previousRect?.height ?? -1)}->${Math.round(source.currentRect?.height ?? -1)} x ${Math.round(source.previousRect?.x ?? -1)}->${Math.round(source.currentRect?.x ?? -1)}`,
-          ),
-          scroll: sc ? `${Math.round(sc.scrollTop)}/${sc.scrollHeight}/${sc.clientHeight}` : "none",
-          ring: [...ring],
-        } as never);
-      }
+        });
     }).observe({ type: "layout-shift", buffered: true });
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) w.__long.push({ at: entry.startTime, ms: entry.duration });
@@ -413,15 +381,6 @@ async function openPage(ctx: Ctx, log: ReplayLog, served: number, status: string
   play = { log, served, status };
   const page = await ctx.browser.newPage({ viewport: { width: 900, height: 700 } });
   await page.addInitScript(instrument, start);
-  // DIAG (cmux#24569 g1, temporary): PIN_ARMS={"id":"arm"} (no spaces) pins experiment arms.
-  if (process.env.PIN_ARMS)
-    await page.addInitScript(
-      (pinned) => {
-        const host = globalThis as { cmuxExperiments?: Record<string, string> };
-        host.cmuxExperiments = { ...host.cmuxExperiments, ...pinned };
-      },
-      JSON.parse(process.env.PIN_ARMS) as Record<string, string>,
-    );
   await installPaintedFrames(page);
   if (PROBE) await installFoldProbe(page);
   const cdp = await page.context().newCDPSession(page);
@@ -730,21 +689,7 @@ async function liveRound(ctx: Ctx, log: ReplayLog, measureIdle: boolean): Promis
       heapMb: Math.round((heapAfter - heapBefore) * 10) / 10,
       idleMsPerS: Math.round(idleMsPerS * 100) / 100,
       seconds: Math.round((performance.now() - started) / 100) / 10,
-      shiftNotes: [
-        ...shiftSources(shifts),
-        ...(process.env.SHIFT_DETAIL === "1" && log.name === "long"
-          ? (shifts as unknown as { at: number; value: number; rects: string[]; scroll: string }[])
-              .filter((shift) => shift.value > 0.005)
-              .slice(0, 25)
-              .map(
-                (shift) =>
-                  `DETAIL at ${Math.round(shift.at)} v ${shift.value.toFixed(4)} scroll ${shift.scroll} | ${shift.rects.join(" ; ")}` +
-                  (process.env.SHIFT_RING === "1"
-                    ? "\n    RING " + (shift as unknown as { ring: string[] }).ring.join("\n    RING ")
-                    : ""),
-              )
-          : []),
-      ],
+      shiftNotes: shiftSources(shifts),
     };
   } finally {
     await page.close();
