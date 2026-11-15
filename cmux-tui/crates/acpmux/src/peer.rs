@@ -381,6 +381,10 @@ pub struct Peer {
     /// An ssh attempt timed out in the banner exchange since the link was last ready: the host
     /// is slow, and its attempts get the long connect deadline (`ssh_connect_secs`).
     slow_banner: AtomicBool,
+    /// The last connect attempt failed because the remote refused this computer's ssh login
+    /// (a key or password it does not take, a host key that does not match): the next attempts
+    /// wait minutes (`Backoff::login_refused`), and no ask or open chat cuts the wait.
+    login_refused: AtomicBool,
     /// From the WebSocket opening until `stale_token` cleared it: callers'
     /// requests and notifications are refused, so none goes out on a link
     /// that is dropped to reconnect as a peer, or waits to go out on the next.
