@@ -40,6 +40,7 @@ import type { CDPSession, Page } from "playwright";
 import { PAPERCUT_CHAT, papercutEvents } from "../test/support/papercutChat";
 import { chromium } from "./browsers";
 import { newestPage } from "./daemonPage";
+import { describePaintWindow, paintWindow } from "./paintWindow";
 import { perfRow } from "./perfRow";
 import { settledAt } from "./stability";
 
@@ -55,6 +56,11 @@ const GROW_BATCH = Number(process.env.GROW_BATCH ?? 400);
 const REPEAT = Math.max(1, Number(process.env.REPEAT ?? 3));
 const CASES = process.env.CASES ?? "all";
 const RESIZE = process.env.RESIZE !== "0";
+// Paint (x1 launches; PAINT=0 skips it): IDLE_S seconds of nothing with a turn open and no record arriving (in empty x1
+// and long x1 a turn opened for it and closed after; running x1's own turn), read twice: the renderers' CPU, then a
+// trace of what the shown page draws (paintWindow.ts: frames, main-thread frames and paints, the running animations
+// and what each animates). A chat with a turn open moves only its running marks, on the compositor.
+const PAINT = process.env.PAINT !== "0";
 const RESIZE_WIDTHS = [700, 620, 540, 460];
 // CPU settle: once a launch's chats are loaded or grown, its renderers are sampled every second until two samples in
 // a row are at most SETTLE_PCT of a core (a 1 s sample counts 10 ms ticks, so a 1 % threshold would be one tick of
@@ -497,6 +503,35 @@ try {
         }
       }
       const idlePct = median(idleWindows);
+      // Idle with a turn open (PAINT, above): the shown chat's running marks are all that may move.
+      if (PAINT && count === 1) {
+        const { page, cdp } = pages[0]!;
+        const id = sessionId(0);
+        if (runGrow === 0) {
+          console.log(describePaintWindow(`${name} idle, no turn`, await paintWindow(page, cdp, IDLE_S)));
+          emit(id, "mux", "user_message", { text: "Wait on the lanes" });
+          emit(id, "mux", "turn_started", {});
+          setStatus(id, "running");
+          // fixed-wait: the opened turn's marks mount and its records apply.
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+        const openPct = runGrow === 0 ? await window(IDLE_S) : idlePct;
+        const paint = await paintWindow(page, cdp, IDLE_S);
+        console.log(describePaintWindow(`${name} idle, turn open, ${openPct.toFixed(2)} % CPU`, paint));
+        const row = (key: string, value: number, unit: string) =>
+          perfRow({ name: `${ROW}.${name}.idle_open_${key}`, p50: value, p95: value, unit });
+        row("cpu_pct", openPct, "pct");
+        row("frames_per_s", paint.framesPerS, "count");
+        row("main_frames_per_s", paint.mainFramesPerS, "count");
+        row("paints_per_s", paint.paintsPerS, "count");
+        row("main_ms_per_s", paint.taskMsPerS, "ms");
+        if (runGrow === 0) {
+          emit(id, "mux", "turn_result", { status: "completed" });
+          setStatus(id, "ready");
+          // fixed-wait: the closed turn's marks unmount before the streaming windows.
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
       // Streaming: the shown chat (the newest) gets a reply of TPS chunks a second for STREAM_S seconds, REPEAT times.
       // In a running launch the reply goes into the open turn; otherwise each round is a turn of its own.
       const shown = sessionId(count - 1);
