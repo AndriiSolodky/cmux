@@ -57,6 +57,12 @@ final class ServerReachService {
     private(set) var lastPlan: ServerReachPlan?
     /// Set while an administrator turned remote hosts off: no server connects.
     private(set) var policyDisabled = false
+    /// The person's joined Macs reached through the hub that they opened a workspace on, by machine id:
+    /// the joined machine's id (`JoinedMachine.id`), so its Machines row stays that machine's, under Joined.
+    /// Each is a server on its acpmux route (``openSignedIn(daemonID:joinedID:socket:name:)``), kept
+    /// across reads of the paired servers until the account changes.
+    private(set) var signedInMachines: [String: String] = [:]
+    private var signedInReaches: [String: ServerReach] = [:]
 
     init(machines: MachineRegistry, mainWork: MainWorkScheduler, call: @escaping Call, signedInUser: @escaping @MainActor () -> String?, paths: SSHPaths,
          binary: URL?, local: @escaping @MainActor () -> ServerReachPlan.LocalServer? = { nil },
@@ -199,7 +205,9 @@ final class ServerReachService {
 
     /// Adds the servers that should show and removes (and forgets) the rest.
     func apply(_ desired: [ServerReach]) async {
-        let change = ServerReachPlan.diff(shown: machines.servers.map(\.reach), desired: desired)
+        // A joined Mac the person opened through its acpmux route is no paired server: a read keeps it.
+        let kept = signedInReaches.values.filter { reach in !desired.contains { $0.machineID == reach.machineID } }
+        let change = ServerReachPlan.diff(shown: machines.servers.map(\.reach), desired: desired + kept)
         for reach in change.add {
             removed.remove(reach.hostID)
             add(reach, connect: true)
@@ -234,6 +242,25 @@ final class ServerReachService {
             watcher.start()
             return watcher
         }
+    }
+
+    /// A joined Mac reached through the hub, whose person allowed this account's other Macs
+    /// (`_acpmux/machine_route_probe` passed): a server on its acpmux route, the local socket that carries
+    /// each connection to that Mac's own session (route `unix`, ``ServerReach/signedInMachine(daemonID:socket:name:)``).
+    /// It connects now and stays until the account changes. Returns its machine id; nil signed out or for
+    /// a socket path that is not a plain absolute one.
+    func openSignedIn(daemonID: String, joinedID: String, socket: String, name: String) -> String? {
+        guard signedInUser() != nil, let reach = try? ServerReach.signedInMachine(daemonID: daemonID, socket: socket, name: name)
+        else { return nil }
+        signedInReaches[reach.machineID] = reach
+        signedInMachines[reach.machineID] = joinedID
+        removed.remove(reach.hostID)
+        if let shown = machines.server(reach.machineID) {
+            if shown.reach != reach { reroute(reach) } else if !policyDisabled { shown.connect() }
+        } else {
+            add(reach, connect: true)
+        }
+        return reach.machineID
     }
 
     /// Restores servers the registry holds that this run has not seen.
@@ -293,6 +320,8 @@ final class ServerReachService {
     /// Sign-out: the servers belong to the account; their records stay for
     /// the next sign-in's read to keep or forget.
     private func closeAll() {
+        signedInMachines = [:]
+        signedInReaches = [:]
         for session in machines.servers {
             session.close()
             _ = machines.removeServer(session.machineID)

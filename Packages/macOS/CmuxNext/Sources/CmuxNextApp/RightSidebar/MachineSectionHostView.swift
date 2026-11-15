@@ -18,11 +18,17 @@ final class MachineSectionHostView: NSView, RightSidebarRefreshing {
         let machines = services.machines, health = services.machineHealth, joined = services.joinedMachines, registry = services.registry
         self.joined = joined
         let provider = MachineSectionPageProvider(dependencies: .init(
-            rows: { MachineSectionRow.rows(machines, health: health, joined: joined) },
+            rows: { [weak services] in
+                MachineSectionRow.rows(machines, health: health, joined: joined, signedIn: services?.serverReach.signedInMachines ?? [:])
+            },
             style: { ServerTunables.machinesStyle.value }, joined: { joined },
             newWorkspace: { registry.perform("workspace.newOnMachine", invocation: ActionInvocation(arguments: ["machine": .string($0)])) },
             addMachine: { registry.perform("device.add") }, present: { _, _ in },
-            menu: { kind, row in Self.menu(kind, row: row, registry: registry) }, cloudTeam: { [weak cloud = services.cloud] in cloud.flatMap { TeamRowText.machinesTeam($0.auth) } }))
+            menu: { kind, row in Self.menu(kind, row: row, registry: registry) }, cloudTeam: { [weak cloud = services.cloud] in cloud.flatMap { TeamRowText.machinesTeam($0.auth) } },
+            openJoined: { [weak services] machine in
+                guard let services else { return .unavailable("app") }
+                return await Self.openSignedIn(machine, services: services)
+            }))
         section = provider.makeSection(joined: joined)
         super.init(frame: NSRect(x: 0, y: 0, width: 260, height: 400))
         section.translatesAutoresizingMaskIntoConstraints = false
