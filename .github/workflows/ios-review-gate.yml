@@ -392,8 +392,10 @@ jobs:
             --out "$RESULTS/device-plan-mismatch.json"
       # CmuxMobileLinkFFI.xcframework is built only when what it is built from changes
       # (.github/scripts/ios_link_ffi_key.py): each job built it from scratch,
-      # about 3 minutes of a Mac (run 43652999096). A pull request only
-      # reads the cache; other events save what they built.
+      # about 3 minutes of a Mac (run 43652999096). It lives in cmux NEXT's
+      # R2 bucket: the Blacksmith Macs' GitHub store kept no save for a later
+      # run (runs 43708277177 to 43721191135). Every run reads it with no
+      # credential; seed-link-ffi below writes it on feat-cmux-next.
       - name: The framework's inputs
         id: ffi-key
         if: env.UDID != ''
