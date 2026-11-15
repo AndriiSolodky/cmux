@@ -482,9 +482,12 @@ class OtherSessions(unittest.TestCase):
                 sock = argv[argv.index("--socket") + 1]
                 test.restarted.append(sock)
                 test.surfaces.append(Path(argv[0]).name)
-                if test.restart_works:
+                if test.restart_works is True:
                     test.pids[sock] += 1
-                return subprocess.CompletedProcess(argv, 0 if test.restart_works else 1, "{}", "")
+                elif test.restart_works == "gone":
+                    del test.pids[sock]
+                return subprocess.CompletedProcess(argv, 0 if test.restart_works is True else 1, "{}",
+                                                   '{"code":"server.different_state"}')
             return real_run(argv, **kwargs)
 
         self.hot.load = lambda name, file: type("rust_live", (), {"Swapper": Swapper})
@@ -523,8 +526,19 @@ class OtherSessions(unittest.TestCase):
         self.assertIn("ssh", step["left_on_old_build_why"])
         self.assertEqual(self.restarted, [])
 
-    def test_a_restart_that_leaves_no_new_owner_raises_so_the_apply_puts_back(self):
-        self.restart_works = False
+    def test_a_refused_restart_still_served_is_left_and_named_the_rest_moves(self):
+        # A Chief whose owner serves another state directory refuses (server.different_state, cmux bf0d3da):
+        # its owner still serves, so it keeps its build and the apply goes on.
+        self.restart_works = "refuse"
+        step = self.swap(True)
+        self.assertEqual(step["left_on_old_build"], [self.CHIEF_SOCK])
+        self.assertIn("refused", step["left_on_old_build_why"])
+        self.assertIn("server.different_state", step["sessions"][0]["left"])
+        self.assertEqual(self.pids[self.CHIEF_SOCK], 200)
+        self.assertEqual((step["old_pid"], step["new_pid"]), (100, 101))
+
+    def test_a_restart_that_leaves_no_owner_raises_so_the_apply_puts_back(self):
+        self.restart_works = "gone"
         with self.assertRaises(RuntimeError) as caught:
             self.swap(True)
         self.assertIn(self.CHIEF_SOCK, str(caught.exception))
@@ -732,8 +746,9 @@ class FindSocket(unittest.TestCase):
                 return subprocess.CompletedProcess(argv, 0, "".join(
                     f"{pid} {exe}{' ' + args if full else ''}\n" for pid, (exe, args, _) in procs.items()), "")
             if argv[0] == "lsof":
-                pid = argv[argv.index("-p") + 1]
-                return subprocess.CompletedProcess(argv, 0, f"p{pid}\nn{procs[pid][2]}\n", "")
+                # One lsof for every process (-p a,b,...): each pid's line, then its sockets.
+                asked = argv[argv.index("-p") + 1].split(",")
+                return subprocess.CompletedProcess(argv, 0, "".join(f"p{pid}\nn{procs[pid][2]}\n" for pid in asked), "")
             sock = argv[argv.index("--socket") + 1]
             if "acpmux" in sock:
                 raise subprocess.TimeoutExpired(argv, 10)
@@ -766,8 +781,8 @@ class FindSocket(unittest.TestCase):
             if argv[0] == "ps":
                 return subprocess.CompletedProcess(argv, 0, "".join(f"{pid} {prefix}/cmux-tui --headless\n" for pid in procs), "")
             if argv[0] == "lsof":
-                pid = argv[argv.index("-p") + 1]
-                return subprocess.CompletedProcess(argv, 0, f"p{pid}\nn{procs[pid]}\n", "")
+                asked = argv[argv.index("-p") + 1].split(",")  # one lsof for every process
+                return subprocess.CompletedProcess(argv, 0, "".join(f"p{pid}\nn{procs[pid]}\n" for pid in asked), "")
             sock = argv[argv.index("--socket") + 1]
             return subprocess.CompletedProcess(argv, 0, '{"pid": %s}' % next(p for p, n in procs.items() if n == sock), "")
         self.hot.subprocess.run = run
@@ -782,8 +797,8 @@ class FindSocket(unittest.TestCase):
             if argv[0] == "ps":
                 return subprocess.CompletedProcess(argv, 0, "".join(f"{pid} {prefix}/cmux-tui --headless\n" for pid in procs), "")
             if argv[0] == "lsof":
-                pid = argv[argv.index("-p") + 1]
-                return subprocess.CompletedProcess(argv, 0, f"p{pid}\nn{procs[pid]}\n", "")
+                asked = argv[argv.index("-p") + 1].split(",")  # one lsof for every process
+                return subprocess.CompletedProcess(argv, 0, "".join(f"p{pid}\nn{procs[pid]}\n" for pid in asked), "")
             if "cmux-app" in argv[argv.index("--socket") + 1]:
                 raise subprocess.TimeoutExpired(argv, 10)
             return subprocess.CompletedProcess(argv, 0, '{"pid": 3001}', "")
@@ -888,8 +903,8 @@ class RunningAcpmux(unittest.TestCase):
                 return subprocess.CompletedProcess(argv, 0, "".join(
                     f"{pid} {exe}{' ' + args if full else ''}\n" for pid, (exe, args, _) in self.procs.items()), "")
             if argv[0] == "lsof":
-                pid = argv[argv.index("-p") + 1]
-                return subprocess.CompletedProcess(argv, 0, f"p{pid}\nn{self.procs[pid][2]}\n", "")
+                asked = argv[argv.index("-p") + 1].split(",")  # one lsof for every process
+                return subprocess.CompletedProcess(argv, 0, "".join(f"p{pid}\nn{self.procs[pid][2]}\n" for pid in asked), "")
             if argv[1:] == ["--json", "daemon", "status"]:
                 home = env.get("ACPMUX_HOME") or str(Path(env["ACPMUX_SOCKET"]).parent)
                 if home not in self.status:

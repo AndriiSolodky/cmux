@@ -639,11 +639,28 @@ def find_sockets(app: Path, cli: Path) -> list[str]:
     answers `server status` with that process's pid, the app's own session (`cmux-app...`) first;
     the app also runs other sessions' daemons from the same file (its chief's). A socket that never
     answered means a daemon may run there, and raises rather than pass for none."""
+    # One lsof for every process and every process's asks at once: a process at a time cost 0.03 s of lsof
+    # each, and Leo's NIGHTLY runs 52 from its bin (find took 4.6 to 8.8 s there at cmux 3ca1a16e3).
     hung, found = [], []
-    for pid in app_pids(app, DAEMON_NAMES):
-        lsof = subprocess.run(["lsof", "-a", "-p", pid, "-U", "-Fn"], capture_output=True, text=True).stdout
-        names = sorted({entry[1:] for entry in lsof.splitlines() if entry.startswith("n/")})
-        name, unanswered = first_status(cli, names, pid)
+    pids = app_pids(app, DAEMON_NAMES)
+    by_pid: dict[str, set[str]] = {pid: set() for pid in pids}
+    if pids:
+        lsof = subprocess.run(["lsof", "-a", "-p", ",".join(pids), "-U", "-Fpn"], capture_output=True,
+                              text=True).stdout
+        current = None
+        for entry in lsof.splitlines():
+            if entry.startswith("p"):
+                current = entry[1:]
+            elif entry.startswith("n/") and current in by_pid:
+                by_pid[current].add(entry[1:])
+    import concurrent.futures
+    asked = {pid: sorted(names) for pid, names in by_pid.items() if names}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, min(16, len(asked)))) as pool:
+        answers = {pid: pool.submit(first_status, cli, names, pid) for pid, names in asked.items()}
+    for pid in pids:
+        if pid not in answers:
+            continue
+        name, unanswered = answers[pid].result()
         if name:
             found.append(name)
         else:
@@ -702,8 +719,13 @@ def restart_sessions(target: Path, sockets: list[str], state: Path) -> list[dict
     """Each other session's daemon running from the app's bin (a Chief's) restarted onto `target`, the build
     now in place: `server restart` by its socket stops the owner the way an update hands it off (its
     terminal hosts live on) and starts one from `target` with the stopped owner's session, launch flags and
-    environment, which adopts them. Checked: a new owner answers on the socket, running `target`. The first
-    that fails raises, and the caller puts every part back."""
+    environment, which adopts them. Checked: a new owner answers on the socket, running `target`.
+
+    A daemon that refuses the restart and still serves, the same owner answering as before, is left on the
+    build it mapped, and its step names the refusal (`left`): it lost nothing, and the others still move.
+    A Chief whose owner serves another state directory refuses this way (`server.different_state`, cmux
+    bf0d3da on a fleet Mac). A daemon gone with no new owner, or a new owner on another file, raises, and
+    the caller puts every part back."""
     swapper_cls = load("rust_live", "rust-live.py").Swapper
     done = []
     for name in sockets:
@@ -721,6 +743,10 @@ def restart_sessions(target: Path, sockets: list[str], state: Path) -> list[dict
         step = {"socket": name, "old_pid": before[0] if before else None, "new_pid": now[0] if now else None,
                 "seconds": round(time.monotonic() - t0, 3)}
         done.append(step)
+        if ran.returncode != 0 and before and now and now[0] == before[0]:
+            step["left"] = f"refused (exit {ran.returncode}), still served by its owner: " \
+                           f"{(ran.stderr or ran.stdout).strip()[-300:]}"
+            continue
         if ran.returncode != 0 or not now or (before and now[0] == before[0]):
             raise RuntimeError(f"`server restart` on {name} left no new owner (exit {ran.returncode}): "
                                f"{(ran.stderr or ran.stdout).strip()[-300:]}")
@@ -785,6 +811,10 @@ def swap_cmux(app: Path, new: Path, want: str, socket: str | None, state: Path, 
         raise RuntimeError(f"{target} hashes to {have}, not {want}")
     if others and sessions and not ssh:
         step["sessions"] = restart_sessions(target, others, state)
+        refused = [one["socket"] for one in step["sessions"] if "left" in one]
+        if refused:
+            step["left_on_old_build"] = refused
+            step["left_on_old_build_why"] = "refused the restart and still served by its owner (each session's `left`)"
     return step
 
 
