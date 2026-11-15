@@ -38,12 +38,18 @@ enum CmuxAppLinks {
     /// web page, where `click` would have sent it (Cmd-click in the background, Shift-Cmd the other
     /// browser, beside its tab). A Cmd-click opens the chat without taking the keys. Nil for any other
     /// URL; false with agent links off.
+    /// A public footer's opaque link (`?id=aid-…`, https or `cmux://agent?id=`) opens its chat the same
+    /// way when acpmux resolves it; when it names no chat the reader can reach, the app says so rather
+    /// than opening a page that only repeats it.
     @MainActor
     static func openAgentWeb(_ url: URL, services: AppServices, click: LinkRouter.Click = .init()) -> Bool? {
+        let intent: WindowActivation.Intent = click.background ? .bringForward : .raise
+        if let reference = DeepLink.agentReference(url, linkScheme: services.linkScheme) {
+            return (try? DeepLinkNavigator(services: services).openAgentReference(reference, intent, asking: false)) != nil
+        }
         let (link, bare) = (DeepLink.parseAgentWeb(url), DeepLink.agentWebSession(url))
         guard link != nil || bare != nil else { return nil }
         let web = { @MainActor in LinkRouter.shared.open(url, as: click) }
-        let intent: WindowActivation.Intent = click.background ? .bringForward : .raise
         return (try? DeepLinkNavigator(services: services).openAgentLink(link, bare: bare, intent, asking: false, notFound: web)) != nil
     }
 

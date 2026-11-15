@@ -22,6 +22,12 @@ enum LinkHandlers {
                 _ = try StashHandlers.show(services, focus: !background)
                 return
             }
+            // `cmux://agent?id=aid-…`: a public PR footer's opaque reference, which cmux.com's page
+            // hands the app on load. acpmux names the chat it stands for, or the reader learns it isn't theirs.
+            if let url = URL(string: trimmed), let reference = DeepLink.agentReference(url, linkScheme: services.linkScheme) {
+                try DeepLinkNavigator(services: services).openAgentReference(reference, background ? .bringForward : .raise, asking: true)
+                return
+            }
             guard let url = URL(string: trimmed), let parsed = DeepLink.read(url, scheme: services.linkScheme) else {
                 throw ActionFailure(message: RefusalStrings.linkNotRecognized(text))
             }

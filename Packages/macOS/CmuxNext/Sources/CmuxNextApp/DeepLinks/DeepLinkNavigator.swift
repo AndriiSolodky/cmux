@@ -167,6 +167,16 @@ struct DeepLinkNavigator {
         }
     }
 
+    /// An opaque agent reference (`cmux://agent?id=aid-…`, ``DeepLink/agentReference(_:linkScheme:)``):
+    /// acpmux resolves it to the chat it stands for among this Mac's and its peers' (`_acpmux/resolve`),
+    /// which opens as an agent link does. A reference that names no chat the reader can reach says
+    /// so ("not available to you") instead of the generic gone refusal: it was never theirs to open.
+    func openAgentReference(_ id: String, _ intent: WindowActivation.Intent, asking: Bool) throws {
+        let (hud, window) = (services.refusalHUD, services.windows.active?.window)
+        try openAgentLink(nil, bare: id, intent, asking: asking,
+                          notFound: { hud.show(RefusalStrings.agentReferenceUnavailable, in: window) })
+    }
+
     /// Nightly's durable workspace UUID is `WorkspaceModel.id` (the
     /// lowercase workspace key); the `stable_workspace_id` fallback is tried next.
     private func legacyWorkspace(_ key: UUID, fallback: UUID?) -> WorkspaceModel? {
