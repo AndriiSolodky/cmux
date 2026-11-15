@@ -411,16 +411,17 @@ fn place(global: &GlobalArgs, chat: &NewChat) -> Result<Place, CallFailure> {
                 several => return Err(ambiguous(selector, &[], several)),
             }
         }
-        // The daemon's own word on a selector it cannot read (`workspace_1`: pass `name:`).
-        if let Some(error) = missing.filter(|error| error["code"] == "validation.invalid") {
-            return Err(CallFailure { kind: FailureKind::NotRun, error, idempotency_key: None });
-        }
         let next = if scope == "workspace" { "cmux workspace list" } else { "cmux pane list" };
+        // The daemon's own word on a selector it cannot read (`workspace_1`: pass `name:`).
+        let hint = missing
+            .filter(|error| error["code"] == "validation.invalid")
+            .and_then(|error| error["message"].as_str().map(|message| format!("; {message}")))
+            .unwrap_or_default();
         return Err(CallFailure {
             kind: FailureKind::NotRun,
             error: json!({"code": "selector.not_found",
                           "message": format!("no {scope} {selector:?} in this cmux session \
-                                              ({next} names them)"),
+                                              ({next} names them){hint}"),
                           "details": {"scope": scope, "selector": selector},
                           "retryable": false}),
             idempotency_key: None,
