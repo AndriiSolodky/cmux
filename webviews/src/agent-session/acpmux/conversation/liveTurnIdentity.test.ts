@@ -80,3 +80,38 @@ test("the shape that ends the turn keeps the objects the running turn drew", () 
   while (kept < running.rows.length && running.rows[kept] === again.rows[kept]) kept += 1;
   expect(kept).toBeGreaterThanOrEqual(running.rows.length - 1);
 });
+
+/// `tool(index)` whose command line counts its reads in `reads`: what a record parses again.
+function countedTool(index: number, reads: { count: number }): AcpmuxRow {
+  const row = tool(index);
+  const call = row.items![0]!.tool!;
+  const command = call.command!;
+  Object.defineProperty(call, "command", {
+    enumerable: true,
+    get: () => {
+      reads.count += 1;
+      return command;
+    },
+  });
+  return row;
+}
+
+test("a record into a long running turn reads none of its earlier calls again", () => {
+  const folds = new Set<string>();
+  const reads = { count: 0 };
+  const rows: AcpmuxRow[] = [prompt];
+  for (let index = 0; index < 200; index += 1) rows.push(index % 4 === 3 ? reply(index) : countedTool(index, reads));
+  let view = turnViewFrom(rows, folds, options(10_000));
+  // Once more with the same rows, so whatever the first shape read lazily is read.
+  view = turnViewFrom([...rows], folds, options(10_000), view);
+  const perRecord: number[] = [];
+  for (let record = 200; record < 220; record += 1) {
+    reads.count = 0;
+    rows.push(record % 4 === 3 ? reply(record) : tool(record));
+    view = turnViewFrom([...rows], folds, options(10_000), view);
+    perRecord.push(reads.count);
+  }
+  // 150 earlier calls: a record that parsed each again read each command line at least once, over
+  // 1,800 reads a record. The new call and the live line read theirs a few dozen times.
+  expect(Math.max(...perRecord)).toBeLessThan(100);
+});
