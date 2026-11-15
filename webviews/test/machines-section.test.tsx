@@ -220,10 +220,11 @@ test("a Mac with an older cmux says to update it; an unreachable one says so", a
 });
 
 test("a second click while the ask runs asks nothing more", async () => {
-  const { provider } = await mount(sampleSnapshot, { recheck: [60_000] });
+  const { provider, store } = await mount(sampleSnapshot, { recheck: [60_000] });
   await act(async () => add(rowNamed("studio-mini")).click());
-  await act(async () => rowNamed("studio-mini").querySelector<HTMLElement>(".machines-dial-spinner")?.click());
-  await act(async () => rowNamed("studio-mini").querySelector<HTMLButtonElement>(".machines-new")?.click());
+  // The spinner holds New Workspace's slot (no button to click); a click that still lands asks nothing.
+  expect(rowNamed("studio-mini").querySelector(".machines-new")).toBeNull();
+  await act(async () => store.openJoined("joined:m_mini"));
   expect(ops(provider, "cmux.machines.openJoined")).toHaveLength(1);
 });
 
