@@ -185,6 +185,29 @@ export function instrument(start: number) {
     const cls = typeof node.className === "string" ? node.className.split(" ").filter(Boolean)[0] : undefined;
     return `${node.tagName.toLowerCase()}${cls ? `.${cls}` : ""}${row ? ` (row ${row})` : ""}`;
   };
+  // DIAG (cmux#24569 g1, temporary): the live row's state over the last frames, kept with each shift.
+  const ring: string[] = [];
+  const sampleLive = () => {
+    const row = document.querySelector<HTMLElement>("[data-row-id='thinking-live']");
+    if (row) {
+      const box = row.getBoundingClientRect();
+      const style = getComputedStyle(row);
+      const worked = row.querySelector<HTMLElement>(".cv-worked");
+      const wbox = worked?.getBoundingClientRect();
+      const wstyle = worked ? getComputedStyle(worked) : undefined;
+      const prev = row.previousElementSibling as HTMLElement | null;
+      const scroller = document.querySelector<HTMLElement>(".acpmux-scroll");
+      ring.push(
+        `t${Math.round(performance.now())} sc ${Math.round(scroller?.scrollTop ?? -1)}/${scroller?.scrollHeight} row y${Math.round(box.y)} h${Math.round(box.height)} tr[${style.translate}] tf[${style.transform}] clip[${style.clipPath}] op${style.opacity} vis${style.visibility} disp${style.display} cv[${style.contentVisibility}] cls[${row.className}] attrs[${[...row.attributes].map((a) => a.name + "=" + a.value.slice(0, 40)).join(" ")}] | worked y${Math.round(wbox?.y ?? -1)} h${Math.round(wbox?.height ?? -1)} op${wstyle?.opacity} tr[${wstyle?.translate}] clip[${wstyle?.clipPath}] cls[${worked?.className}] | prev ${prev?.dataset.rowId ?? prev?.className}`,
+      );
+    } else ring.push(`t${Math.round(performance.now())} no live row`);
+    if (ring.length > 6) ring.shift();
+    requestAnimationFrame(afterPaint);
+  };
+  const channel = new MessageChannel();
+  channel.port1.onmessage = () => sampleLive();
+  const afterPaint = () => channel.port2.postMessage(0);
+  requestAnimationFrame(afterPaint);
   try {
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries() as unknown as {
@@ -205,6 +228,7 @@ export function instrument(start: number) {
               `${describe(source.node)} y ${Math.round(source.previousRect?.y ?? -1)}->${Math.round(source.currentRect?.y ?? -1)} h ${Math.round(source.previousRect?.height ?? -1)}->${Math.round(source.currentRect?.height ?? -1)} x ${Math.round(source.previousRect?.x ?? -1)}->${Math.round(source.currentRect?.x ?? -1)}`,
           ),
           scroll: sc ? `${Math.round(sc.scrollTop)}/${sc.scrollHeight}/${sc.clientHeight}` : "none",
+          ring: [...ring],
         } as never);
       }
     }).observe({ type: "layout-shift", buffered: true });
@@ -714,7 +738,10 @@ async function liveRound(ctx: Ctx, log: ReplayLog, measureIdle: boolean): Promis
               .slice(0, 25)
               .map(
                 (shift) =>
-                  `DETAIL at ${Math.round(shift.at)} v ${shift.value.toFixed(4)} scroll ${shift.scroll} | ${shift.rects.join(" ; ")}`,
+                  `DETAIL at ${Math.round(shift.at)} v ${shift.value.toFixed(4)} scroll ${shift.scroll} | ${shift.rects.join(" ; ")}` +
+                  (process.env.SHIFT_RING === "1"
+                    ? "\n    RING " + (shift as unknown as { ring: string[] }).ring.join("\n    RING ")
+                    : ""),
               )
           : []),
       ],
