@@ -20,9 +20,6 @@ import {
   TRANSCRIPT_RUN_GAP,
   TRANSCRIPT_FOOTER_CONTROL,
   TRANSCRIPT_INNER_GAP,
-  TRANSCRIPT_TOOL_ROW,
-  baseMark,
-  liveStepLift,
   transcriptGap,
 } from "./transcriptGrid";
 import type { MachineResources } from "./machineResources";
@@ -1606,9 +1603,8 @@ const isStepRow = (row: AcpmuxRow) =>
 export const isLiveLine = (row: AcpmuxRow) =>
   row.below === true && (row.kind === WORKING || row.kind === THINKING || row.kind === ACTIVITY_LINE);
 /// The running turn's line as its last row (`below`) right under a step row or a status row ("Subagent
-/// finished", "Scheduled check", a compaction): its words where a 22 tall line under the run's last line puts
-/// them (#29965), in the footer's 32 slot it has under a reply, so a run or a reply landing over it moves nothing
-/// (transcriptGrid.ts MARK_LIVE_STEP, cmux#24569); the waiting
+/// finished", "Scheduled check", a compaction): the footer's 32 slot it has under a reply, the inner gap under the
+/// run, so a run or a reply landing over it moves nothing (transcriptGrid.ts MARK_LIVE_STEP, cmux#24569); the waiting
 /// messages' head draws over it (pendingMessages.ts `withWaitingRows`). Under a status row it took the footer's
 /// slot a block gap away, 55 and 70 from its neighbours (Leo, 2026-11-03: "this is pretty bad
 /// spacing and formatting"; design/transcript-spacing.md rule 3).
@@ -1652,16 +1648,9 @@ const rowGridMark = (row: AcpmuxRow, prev: AcpmuxRow | undefined): number =>
             ? MARK_STATUS
             : rowMark(row);
 const LIVE_STEP_EDGE = "+step";
-/// The gap placed between two drawn rows at `scale` (transcriptGrid.ts transcriptGap), less liveStepLift over a live
-/// line under a step, whose box is the footer's slot (MARK_LIVE_STEP); never less than 0, so the slot never lies over
-/// the row above it (right under "Worked for", whose gap is its own room).
-const placedGap = (before: number, next: number, scale: number): number => {
-  const gap = transcriptGap(before, next) * scale;
-  return baseMark(next) === MARK_LIVE_STEP ? Math.max(0, gap - liveStepLift(scale)) : gap;
-};
 /// One-line activity rows are 22 apart top to top (design/chat-transcript.md "One-line row pitch",
 /// #29965), `--cv-tool-row-height`.
-const TOOL_ROW_PT = TRANSCRIPT_TOOL_ROW;
+const TOOL_ROW_PT = 22;
 /// The room around "Worked for"'s rule (Lucas, 2026-11-07; Leo, 2026-11-09): 4 under its words, 8 over the next row,
 /// conversation.css `.cv-worked.has-divider.is-toggle`; no stack gap follows (MARK_WORKED).
 const WORKED_GAP_PT = gridLength("gap-foot") + gridLength("gap");
@@ -3380,7 +3369,7 @@ export function layoutConversation(
       }
     }
     if (height > 0) {
-      if (previousContent >= 0) gaps[index] = placedGap(marks[previousContent]!, marks[index]!, scale);
+      if (previousContent >= 0) gaps[index] = transcriptGap(marks[previousContent]!, marks[index]!) * scale;
       top += gaps[index]!;
       beforeContent = previousContent;
       previousContent = index;
@@ -3441,7 +3430,7 @@ export function placeRows(
     const height = known !== undefined && known >= 0 ? known : estimate.heights[index];
     if (height > 0) {
       if (previousContent >= 0)
-        top += marks ? placedGap(marks[previousContent]!, marks[index]!, scale) : (estimate.gaps?.[index] ?? 0);
+        top += marks ? transcriptGap(marks[previousContent]!, marks[index]!) * scale : (estimate.gaps?.[index] ?? 0);
       beforeContent = previousContent;
       previousContent = index;
     }
@@ -3574,7 +3563,7 @@ export function placeRowsIndexed(
     const heights = new Float64Array(count);
     for (let at = 0; at < count; at += 1) heights[at] = resolve(at);
     index = PlacedHeightIndex.fromRows(heights, marks, marks ? undefined : estimate.gaps, {
-      between: marks ? (before, next) => placedGap(before, next, scale) : undefined,
+      between: marks ? (before, next) => transcriptGap(before, next) * scale : undefined,
     });
   } else {
     index = reusable;

@@ -2605,9 +2605,9 @@ pre.cv-math-source {
   height: var(--cv-footer-row);
   padding-top: 0;
 }
-/* Right under a step row it keeps this slot, its ⌃B hint on its line: the gap over it is less instead, so its words
-   stand where a one-line box put them under the run (transcriptGrid.ts MARK_LIVE_STEP). A box one tool row tall
-   there moved the words each time the row over it changed between a run and a reply (cmux#24569). */
+/* Right under a step row it keeps this slot, its ⌃B hint on its line, the inner gap under the run (transcriptGrid.ts
+   MARK_LIVE_STEP). A box one tool row tall there moved the words each time the row over it changed between a run
+   and a reply (cmux#24569). */
 /* Its "⌃B to run in background" keeps its room while it is offered, and pointing at the line changes
    only its opacity, on every live line (backgroundHintRoom.experiment.ts). It used to take its room
    on hover alone: the times and tokens were squeezed over each other ("8s · 2m5 1.4K toke") and moved

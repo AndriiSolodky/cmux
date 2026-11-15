@@ -111,9 +111,10 @@ export const TRANSCRIPT_SPACING: readonly SpacingRow[] = [
   {
     id: "step-to-live",
     between: 'the waiting group and the live line under it ("Sending message to …"), centre to centre',
-    value: 38,
+    value: 39,
     tolerance: 0.5,
-    source: "22 line + Codex transcript run gap 16",
+    source:
+      "22 line + inner gap 12 over the footer's 32 slot, its words centred (+5): the line keeps the slot a reply gives it (cmux#24569)",
   },
 ];
 
@@ -243,9 +244,10 @@ export const TRANSCRIPT_STATUS_ROWS: readonly (SpacingRow & {
     id: "waiting-to-live",
     variant: "working-bottom",
     between: '"1 message from 1 session" and the live "Thinking" line under it, the turn\'s last, centre to centre',
-    value: 38,
+    value: 39,
     tolerance: 0.5,
-    source: "22 line + Codex transcript run gap 16",
+    source:
+      "22 line + inner gap 12 over the footer's 32 slot, its words centred (+5): the line keeps the slot a reply gives it (cmux#24569)",
   },
   {
     id: "reply-footer-to-received",
@@ -267,18 +269,20 @@ export const TRANSCRIPT_STATUS_ROWS: readonly (SpacingRow & {
     id: "sent-to-live",
     variant: "reply-received",
     between: '"Sent to" and the live "Thinking" line under it, centre to centre',
-    value: 38,
+    value: 39,
     tolerance: 0.5,
-    source: "22 line + Codex transcript run gap 16",
+    source:
+      "22 line + inner gap 12 over the footer's 32 slot, its words centred (+5): the line keeps the slot a reply gives it (cmux#24569)",
   },
   {
     id: "note-to-live",
     variant: "notes-live",
     between:
       'the last "Background task finished" note, after "Received 6 messages", and the live "Thinking" line under it, centre to centre',
-    value: 38,
+    value: 39,
     tolerance: 0.5,
-    source: "22 line + Codex transcript run gap 16",
+    source:
+      "22 line + inner gap 12 over the footer's 32 slot, its words centred (+5): the line keeps the slot a reply gives it (cmux#24569)",
   },
   {
     id: "status-to-prompt",

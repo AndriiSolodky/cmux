@@ -18,14 +18,6 @@ export const TRANSCRIPT_RUN_GAP = gridLength("gap-run");
 /// line, then the block gap to whatever comes next.
 export const TRANSCRIPT_FOOTER_GAP = gridLength("gap-footer");
 export const TRANSCRIPT_FOOTER_CONTROL = gridLength("transcript-footer-control");
-/// One one-line activity row as drawn (`--cv-tool-row-height`, px at every Interface Size; design/chat-transcript.md
-/// "One-line row pitch", #29965).
-export const TRANSCRIPT_TOOL_ROW = 22;
-/// How much lower the live line's words sit in the footer's slot (32 at 1x, scaled with the interface, its words
-/// centred) than in a box one tool row tall. Over a live line under a step the placed gap is that much less than the
-/// run gap (model.ts `placedGap`), so its words keep the place a one-line box gave them under the run
-/// (MARK_LIVE_STEP).
-export const liveStepLift = (scale: number): number => (TRANSCRIPT_FOOTER_CONTROL * scale - TRANSCRIPT_TOOL_ROW) / 2;
 
 /// The interface scale the CSS grid tokens multiply by (desktop.css: `calc(24px *
 /// var(--cmux-interface-scale, 1))`). The virtual stack places its gaps with the same factor, so
@@ -81,8 +73,9 @@ export const MARK_PLAN_LINE = 11;
 /// footer's slot it has under a reply (MARK_FOOTER_SLOT's box), so what lands over it never changes its height or
 /// moves its words: a box one tool row tall there moved the words 5 px, and the line 10, each time the row over it
 /// changed between a run and a reply while the transcript followed the latest row (cmux#24569, a live CLS of 1.16
-/// in transcript-replay.bench.ts). Toward the row over it the gap is the run gap less liveStepLift, so its words
-/// stand where they stood under the run; under it, the slot's room (tailGap) whatever is over it.
+/// in transcript-replay.bench.ts). Toward the row over it the gap is the inner gap (12, a token: tokens.md), so its
+/// words, centred in the taller slot, stand 18 under the run's last line, about where the 22 box put them (17); under
+/// it, the slot's room (tailGap) whatever is over it.
 export const MARK_LIVE_STEP = 12;
 /// Added to a row's mark (a reply or a tool run) when it opens a turn the agent ran on its own that
 /// draws as its own turn, with no line of its own over it (model.ts `opensBackgroundTurn`): a task
@@ -168,7 +161,7 @@ export function transcriptGap(previous: number, next: number): number {
   // The live state is separate from completed activity. Leo, 2026-11-04: "the gap between tool
   // calls and thinking needs to be bigger". Use the same scaled run gap as activity to prose.
   if (line(previous) && (next === MARK_INDICATOR || next === MARK_FOOTER_SLOT)) return TRANSCRIPT_RUN_GAP;
-  if (next === MARK_LIVE_STEP) return TRANSCRIPT_RUN_GAP;
+  if (next === MARK_LIVE_STEP) return TRANSCRIPT_INNER_GAP;
   // A run, or any status line, and the reply's prose around it sit 16 apart, either way.
   if ((line(previous) && next === MARK_MESSAGE) || (previous === MARK_MESSAGE && line(next))) return TRANSCRIPT_RUN_GAP;
   return TRANSCRIPT_BLOCK_GAP;
