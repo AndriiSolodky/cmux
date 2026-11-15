@@ -133,6 +133,19 @@ describe("judgeLoss", () => {
     expect(v.text).toContain("the client is missing step 4");
   });
 
+  test("a gap names the journal's kind of each skipped seq", () => {
+    const j = turn(10).map((e) => e.seq === 47 ? { ...e, kind: "agent_message_chunk" } : e);
+    const client = j.filter((e) => e.seq !== 47);
+    const v = judgeLoss({ n: 10, journal: j, client });
+    expect(v.text).toContain("the client's stream jumps 46->48 [agent_message_chunk]");
+    const many = turn(10).filter((e) => e.seq < 45 || e.seq > 49);
+    expect(judgeLoss({ n: 10, journal: turn(10), client: many }).text).toContain("44->50 [?,?,?,...]");
+  });
+
+  test("journalEvent keeps the record's kind", () => {
+    expect(journalEvent("t", { seq: 7, kind: "agent_message_chunk", msg: {} })?.kind).toBe("agent_message_chunk");
+  });
+
   test("a delivery received twice is doubled output", () => {
     const j = turn(10);
     const client = [...j.slice(0, 12), j[11], ...j.slice(12)];
