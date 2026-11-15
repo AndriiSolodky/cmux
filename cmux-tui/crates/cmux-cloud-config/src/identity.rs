@@ -159,6 +159,47 @@ pub fn install_key_account(user: &str) -> String {
     format!("install-key-{hex}")
 }
 
+/// Where an install key's blob lives among `accounts` (the Keychain accounts of its service): the
+/// account itself is generation 1, `<account>.<n>` (n from 2, no leading zero) generation n. The
+/// newest generation present is the key.
+///
+/// Why generations (probe cloud-signed-in-after-update-production, 2026-11-15T04:06Z and 04:49Z): the
+/// blob is a login Keychain item, which another build of the same bundle id may read but not delete
+/// (`SecItemDelete`: errSecInvalidOwnerEdit, -25244). A rotation that only deleted left the retired
+/// key in place after an update; the next sign-in registered it, the owner refused it, and every mint
+/// failed while the app read signed in. A rotation now puts the new key in [`InstallKeySlots::next`]
+/// of the generations it could not delete, so the retired key is never read again.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct InstallKeySlots {
+    /// The account's generations among `accounts`, oldest first.
+    pub generations: Vec<String>,
+    /// The newest one: the key, none when there is no generation.
+    pub current: Option<String>,
+    /// The account a new key goes in: the generation above every one listed.
+    pub next: String,
+}
+
+/// [`InstallKeySlots`] of the install key `account` among a Keychain service's `accounts`.
+pub fn install_key_slots(account: &str, accounts: &[String]) -> InstallKeySlots {
+    let generation = |candidate: &str| -> Option<u32> {
+        if candidate == account {
+            return Some(1);
+        }
+        let suffix = candidate.strip_prefix(account)?.strip_prefix('.')?;
+        let number: u32 = suffix.parse().ok()?;
+        (number >= 2 && number.to_string() == suffix).then_some(number)
+    };
+    let mut found: Vec<u32> = accounts.iter().filter_map(|a| generation(a)).collect();
+    found.sort_unstable();
+    found.dedup();
+    let name = |n: u32| if n <= 1 { account.to_owned() } else { format!("{account}.{n}") };
+    InstallKeySlots {
+        current: found.last().map(|&n| name(n)),
+        next: name(found.last().map_or(1, |&n| n.saturating_add(1))),
+        generations: found.into_iter().map(name).collect(),
+    }
+}
+
 /// The folder prefix of a share install's store (`install-share-<host>`).
 pub const SHARE_FOLDER_PREFIX: &str = "install-share-";
 

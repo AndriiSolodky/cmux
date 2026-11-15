@@ -192,6 +192,17 @@ pub(crate) fn respond(operation: &[u8], request: &[u8]) -> Result<Vec<u8>, i32> 
             let request: Request = read(request)?;
             json!({ "account": identity::install_key_account(&request.user) })
         }
+        // `{generations, current, next}` of an install key `account` among a Keychain service's
+        // `accounts`: the newest generation is the key; a new key goes in `next`.
+        b"cloud_identity_install_key_slots" => {
+            #[derive(Deserialize)]
+            struct Request {
+                account: String,
+                accounts: Vec<String>,
+            }
+            let request: Request = read(request)?;
+            json!(identity::install_key_slots(&request.account, &request.accounts))
+        }
         b"cloud_identity_share_origin" => {
             #[derive(Default, Deserialize)]
             #[serde(default)]

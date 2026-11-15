@@ -160,3 +160,46 @@ fn a_share_install_is_kept_by_its_https_origin() {
     assert_eq!(share_folder_api("install-share-a/b"), None);
     assert_eq!(share_folder_api("other"), None);
 }
+
+fn accounts(names: &[&str]) -> Vec<String> {
+    names.iter().map(|s| (*s).to_owned()).collect()
+}
+
+#[test]
+fn the_newest_generation_of_an_install_key_is_the_key() {
+    let account = "install-key-0123456789abcdef";
+    let none = install_key_slots(account, &[]);
+    assert_eq!((none.current, none.next.as_str()), (None, account));
+    assert!(none.generations.is_empty());
+
+    let first = install_key_slots(account, &accounts(&[account]));
+    assert_eq!(first.current.as_deref(), Some(account));
+    assert_eq!(first.next, format!("{account}.2"));
+
+    // Another user's key and look-alike accounts are never a generation; a gap is kept.
+    let mixed = install_key_slots(
+        account,
+        &accounts(&[
+            "install-key-ffffffffffffffff",
+            "install-key-0123456789abcdef.x",
+            "install-key-0123456789abcdef.02",
+            "install-key-0123456789abcdef.1",
+            "install-key-0123456789abcdef.3",
+            account,
+        ]),
+    );
+    assert_eq!(mixed.generations, accounts(&[account, "install-key-0123456789abcdef.3"]));
+    assert_eq!(mixed.current.as_deref(), Some("install-key-0123456789abcdef.3"));
+    assert_eq!(mixed.next, "install-key-0123456789abcdef.4");
+}
+
+/// Probe cloud-signed-in-after-update-production, 2026-11-15: a build could not delete the key the
+/// previous build made. The new key goes above what stayed, so it is the one read next.
+#[test]
+fn a_rotation_puts_the_new_key_above_what_it_could_not_delete() {
+    let account = "install-key-0123456789abcdef";
+    let kept = install_key_slots(account, &accounts(&[account]));
+    assert_eq!(kept.next, format!("{account}.2"));
+    let after = install_key_slots(account, &accounts(&[account, &kept.next]));
+    assert_eq!(after.current.as_deref(), Some(kept.next.as_str()));
+}
