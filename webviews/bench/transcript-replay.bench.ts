@@ -389,7 +389,7 @@ async function openPage(ctx: Ctx, log: ReplayLog, served: number, status: string
   play = { log, served, status };
   const page = await ctx.browser.newPage({ viewport: { width: 900, height: 700 } });
   await page.addInitScript(instrument, start);
-  // DIAG (cmux#24569 g1, temporary): PIN_ARMS='{"id":"arm"}' pins experiment arms.
+  // DIAG (cmux#24569 g1, temporary): PIN_ARMS=id=arm,id=arm pins experiment arms.
   if (process.env.PIN_ARMS)
     await page.addInitScript(
       (pinned) => {
