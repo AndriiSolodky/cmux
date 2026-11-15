@@ -43,7 +43,7 @@ Run by hand on a Freestyle VM, never in CI and never on a laptop (macOS-only CLO
 No app, GUI or build: the module's socket helper is replaced by a model of the topology, focus and closed history.
 Run: python3 -I scripts/cmux-next/tests/test_every_action_sweep.py
 """
-import contextlib, copy, importlib.util, io, itertools, json, os, shutil, sys, tempfile, unittest
+import contextlib, copy, importlib.util, io, itertools, json, os, shutil, sys, tempfile, time, unittest
 from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -63,8 +63,16 @@ def load_sweep():
     return module
 
 
-sweep_mod = load_sweep()
-stress_mod = sweep_mod.load("perf_stress_session", "perf-stress-session.py")
+# every-action-sweep.py reads macOS CLOCK_UPTIME_RAW (the clock of NSEvent timestamps) when it loads.
+MAC = hasattr(time, "CLOCK_UPTIME_RAW")
+NOT_A_MAC = "every-action-sweep.py needs macOS time.CLOCK_UPTIME_RAW; this test runs on a Mac (or by hand with the alias above)"
+sweep_mod = load_sweep() if MAC else None
+stress_mod = sweep_mod.load("perf_stress_session", "perf-stress-session.py") if MAC else None
+
+
+def setUpModule():
+    if not MAC:
+        raise unittest.SkipTest(NOT_A_MAC)
 
 
 class NoProcess:
@@ -2077,4 +2085,5 @@ if __name__ == "__main__":
         unittest.main()
     finally:
         shutil.rmtree(OUT, ignore_errors=True)
-        shutil.rmtree(sweep_mod.SCRATCH, ignore_errors=True)
+        if sweep_mod:
+            shutil.rmtree(sweep_mod.SCRATCH, ignore_errors=True)
