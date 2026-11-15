@@ -59,7 +59,14 @@ pub enum Mux {
     Echo,
     /// [`EventLog`]: an agent chat's event log, attached with `afterSeq`.
     Events,
+    /// [`EventLog`] whose events are `agent-session-record` pushes, each with
+    /// [`RECORD_PAD`] bytes of text: the carrier takes them on its bulk lane,
+    /// as it takes a Cloud chat's records.
+    Records,
 }
+
+/// The text each [`Mux::Records`] event carries, about a streamed chunk's size.
+pub const RECORD_PAD: usize = 1024;
 
 pub struct HostWorld {
     pub platform: SocketAddr,
@@ -131,7 +138,8 @@ pub fn host_world(restart: Restart, mux: Mux) -> HostWorld {
                 restarting_mux(&mux_path, host.clone(), starts.clone(), restart);
             }
             (Mux::Echo, _) => fake_mux(&mux_path).await,
-            (Mux::Events, _) => events.clone().serve(&mux_path),
+            (Mux::Events, _) => events.clone().serve(&mux_path, false),
+            (Mux::Records, _) => events.clone().serve(&mux_path, true),
         }
         start(host.clone(), starts.clone(), restart).await;
         let client_relay = proxy.clone().listen(relay_address).await;
@@ -479,7 +487,12 @@ impl EventLog {
         self.events.lock().unwrap().iter().copied().filter(|event| *event > seq).collect()
     }
 
-    fn serve(self: Arc<Self>, path: &Path) {
+    /// The newest seq appended (0 before any).
+    pub fn last(&self) -> u64 {
+        self.events.lock().unwrap().back().copied().unwrap_or(0)
+    }
+
+    fn serve(self: Arc<Self>, path: &Path, records: bool) {
         let listener = tokio::net::UnixListener::bind(path).unwrap();
         tokio::spawn(async move {
             loop {
@@ -498,7 +511,14 @@ impl EventLog {
                     loop {
                         let appended = log.appended.notified();
                         for seq in log.after(sent) {
-                            let event = format!("{}\n", json!({"event": "chat", "seq": seq}));
+                            let event = if records {
+                                let text = "x".repeat(RECORD_PAD);
+                                json!({"event": "agent-session-record", "surface": 1, "seq": seq,
+                                    "record": {"seq": seq, "text": text}})
+                            } else {
+                                json!({"event": "chat", "seq": seq})
+                            };
+                            let event = format!("{event}\n");
                             if writer.write_all(event.as_bytes()).await.is_err() {
                                 return;
                             }
