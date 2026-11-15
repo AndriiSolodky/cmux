@@ -646,6 +646,64 @@ export function measure(
   };
 }
 
+type SendProfile = {
+  nodes: { id: number; callFrame: { functionName: string; url: string; lineNumber: number }; children?: number[] }[];
+  samples: number[];
+  timeDeltas: number[];
+};
+const sendProfiles: SendProfile[] = [];
+function printSendProfiles(label: string) {
+  if (!sendProfiles.length) return;
+  const self = new Map<string, number>();
+  const total = new Map<string, number>();
+  const stacks = new Map<string, number>();
+  for (const profile of sendProfiles) {
+    const byId = new Map(profile.nodes.map((node) => [node.id, node]));
+    const parent = new Map<number, number>();
+    for (const node of profile.nodes) for (const child of node.children ?? []) parent.set(child, node.id);
+    const keyOf = (id: number) => {
+      const frame = byId.get(id)?.callFrame;
+      if (!frame || ["(root)", "(idle)", "(program)"].includes(frame.functionName)) return undefined;
+      return `${frame.functionName || "(anon)"} ${frame.url.split("/").pop() ?? ""}:${frame.lineNumber + 1}`;
+    };
+    profile.samples.forEach((id, index) => {
+      const ms = (profile.timeDeltas[index] ?? 0) / 1000 / sendProfiles.length;
+      const own = keyOf(id);
+      if (own) self.set(own, (self.get(own) ?? 0) + ms);
+      // The stacks under the functions SEND_PROFILE_FOCUS names (a regex over `fn file:line`): who calls them.
+      const focus = process.env.SEND_PROFILE_FOCUS;
+      if (focus) {
+        const chain: string[] = [];
+        for (let at: number | undefined = id; at !== undefined && chain.length < 40; at = parent.get(at)) {
+          const key = keyOf(at);
+          if (key) chain.push(key);
+        }
+        const hit = chain.findIndex((key) => new RegExp(focus).test(key));
+        if (hit >= 0) {
+          const stack = chain.slice(hit, hit + 9).join(" < ");
+          stacks.set(stack, (stacks.get(stack) ?? 0) + ms);
+        }
+      }
+      const seen = new Set<string>();
+      for (let at: number | undefined = id; at !== undefined; at = parent.get(at)) {
+        const key = keyOf(at);
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          total.set(key, (total.get(key) ?? 0) + ms);
+        }
+      }
+    });
+  }
+  const top = (map: Map<string, number>, n: number) =>
+    [...map].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, v]) => `${v.toFixed(2)} ${k}`);
+  const busy = [...self.values()].reduce((a, b) => a + b, 0);
+  console.log(`SEND-PROFILE ${label} rounds=${sendProfiles.length} busy_ms=${busy.toFixed(2)}`);
+  for (const line of top(self, 25)) console.log(`SEND-PROFILE ${label} self ${line}`);
+  for (const line of top(total, 40)) console.log(`SEND-PROFILE ${label} total ${line}`);
+  for (const line of top(stacks, 25)) console.log(`SEND-PROFILE ${label} stack ${line}`);
+  sendProfiles.length = 0;
+}
+
 async function round(browser: Browser, url: string): Promise<Round> {
   events.length = opened;
   status = "idle";
@@ -683,8 +741,122 @@ async function round(browser: Browser, url: string): Promise<Round> {
     );
     await startSampling(page, THOUGHT.split(" ").slice(0, 4).join(" "));
     if (LOAD_MS > 0) await startLoad(page, LOAD_MS);
+    const cdp = process.env.PROFILE_SEND === "1" && browser.browserType().name() === "chromium"
+      ? await page.context().newCDPSession(page)
+      : undefined;
+    const metrics = async () =>
+      Object.fromEntries(
+        ((await cdp!.send("Performance.getMetrics")) as { metrics: { name: string; value: number }[] }).metrics.map(
+          (m) => [m.name, m.value],
+        ),
+      ) as Record<string, number>;
+    let before: Record<string, number> = {};
+    if (cdp) {
+      await cdp.send("Performance.enable");
+      const dom = await page.evaluate(() => ({
+        nodes: document.querySelectorAll("*").length,
+        rows: document.querySelectorAll("[data-row-id]").length,
+        ticks: document.querySelectorAll("[data-tick]").length,
+      }));
+      console.log(`SEND-DOM history${HISTORY} ${JSON.stringify(dom)}`);
+      await page.evaluate(() => {
+        const seen: { what: string; under: number; t: number }[] = [];
+        const t0 = performance.now();
+        const name = (el: Element) =>
+          `${el.tagName.toLowerCase()}${el.id ? "#" + el.id : ""}.${String(el.getAttribute("class") ?? "").split(/\s+/).slice(0, 3).join(".")}`;
+        const observer = new MutationObserver((list) => {
+          for (const m of list) {
+            const el = m.target instanceof Element ? m.target : m.target.parentElement;
+            if (!el) continue;
+            const under = el.getElementsByTagName("*").length;
+            const what =
+              m.type === "attributes"
+                ? `attr ${m.attributeName} on ${name(el)} [${String(m.oldValue).slice(0, 300)} -> ${String(el.getAttribute(m.attributeName!)).slice(0, 300)}]`
+                : `${m.type} +${m.addedNodes.length}/-${m.removedNodes.length} on ${name(el)}`;
+            seen.push({ what, under, t: Math.round(performance.now() - t0) });
+          }
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeOldValue: true, subtree: true, childList: true });
+        (window as unknown as { __sendMut: () => typeof seen }).__sendMut = () => {
+          observer.disconnect();
+          return seen;
+        };
+      });
+      before = await metrics();
+      if (process.env.PROFILE_TRACE === "1") {
+        await browser.startTracing(page, {
+          categories: [
+            "devtools.timeline",
+            "disabled-by-default-devtools.timeline",
+            "disabled-by-default-devtools.timeline.invalidationTracking",
+            "blink",
+          ],
+        });
+      } else {
+        await cdp.send("Profiler.enable");
+        await cdp.send("Profiler.setSamplingInterval", { interval: 100 });
+        await cdp.send("Profiler.start");
+      }
+    }
     const sentAt = Date.now();
     await page.keyboard.press("Enter");
+    if (cdp) {
+      await sleep(250);
+      if (process.env.PROFILE_TRACE === "1") {
+        const buf = await browser.stopTracing();
+        type Ev = { name: string; dur?: number; ts: number; args?: { elementCount?: number; data?: Record<string, unknown> } };
+        const evs = (JSON.parse(buf.toString()) as { traceEvents: Ev[] }).traceEvents;
+        const recalcs = evs.filter((e) => e.name === "UpdateLayoutTree" && e.dur !== undefined);
+        const sum = recalcs.reduce((a, e) => a + (e.dur ?? 0), 0) / 1000;
+        console.log(`SEND-TRACE history${HISTORY} recalcs=${recalcs.length} ms=${sum.toFixed(2)}`);
+        for (const e of [...recalcs].sort((a, b) => (b.dur ?? 0) - (a.dur ?? 0)).slice(0, 8))
+          console.log(
+            `SEND-TRACE history${HISTORY} recalc ms=${((e.dur ?? 0) / 1000).toFixed(2)} elements=${e.args?.elementCount ?? e.args?.data?.elementCount ?? "?"} at=${e.ts}`,
+          );
+        const why = new Map<string, number>();
+        for (const e of evs) {
+          if (!/InvalidationTracking/.test(e.name)) continue;
+          const d = e.args?.data ?? {};
+          const key = `${e.name} ${String(d.reason ?? "")} ${String(d.nodeName ?? "")} ${String(d.changedAttribute ?? d.changedClass ?? d.changedId ?? d.changedPseudo ?? "")} ${JSON.stringify(d.invalidationList ?? d.extraData ?? "").slice(0, 160)}`;
+          why.set(key, (why.get(key) ?? 0) + 1);
+        }
+        const full = new Set<string>();
+        for (const e of evs) {
+          if (!/InvalidationTracking/.test(e.name)) continue;
+          const d = e.args?.data ?? {};
+          if (!/acpmux-main|acpmux-composer-box|acpmux-dock/.test(String(d.nodeName ?? ""))) continue;
+          const line = `${e.name} ${JSON.stringify(d).slice(0, 3000)}`;
+          if (full.has(line)) continue;
+          full.add(line);
+          console.log(`SEND-FULL history${HISTORY} ${line}`);
+        }
+        for (const [k, n] of [...why].sort((a, b) => b[1] - a[1]).slice(0, 30))
+          console.log(`SEND-WHY history${HISTORY} n=${n} ${k.slice(0, 300)}`);
+      } else {
+        const { profile } = (await cdp.send("Profiler.stop")) as { profile: SendProfile };
+        sendProfiles.push(profile);
+      }
+      const after = await metrics();
+      const muts = await page.evaluate(() =>
+        (window as unknown as { __sendMut: () => { what: string; under: number; t: number }[] }).__sendMut(),
+      );
+      const big = muts.filter((m) => m.under >= 100);
+      console.log(`SEND-MUT history${HISTORY} total=${muts.length} big=${big.length}`);
+      for (const m of big.slice(0, 25)) console.log(`SEND-MUT history${HISTORY} t=${m.t} under=${m.under} ${m.what}`);
+      const delta = (name: string) => +((after[name] ?? 0) - (before[name] ?? 0)).toFixed(4);
+      console.log(
+        `SEND-METRICS history${HISTORY} ${JSON.stringify({
+          layouts: delta("LayoutCount"),
+          layout_ms: +(delta("LayoutDuration") * 1000).toFixed(2),
+          styles: delta("RecalcStyleCount"),
+          style_ms: +(delta("RecalcStyleDuration") * 1000).toFixed(2),
+          script_ms: +(delta("ScriptDuration") * 1000).toFixed(2),
+          task_ms: +(delta("TaskDuration") * 1000).toFixed(2),
+          nodes: after.Nodes,
+          layout_objects: after.LayoutObjects,
+        })}`,
+      );
+    }
     await sleep(THINK_MS + 200);
     // Under load the prompt request can come late: wait for it, so `turnDone` is this round's turn.
     const until = Date.now() + 15_000;
@@ -749,10 +921,11 @@ if (import.meta.main) {
     const { build } = await import("vite");
     await build({
       configFile: path.join(webviews, "vite.config.acpmux-pane.mjs"),
-      build: { outDir: out, emptyOutDir: true },
+      build: { outDir: out, emptyOutDir: true, ...(process.env.PROFILE_SEND === "1" ? { minify: false } : {}) },
       logLevel: "error",
     });
     console.log(`send-motion-pass: pane built in ${((performance.now() - builtAt) / 1000).toFixed(0)} s`);
+    if (process.env.SEND_PROFILE_BUILD) fs.cpSync(out, process.env.SEND_PROFILE_BUILD, { recursive: true });
     const statics = Bun.serve({
       port: 0,
       hostname: "127.0.0.1",
@@ -787,6 +960,7 @@ if (import.meta.main) {
       const rounds: Round[] = [];
       try {
         for (let index = 0; index < ROUNDS; index++) rounds.push(await round(browser, url));
+        printSendProfiles(`${engine} history${HISTORY}`);
       } catch (error) {
         failed += 1;
         console.log(`send-motion-pass: ${engine} FAILED: ${error instanceof Error ? error.message : String(error)}`);
