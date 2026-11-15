@@ -94,6 +94,22 @@ impl SegmentFile {
             Self::Cold(_) => None,
         }
     }
+
+    /// The segment's length in raw bytes.
+    pub(crate) fn len(&self) -> std::io::Result<u64> {
+        match self {
+            Self::Local(file) => Ok(file.metadata()?.len()),
+            Self::Cold(cold) => Ok(cold.index.raw_len),
+        }
+    }
+
+    /// The file's metadata: the archive's for a cold segment (its identity, never its length).
+    pub(crate) fn metadata(&self) -> std::io::Result<std::fs::Metadata> {
+        match self {
+            Self::Local(file) => file.metadata(),
+            Self::Cold(cold) => cold.file.metadata(),
+        }
+    }
 }
 
 impl Read for SegmentFile {
