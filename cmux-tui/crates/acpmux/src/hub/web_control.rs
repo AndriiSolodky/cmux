@@ -270,20 +270,24 @@ impl Hub {
         if control != Control::Web {
             return Ok(());
         }
+        // One step under the turn lock, on the turn itself: the promotion to Web and the turn's
+        // device (`TurnInfo::device`). The turn stays the one device's only while every Web
+        // prompt and steer into it is that device's; a steer from any other client (the shared
+        // dashboard token included) leaves it no device. Split across two locks, a dashboard
+        // steer between a phone's promotion and its device write was lost, and the mixed turn
+        // kept the phone's exception from the floor (review of #43251, P1-F1).
         let raised = session.turn.lock().unwrap_or_else(|e| e.into_inner()).as_mut().map(|t| {
             let was_web = t.control == Control::Web;
             t.control = Control::Web;
-            (t.turn_id.clone(), was_web)
-        });
-        if let Some((turn_id, was_web)) = raised {
-            session.floor.last_turn_web.store(true, Ordering::SeqCst);
-            // The turn stays the one device's only while every Web steer into it is that device's
-            // (`FloorState::turn_device`).
-            let mut sender = session.floor.turn_device.lock().unwrap_or_else(|e| e.into_inner());
-            if !was_web || sender.as_deref() != device {
-                *sender = (!was_web).then(|| device.map(str::to_owned)).flatten();
+            if !was_web {
+                t.device = device.map(str::to_owned);
+            } else if t.device.as_deref() != device {
+                t.device = None;
             }
-            drop(sender);
+            t.turn_id.clone()
+        });
+        if let Some(turn_id) = raised {
+            session.floor.last_turn_web.store(true, Ordering::SeqCst);
             // Read back when a host is adopted (`hosts.rs`).
             self.append(
                 session,

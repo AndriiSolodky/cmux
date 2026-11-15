@@ -23,6 +23,7 @@ fn fixture() -> (Arc<Hub>, Arc<Session>, String) {
     let hub = Hub::new(cfg, store);
     let session = hub.resolve("mac-chat").unwrap();
     let seq = hub.append(&session, "mux", "turn_started", json!({"turnId": "turn-phone"})).seq;
+    let (device, _) = hub.pairing.issue_phone("phone-iphone").unwrap();
     *session.turn.lock().unwrap() = Some(TurnInfo {
         trigger: false,
         started_at: 1,
@@ -37,10 +38,45 @@ fn fixture() -> (Arc<Hub>, Arc<Session>, String) {
         notice: false,
         persons: false,
         accepted: true,
+        device: Some(device.id.clone()),
     });
-    let (device, _) = hub.pairing.issue_phone("phone-iphone").unwrap();
-    *session.floor.turn_device.lock().unwrap() = Some(device.id.clone());
     (hub, session, device.id)
+}
+
+/// Two of the owner's phones steer the same local turn at once: whatever the interleaving, the
+/// turn they share is no one device's, so neither phone's Full-access exception lifts the floor
+/// for it (`check_steer` promotes the turn and narrows its device in one step under the turn
+/// lock). Split across two locks, phone A's device write could land after phone B's whole steer
+/// and leave the mixed turn A's (review of #43251, P1-F1).
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn concurrent_steers_from_two_devices_never_leave_one_devices_exception() {
+    let (hub, session, _) = fixture();
+    let (a, _) = hub.pairing.issue_phone("phone-a").unwrap();
+    let (b, _) = hub.pairing.issue_phone("phone-b").unwrap();
+    const ROUNDS: usize = 20_000;
+    let mut kept = 0;
+    for round in 0..ROUNDS {
+        let turn_id = format!("turn-{round}");
+        *session.turn.lock().unwrap() =
+            Some(TurnInfo::prompted("mac", "hi", &turn_id, "prompt", Control::Local));
+        let gate = std::sync::Barrier::new(2);
+        std::thread::scope(|s| {
+            for id in [a.id.as_str(), b.id.as_str()] {
+                let (hub, session, gate) = (&hub, &session, &gate);
+                s.spawn(move || {
+                    gate.wait();
+                    hub.check_steer(session, Control::Web, Some(id)).unwrap();
+                });
+            }
+        });
+        let turn = session.turn().unwrap();
+        assert_eq!(turn.control, Control::Web);
+        // A chat in a mode that does not ask: a mixed Web turn is held to the floor.
+        if hub.remote_floor_breach(&session).is_none() {
+            kept += 1;
+        }
+    }
+    assert_eq!(kept, 0, "{kept} of {ROUNDS} turns steered by two phones kept one phone's exception");
 }
 
 fn tool_call(session: &Session) -> Value {

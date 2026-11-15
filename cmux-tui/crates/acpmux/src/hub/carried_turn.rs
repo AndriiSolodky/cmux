@@ -328,7 +328,9 @@ impl Hub {
     pub(super) fn recovered_floor(&self, session: &Session, control: Control) {
         session.floor.last_turn_web.store(control == Control::Web, Ordering::SeqCst);
         // Which device sent it is not kept across a restart.
-        *session.floor.turn_device.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        if let Some(t) = session.turn.lock().unwrap_or_else(|e| e.into_inner()).as_mut() {
+            t.device = None;
+        }
         if control == Control::Web && session.floor.unsandboxed.load(Ordering::SeqCst) {
             self.remote_floor_cancel(session, "remote.unsandboxed_agent");
         }
