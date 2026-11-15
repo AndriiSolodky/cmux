@@ -8,6 +8,7 @@
     hot-apply.py rollback [--app APP] [--socket P]
     hot-apply.py status
     hot-apply.py live-from SHA [--repo DIR] [--max N]
+    hot-apply.py drop-refused-overlay [--app APP]
 
 Leo, 2026-11-06: "how much of this needs a nightly versus, like, us being able to do the hot swap
 thing?" This puts the parts of a merged commit that need no app build into the app that runs now,
@@ -18,7 +19,11 @@ with live_apply.py's rules:
 
   web    webviews/ changed and SHA's web ABI (webviews/src/web-abi.json) equals the app's: the
          bundles published for SHA's source key (fetch-web-bundles.sh) go into the app's web
-         overlay (web-overlay.sh install), and every open page reloads onto them
+         overlay (web-overlay.sh install), and every open page reloads onto them. A commit in the
+         range whose own change edits webviews/ and native code the app is built from (Swift,
+         resources, FFI Rust) holds the web back for a new app: those pages were written against
+         that native side, whatever the ABI integer says (web_needs_native). One whose native side
+         is daemon Rust takes the web only with the Rust part (`web_needs_rust`)
   rust   SHA's cmux-tui tree key differs from the app's and no Rust the app links (its FFI
          crates, scripts/ci/cmux_next_route.py) changed (the C, Objective-C and Zig sources inside
          cmux-tui count as its Rust: the tree build compiles them into bin/cmux or a companion): the cmux binary published for SHA's tree
@@ -63,6 +68,12 @@ line on stdout is the receipt, as JSON; it is also kept in the state folder (las
 history.jsonl), which `rollback` reads to put back the build and overlay that ran before the last
 apply, checked the same way, and the acpmux daemons --acpmux-home restarted. A part that does not
 go back stays in the receipt's `undo`, and `rollback` tries it again. `status` prints the last receipt.
+
+The web undo is what the app served, not the files as they were: when web-dev.json pointed at an
+overlay the app refused (its manifest names another web ABI, so the app served its bundled pages),
+`rollback` puts back no pointer, the bundled pages, and its receipt says so
+(`dropped_refused_pointer`). `plan` names such a pointer in `notes`, and `drop-refused-overlay` drops
+it from an install by itself (web-dev.json's server and gallery entries stay).
 
 The daemon is found from the app: the process running from APP's bin folder whose socket answers
 `server status` with its own pid (--socket names it instead). For a side instance, run
@@ -409,12 +420,49 @@ def abi_at(repo: Path, commit: str) -> int | None:
         return None
 
 
+def web_needs_native(repo: Path, since: str, sha: str) -> tuple[list[dict], list[dict]]:
+    """The commits in SINCE..SHA whose own change pairs web with native code: (those whose native side
+    needs a new app, those whose native side is the daemon's Rust).
+
+    A web bundle calls native code by name (page ops, pane methods, scheme paths, daemon RPCs), and no
+    generated contract covers those names, so the web ABI integer catches only the changes someone
+    remembered to bump it for. What does show is the change itself: a commit that edits webviews/ and
+    the Swift, resources or FFI Rust the app is built from, in one change, is a page and the native side
+    it was written against. Its web can run only on an app that has that native side, so it waits for
+    one; a commit whose native side is daemon Rust needs the Rust part with it. Web-only and native-only
+    commits pair nothing: a web change that leans on an earlier native-only commit without a bump is
+    the bump's to catch (webviews/src/web-abi.json)."""
+    app_side, daemon_side = [], []
+    text = git(repo, "log", "--no-renames", "--name-status", "--format=@@%x00%H%x00%s", f"{since}..{sha}")
+    for chunk in text.split("@@\0")[1:]:
+        head, _, body = chunk.partition("\n")
+        commit, _, subject = head.partition("\0")
+        kinds = live_apply.classify(live_apply.parse_name_status(body), {})["files"]
+        if not kinds.get("web-live"):
+            continue
+        rebuild = kinds.get("rebuild", []) + kinds.get("swift-live", [])
+        rust = kinds.get("daemon", []) + [p for p in rebuild if NATIVE_IN_TUI.match(p)]
+        rebuild = [p for p in rebuild if not NATIVE_IN_TUI.match(p)]
+        linked = linked_rust(repo, rust) if rust else []
+        native = sorted(set(rebuild) | set(linked))
+        entry = {"commit": commit, "subject": subject[:120]}
+        if native:
+            app_side.append({**entry, "native": native[:10]})
+        elif rust:
+            daemon_side.append({**entry, "rust": sorted(rust)[:10]})
+    return app_side, daemon_side
+
+
 def _plan(repo: Path, app: Path, sha: str, branch: bool, given_base: str | None) -> dict:
     base = given_base or app_commit(app, repo)
     for commit in (base, sha):
         if not have_commit(repo, commit):
             raise RuntimeError(f"{commit} is not in {repo} (fetch feat-cmux-next)")
     out = {"sha": sha, "base": base, "app": str(app), "parts": [], "left": {}, "notes": []}
+    if not given_base and (refused := refused_pointer(app)):
+        out["refused_overlay"] = refused
+        out["notes"].append(f"web-dev.json points at {refused['overlay']}: {refused['why']}. "
+                            "`hot-apply.py drop-refused-overlay` drops that pointer; an apply's web part replaces it")
     if is_ancestor(repo, sha, base):
         out["notes"].append("the app already contains SHA")
         return out
@@ -448,10 +496,17 @@ def _plan(repo: Path, app: Path, sha: str, branch: bool, given_base: str | None)
     elif web:
         want = json.loads(git(repo, "show", f"{sha}:webviews/src/web-abi.json"))["abi"]
         have = abi_at(repo, base) if given_base else app_abi(app)
-        if have == want:
-            out["parts"].append("web")
-        else:
+        app_side, daemon_side = web_needs_native(repo, since, sha)
+        if have != want:
             out["left"]["web ABI"] = [f"SHA's web needs ABI {want}, the app has {have}"]
+        elif app_side:
+            # The ABI matches, but a commit since the app's wrote its pages against native code the app lacks.
+            out["left"]["web (needs native code the app lacks)"] = [
+                f"{c['commit'][:10]} {c['subject']}: {', '.join(c['native'])}" for c in app_side]
+        else:
+            out["parts"].append("web")
+            if daemon_side:
+                out["web_needs_rust"] = [c["commit"] for c in daemon_side]
     rust = files.get("daemon", [])
     if rust:
         linked = linked_rust(repo, rust)
@@ -465,6 +520,10 @@ def _plan(repo: Path, app: Path, sha: str, branch: bool, given_base: str | None)
             if helpers:
                 # The daemon part still applies; the helpers built from these files keep the app's build.
                 out["left"]["bundled helpers (cmux-mobile-host, ...)"] = helpers
+    if out.get("web_needs_rust") and "rust" not in out["parts"] and out.get("tree_key") != out.get("base_tree_key"):
+        # The daemon side those pages were written against stays behind with the Rust part: so do they.
+        out["parts"].remove("web")
+        out["left"]["web (needs the Rust part, which waits)"] = out.pop("web_needs_rust")
     return out
 
 
@@ -1015,6 +1074,110 @@ def overlay_restore(live, saved: dict) -> None:
                   "web_dev": base64.b64decode(saved["web_dev"]) if saved["web_dev"] is not None else None})
 
 
+def overlay_pointer(web_dev: bytes | None) -> str | None:
+    """The overlay folder web-dev.json points the app at, read as the app reads it (WebDevOverride.parse):
+    None for no file, invalid JSON, `"enabled": false`, or no usable `overlay`."""
+    try:
+        data = json.loads(web_dev) if web_dev is not None else None
+    except ValueError:
+        return None
+    if not isinstance(data, dict) or data.get("enabled", True) is False or not isinstance(data.get("overlay"), str):
+        return None
+    path = data["overlay"].strip()
+    if path == "~" or path.startswith("~/"):
+        return str(Path.home() / path[2:])
+    return path if path.startswith("/") else None
+
+
+def overlay_refusal(web_dev: bytes | None, manifest: str | None, have: int | None, folder: Path | None = None) -> dict | None:
+    """Why the app refuses the overlay WEB_DEV points at, as WebDevOverride.abiRefusal does: its manifest
+    (MANIFEST, the one in FOLDER, or the pointed folder's own when the pointer names another) names a web
+    ABI that is not the app's (HAVE). None when the app serves it, or when it points at no overlay."""
+    pointer = overlay_pointer(web_dev)
+    if pointer is None or have is None:
+        return None
+    if folder is None or Path(pointer).resolve() != folder.resolve():
+        try:
+            manifest = (Path(pointer) / "manifest.json").read_text()
+        except OSError:
+            return None
+    try:
+        read = json.loads(manifest) if manifest is not None else {}
+    except ValueError:
+        return None
+    abi = read.get("abi") if isinstance(read, dict) else None
+    if not isinstance(abi, int) or isinstance(abi, bool) or abi == have:
+        return None
+    commit = read.get("commit") or "unknown commit"
+    return {"overlay": pointer, "commit": commit, "abi": abi, "app_abi": have,
+            "why": f"the overlay ({commit}) needs web ABI {abi}; this app has {have}, so it serves its bundled pages"}
+
+
+def without_pointer(web_dev: bytes | None) -> bytes | None:
+    """WEB_DEV with its `overlay` pointer dropped (the server and gallery entries stay); None, so the
+    file goes, when nothing else is left in it."""
+    data = json.loads(web_dev)
+    data.pop("overlay", None)
+    if not {k: v for k, v in data.items() if k != "enabled"}:
+        return None
+    return (json.dumps(data, indent=2) + "\n").encode()
+
+
+def in_effect(saved: dict, have: int | None, folder: Path) -> dict:
+    """SAVED (an overlay snapshot) as what the app served then, not as the files were: a pointer at an
+    overlay the app refuses (HAVE, its web ABI) was the app's bundled pages, so it comes back as no
+    pointer. The result names what it dropped under `refused`."""
+    refused = overlay_refusal(base64.b64decode(saved["web_dev"]) if saved.get("web_dev") else None,
+                              saved.get("manifest"), have, folder)
+    if refused is None:
+        return saved
+    dropped = without_pointer(base64.b64decode(saved["web_dev"]))
+    return {**saved, "web_dev": base64.b64encode(dropped).decode() if dropped is not None else None, "refused": refused}
+
+
+def refused_pointer(app: Path) -> dict | None:
+    """web-dev.json's overlay pointer when APP refuses that overlay and serves its bundled pages instead;
+    None when it points at none or the app serves it."""
+    _, web_dev = load("live_apply_loop", "live-apply.py").overlay_paths()
+    try:
+        data = web_dev.read_bytes()
+    except OSError:
+        return None
+    return overlay_refusal(data, None, app_abi(app))
+
+
+def command_drop_refused_overlay(args) -> int:
+    """Drops web-dev.json's pointer at an overlay the app refuses (an older install's, a rollback's from
+    before rollback checked): the app already serves its bundled pages, and now the file says so too.
+    The server and gallery entries stay. A pointer the app serves is left alone."""
+    import fcntl
+    app, state = Path(args.app), state_dir()
+    _, web_dev = load("live_apply_loop", "live-apply.py").overlay_paths()
+    receipt = {"action": "drop-refused-overlay", "app": str(app), "web_dev": str(web_dev), "dropped": None,
+               "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+    if web_dev.parent.is_dir():
+        with open(web_dev.parent / ".web-dev.lock", "a") as lock:  # web-overlay.sh's lock
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            try:
+                data = web_dev.read_bytes()
+            except OSError:
+                data = None
+            refused = overlay_refusal(data, None, app_abi(app))
+            if refused:
+                kept = without_pointer(data)
+                if kept is None:
+                    web_dev.unlink()
+                else:
+                    write_atomic(web_dev, kept)
+                receipt["dropped"] = refused
+                receipt["web_dev_now"] = "removed" if kept is None else "kept without its overlay pointer"
+    receipt["note"] = (f"dropped the pointer at {receipt['dropped']['overlay']}: {receipt['dropped']['why']}"
+                       if receipt["dropped"] else "web-dev.json points at no overlay this app refuses: nothing to drop")
+    log(receipt["note"])
+    record(state, receipt, last=False)  # `rollback` still puts back the last apply
+    return 0
+
+
 def overlay_commit(live) -> str | None:
     overlay, _ = live.overlay_paths()
     try:
@@ -1145,6 +1308,10 @@ def command_apply(args) -> int:
     t0 = time.monotonic()
     planned = plan(repo, app, args.sha, args.branch, args.base)
     parts = [p for p in planned["parts"] if p in args.parts.split(",")]
+    if "web" in parts and "rust" not in parts and planned.get("web_needs_rust"):
+        # --parts web alone: those pages call daemon code only the Rust part brings.
+        parts.remove("web")
+        planned["left"]["web (needs the Rust part: --parts web,rust)"] = planned["web_needs_rust"]
     receipt = {"action": args.command if args.dry_run and args.command == "prefetch" else
                "dry-run" if args.dry_run else "apply", **planned, "applied": [], "rolled_back": False,
                "steps": {}, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
@@ -1210,8 +1377,12 @@ def command_apply(args) -> int:
                 receipt["unchanged"].append("web")
                 receipt["steps"]["web"] = {"key": key, "commit": overlay_commit(live), "unchanged": True}
             else:
-                undo["web"] = overlay_snapshot(live)
+                # What the app served before, not the files as they were: a pointer at an overlay the app
+                # refuses was its bundled pages, so that is what `rollback` puts back.
+                undo["web"] = in_effect(overlay_snapshot(live), app_abi(app), live.overlay_paths()[0])
                 receipt["steps"]["web"] = apply_web(repo, args.sha, live)
+                if undo["web"].get("refused"):
+                    receipt["steps"]["web"]["replaced_refused_overlay"] = undo["web"]["refused"]
                 receipt["applied"].append("web")
     except Exception as error:  # noqa: BLE001 - any failed step puts back what ran before
         receipt["error"] = str(error)
@@ -1255,8 +1426,16 @@ def put_back(app: Path, undo: dict, socket: str | None, state: Path, live) -> di
     out: dict = {}
     if "web" in undo:
         try:
-            overlay_restore(live, undo["web"])
-            out["web"] = {"ok": True, "commit": overlay_commit(live)}
+            # An undo written before apply checked this (or an app updated since) is checked here too.
+            saved = in_effect(undo["web"], app_abi(app), live.overlay_paths()[0])
+            overlay_restore(live, saved)
+            if saved.get("refused"):
+                out["web"] = {"ok": True, "commit": None, "in_effect": "the app's bundled pages",
+                              "dropped_refused_pointer": saved["refused"]}
+            else:
+                pointer = overlay_pointer(base64.b64decode(saved["web_dev"]) if saved.get("web_dev") else None)
+                out["web"] = {"ok": True, "commit": overlay_commit(live) if pointer else None,
+                              "in_effect": f"the overlay at {pointer}" if pointer else "the app's bundled pages"}
         except Exception as error:  # noqa: BLE001
             out["web"] = {"ok": False, "error": str(error)}
     if "rust" in undo:
@@ -1357,6 +1536,9 @@ def main(argv=None) -> int:
     p.add_argument("--app")
     p.add_argument("--socket")
     sub.add_parser("status")
+    p = sub.add_parser("drop-refused-overlay",
+                       help="drop web-dev.json's pointer at an overlay the app refuses (it serves its bundled pages)")
+    p.add_argument("--app", default=DEFAULT_APP)
     args = parser.parse_args(argv)
     if getattr(args, "sha", None) is not None:
         args.sha = git(Path(args.repo), "rev-parse", "--verify", f"{args.sha}^{{commit}}", check=False) or args.sha
@@ -1365,7 +1547,8 @@ def main(argv=None) -> int:
             return 2
     try:
         return {"plan": command_plan, "apply": command_apply, "prefetch": command_prefetch, "rollback": command_rollback,
-                "status": command_status, "live-from": command_live_from}[args.command](args)
+                "status": command_status, "live-from": command_live_from,
+                "drop-refused-overlay": command_drop_refused_overlay}[args.command](args)
     except RuntimeError as error:
         print(f"hot-apply: {error}", file=sys.stderr)
         return 3
