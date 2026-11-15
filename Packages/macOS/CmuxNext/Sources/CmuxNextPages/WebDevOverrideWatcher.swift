@@ -73,6 +73,7 @@ public final class WebDevOverrideWatcher {
     private func apply(_ value: WebDevOverride) {
         watchManifest(of: value.overlay)
         guard WebDevOverride.update(value) else { return }
+        NotificationCenter.default.post(name: WebDevOverride.didChange, object: nil)
         if let refusal = value.refusal {
             Logger(subsystem: "com.cmuxterm.app.next", category: "web-dev").notice("overlay refused: \(refusal, privacy: .public)")
         }

@@ -49,10 +49,24 @@ public final class SettingsCustomizeLibrary: PageProvider {
                 throw PageError(code: PageNativeOp.userOnlyCode, message: "\(verb) needs a click in the page")
             }
         }
+        return try await answer(arguments)
+    }
+
+    /// Posted after a change verb (`on`, `off`, `order`, `remove`) ran to a success, from the page or the
+    /// sidebar's experiments mark (``CustomizeExperiments`` reads the library again on it).
+    public static let didChange = Notification.Name("cmux.settings.customize.library.didChange")
+
+    /// Runs `arguments` (``arguments(_:)``) through the bundled CLI and answers its JSON, or its error
+    /// envelope on a refusal (`code`, `message`). Not gated: the page's call checks the gesture first, and
+    /// the sidebar's experiments mark runs only on the person's click.
+    func answer(_ arguments: [String]) async throws -> JSONValue {
         guard let binary = await cli() else { throw PageError(code: "cmux.page.unavailable", message: "no cmux CLI") }
         var environment = ProcessInfo.processInfo.environment
         if let file = settingsFile() { environment["CMUX_NEXT_CONFIG_FILE"] = file.path }
         let (status, stdout, stderr) = try await runCLI(binary, arguments, environment)
+        if status == 0, let verb = arguments.dropFirst(3).first, Self.changes.contains(verb) {
+            NotificationCenter.default.post(name: Self.didChange, object: self)
+        }
         // A refusal is the CLI's envelope on stderr (`code`, `message`): the page shows its words.
         return (try? JSONValue.parse(status == 0 ? stdout : stderr)) ?? .object([:])
     }

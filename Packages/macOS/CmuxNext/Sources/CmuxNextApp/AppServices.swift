@@ -534,6 +534,14 @@ final class AppServices {
     /// (plans/cmux-next/hovercards.md).
     let hoverCards = HoverCardCoordinator()
     let overlayProcess = PageOverlayProcess() // the overlay pages' one web content process, handed to each page's owner
+    /// The pull requests whose pages are on (`cmux customize use pr:N`), for each window's sidebar mark.
+    private(set) lazy var customizeExperiments: CustomizeExperiments = {
+        let library = SettingsCustomizeLibrary(cli: { [bundled = bundledCLI] in await bundled.resolve() },
+                                               settingsFile: { [weak self] in self?.settings?.file.url })
+        let experiments = CustomizeExperiments(library: library)
+        experiments.start()
+        return experiments
+    }()
     private(set) lazy var healthFeeds = AppHealthFeeds(daemon: daemon, stateDirectory: environment.daemonStateDirectory, work: work, overlayProcess: overlayProcess) // app health (CmuxNextAppHealth)
     let toasts = CmuxToastOverlayHost(drawing: .shared) // the shared center's toasts draw as native views on the window's overlay
     /// Refusal messages for keyboard and menu runs.

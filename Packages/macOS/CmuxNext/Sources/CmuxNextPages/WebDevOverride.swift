@@ -58,6 +58,11 @@ public nonisolated struct WebDevOverride: Sendable, Equatable {
     /// Whether pages load from a server or an overlay (an empty override serves the bundle).
     public var isActive: Bool { server != nil || overlay != nil }
 
+    /// Posted on the main actor when ``current`` changed (``WebDevOverrideWatcher`` read a new
+    /// `web-dev.json` or overlay manifest): a pull request's pages came on or went off
+    /// (``CustomizeExperiments``).
+    public static let didChange = Notification.Name("cmux.webDevOverride.didChange")
+
     /// The file's name, next to `cmux-next.json`.
     public static let fileName = "web-dev.json"
     /// The file an overlay install writes last.
