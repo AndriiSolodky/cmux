@@ -276,7 +276,7 @@ try {
 
     const server = await chromium.launchServer({
       headless: true,
-      args: ["--process-per-site", "--js-flags=--expose-gc"],
+      args: ["--process-per-site", `--js-flags=--expose-gc ${process.env.XJS ?? ""}`.trim()],
     });
     const root = server.process().pid!;
     const browser = await chromium.connect(server.wsEndpoint());
@@ -435,6 +435,11 @@ try {
             document.dispatchEvent(new Event("visibilitychange"));
           });
         await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+      if (process.env.XGC === "1") {
+        const t = performance.now();
+        for (const { cdp } of pages) await cdp.send("HeapProfiler.collectGarbage");
+        console.log(`  ${name}: forced GC before idle in ${(performance.now() - t).toFixed(0)} ms`);
       }
       const shownProfiler = pages.at(-1)!.cdp;
       // Each reading is the median of REPEAT windows, so one noisy window on a shared runner cannot set the run's max
