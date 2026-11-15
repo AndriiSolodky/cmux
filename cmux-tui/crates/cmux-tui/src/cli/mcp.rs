@@ -35,6 +35,7 @@ mod customize_tools;
 mod keybinding_tools;
 mod live_code_tools;
 mod messages;
+mod keys_tools;
 mod open_tool;
 mod placement;
 mod remote_tools;
@@ -846,6 +847,7 @@ impl<B: Backend> Server<B> {
         tools.extend(terminal_talk_tools::descriptors());
         tools.push(render_tool::descriptor());
         tools.push(open_tool::descriptor());
+        tools.extend(keys_tools::descriptors());
         tools.extend(video_tools::descriptors());
         tools.extend(remote_tools::TOOLS.iter().map(remote_tools::RemoteTool::descriptor_json));
         tools
@@ -1093,6 +1095,9 @@ impl<B: Backend> Server<B> {
         }
         if let Some(result) = self.call_video(name, &arguments) {
             return Ok(result);
+        }
+        if keys_tools::owns(name) {
+            return Ok(self.call_keys(name, &arguments));
         }
         if name == open_tool::NAME {
             if !self.actions_loaded {

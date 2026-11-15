@@ -19,6 +19,10 @@
 //! pipes (`gh secret set`, `security -i`) and are never printed, logged or put in argv.
 //! `~/.config/cmux/keys.json` (0600) is the audit: providers, and for each minted key its provider id,
 //! scope, expiry, where it was stored and who asked, never a value. docs/cmux-next/keys.md is the design.
+//!
+//! Keys from any other provider (one an agent got from an API or CLI, one the person pastes once, a
+//! generated one) are stored, used as env, written and filled by `local.rs`: `cmux keys put|generate|
+//! request|use|write|fill|rm`. Cloudflare minting is one provider among them.
 
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
@@ -29,6 +33,8 @@ use sha2::{Digest as _, Sha256};
 use zeroize::Zeroizing;
 
 use super::UsageError;
+
+pub(super) mod local;
 
 /// The Keychain service of a provider's bootstrap token; the account is `<provider>/<account id>`.
 const PROVIDER_SERVICE: &str = "cmux-key-provider";
@@ -41,9 +47,9 @@ const R2_ADMIN_WRITE: &str = "Workers R2 Storage Write";
 const R2_ITEM_WRITE: &str = "Workers R2 Storage Bucket Item Write";
 const R2_ITEM_READ: &str = "Workers R2 Storage Bucket Item Read";
 
-const USAGE: &str = "usage: cmux keys connect cloudflare --account ACCOUNT_ID\n       \
-cmux keys mint cloudflare-r2 --bucket B (--rw|--ro) [--ttl 90d] [--create-bucket] [--expire-objects-days N] --store SPEC...\n       \
-cmux keys ls\n       cmux keys revoke ID\n\
+const USAGE: &str = "usage: cmux keys ls\n       cmux keys revoke ID|NAME\n       \
+cmux keys connect cloudflare --account ACCOUNT_ID\n       \
+cmux keys mint cloudflare-r2 --bucket B (--rw|--ro) [--ttl 90d] [--create-bucket] [--expire-objects-days N] --store SPEC...\n\
 SPEC: gh-secret:OWNER/REPO[@ENV]:PREFIX, keychain:[OWNER/REPO:]PREFIX or vault:PREFIX";
 
 /// `Some(exit code)` when `args` is `keys …`.
@@ -65,10 +71,35 @@ pub(super) fn run_if_requested(args: &[String]) -> Option<i32> {
         }
     };
     if command == Command::Help {
-        println!("{USAGE}");
+        println!("{USAGE}\n       {}", local::USAGE);
         return Some(0);
     }
-    let result = Paths::home().and_then(|paths| run(command, &paths, &Live::new()?, &LiveSinks));
+    if let Command::Local(local::Local::Use(run)) = &command {
+        // The command's own exit code and output (masked), not a reply.
+        let ran = Paths::home().and_then(|paths| {
+            local::run_use(&paths, &local::OsVault, run, std::io::stdout(), std::io::stderr())
+        });
+        return Some(match ran {
+            Ok(code) => code,
+            Err(message) => {
+                super::app::failure("keys.failed", &format!("cmux: {message}"), global.output, 1)
+            }
+        });
+    }
+    let result = Paths::home().and_then(|paths| match command {
+        Command::Local(local) => local::run(
+            local,
+            &paths,
+            &local::OsVault,
+            &LiveSinks,
+            &local::LiveApp(&global),
+            &|name| {
+                acpmux::cli::harness_secret::read_value(name)
+                    .map_err(|e| e.to_string())
+            },
+        ),
+        command => run(command, &paths, &Live::new()?, &LiveSinks, &local::OsVault),
+    });
     Some(match result {
         Ok(answer) => super::wire::print_local_success(&answer, global.output),
         Err(message) => {
@@ -84,6 +115,8 @@ pub(super) enum Command {
     MintR2(MintR2),
     Ls,
     Revoke { id: String },
+    /// Keys from any provider: put, generate, request, use, write, fill.
+    Local(local::Local),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -114,6 +147,9 @@ pub(super) enum Store {
     /// on the wire, so the egress proxy has no placeholder it could fill.
     Vault {
         prefix: String,
+        /// The hosts a kept key is filled toward (`--host`, a `cmux-secret://` placeholder the
+        /// egress proxy fills); none keeps it as a plain env value (`--env`).
+        hosts: Vec<String>,
     },
 }
 
@@ -158,34 +194,57 @@ impl Store {
             if !valid_prefix(prefix) {
                 return Err(bad());
             }
-            return Ok(Self::Vault { prefix: prefix.to_owned() });
+            return Ok(Self::Vault { prefix: prefix.to_owned(), hosts: Vec::new() });
         }
         Err(bad())
     }
 
     /// The store's full name of one value: `PREFIX_SUFFIX` where it lives.
     fn label(&self, suffix: &str) -> String {
+        self.place(&self.name(suffix))
+    }
+
+    /// Where the value named `name` lives in this store.
+    fn place(&self, name: &str) -> String {
         match self {
-            Self::GhSecret { repo, environment: Some(env), prefix } => {
-                format!("gh-secret:{repo}@{env}:{prefix}_{suffix}")
+            Self::GhSecret { repo, environment: Some(env), .. } => {
+                format!("gh-secret:{repo}@{env}:{name}")
             }
-            Self::GhSecret { repo, environment: None, prefix } => {
-                format!("gh-secret:{repo}:{prefix}_{suffix}")
+            Self::GhSecret { repo, environment: None, .. } => format!("gh-secret:{repo}:{name}"),
+            Self::Keychain { scope, .. } => {
+                format!("keychain:{}/{name}", scope.as_deref().unwrap_or("*"))
             }
-            Self::Keychain { scope, prefix } => {
-                format!("keychain:{}/{prefix}_{suffix}", scope.as_deref().unwrap_or("*"))
-            }
-            Self::Vault { prefix } => format!("vault:{prefix}_{suffix}"),
+            Self::Vault { .. } => format!("vault:{name}"),
         }
     }
 
-    fn name(&self, suffix: &str) -> String {
+    /// The place of the one value `cmux keys write` puts here: the spec's last part is its whole
+    /// name, not a prefix.
+    fn spot(&self) -> String {
+        self.place(self.prefix())
+    }
+
+    fn prefix(&self) -> &str {
         match self {
             Self::GhSecret { prefix, .. }
             | Self::Keychain { prefix, .. }
-            | Self::Vault { prefix } => {
-                format!("{prefix}_{suffix}")
-            }
+            | Self::Vault { prefix, .. } => prefix,
+        }
+    }
+
+    /// `PREFIX_SUFFIX`, or the bare prefix for an empty suffix (`cmux keys write`).
+    fn name(&self, suffix: &str) -> String {
+        if suffix.is_empty() {
+            return self.prefix().to_owned();
+        }
+        format!("{}_{suffix}", self.prefix())
+    }
+
+    /// This store, filling a kept key only toward `hosts` (a key's scope) when it has any.
+    fn with_hosts(self, hosts: &[String]) -> Self {
+        match self {
+            Self::Vault { prefix, .. } => Self::Vault { prefix, hosts: hosts.to_vec() },
+            other => other,
         }
     }
 }
@@ -252,13 +311,17 @@ fn parse_ttl(text: &str) -> Result<Duration, UsageError> {
 pub(super) fn parse(args: &[String]) -> Result<Command, UsageError> {
     let usage = || UsageError::new(USAGE);
     let Some((verb, rest)) = args.split_first() else { return Ok(Command::Help) };
+    if let Some(local) = local::parse(verb, rest) {
+        return local.map(Command::Local);
+    }
     match (verb.as_str(), rest) {
         ("--help" | "-h" | "help", []) => Ok(Command::Help),
         ("ls" | "list", []) => Ok(Command::Ls),
-        ("revoke", [id])
+        // A minted key's provider id, or a stored key's NAME.
+        ("revoke" | "rm", [id])
             if !id.is_empty()
-                && id.len() <= 64
-                && id.chars().all(|c| c.is_ascii_alphanumeric()) =>
+                && id.len() <= 80
+                && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') =>
         {
             Ok(Command::Revoke { id: id.clone() })
         }
@@ -407,7 +470,7 @@ impl Http for Live {
     }
 }
 
-struct LiveSinks;
+pub(super) struct LiveSinks;
 
 impl Sinks for LiveSinks {
     fn provider_token(&self, provider_account: &str) -> Result<Zeroizing<String>, String> {
@@ -468,12 +531,16 @@ impl Sinks for LiveSinks {
                 let account = format!("{}/{name}", scope.as_deref().unwrap_or("*"));
                 super::cloud_secret::store_value(&account, value)
             }
-            Store::Vault { .. } => pipe_to(
-                "acpmux",
-                &["machine", "vault", "keep", name, "--env"],
-                value,
-                &format!("acpmux machine vault keep {name}"),
-            ),
+            Store::Vault { hosts, .. } => {
+                let mut args = vec!["machine", "vault", "keep", name];
+                if hosts.is_empty() {
+                    args.push("--env");
+                }
+                for host in hosts {
+                    args.extend(["--host", host.as_str()]);
+                }
+                pipe_to("acpmux", &args, value, &format!("acpmux machine vault keep {name}"))
+            }
         }
     }
 }
@@ -505,7 +572,7 @@ pub(super) struct Paths {
 }
 
 impl Paths {
-    fn home() -> Result<Self, String> {
+    pub(super) fn home() -> Result<Self, String> {
         let home = std::env::var_os("HOME").ok_or("HOME is not set")?;
         Ok(Self { audit: PathBuf::from(home).join(".config/cmux/keys.json") })
     }
@@ -825,31 +892,34 @@ fn cloudflare_account(audit: &Value, wanted: Option<&str>) -> Result<String, Str
     }
 }
 
+/// Every provider and every key, each with its state and the fields a list shows, never a value.
+pub(super) fn list(paths: &Paths) -> Result<Value, String> {
+    let _lock = AuditLock::take(&paths.audit)?;
+    let mut audit = read_audit(&paths.audit)?;
+    let now = now_secs();
+    for key in audit["keys"].as_array_mut().into_iter().flatten() {
+        local::listed(key, now);
+    }
+    Ok(audit)
+}
+
 pub(super) fn run(
     command: Command,
     paths: &Paths,
     http: &dyn Http,
     sinks: &dyn Sinks,
+    vault: &dyn local::KeyVault,
 ) -> Result<Value, String> {
     match command {
         Command::Help => Ok(json!({"usage": USAGE})),
-        Command::Ls => {
-            let _lock = AuditLock::take(&paths.audit)?;
-            let mut audit = read_audit(&paths.audit)?;
-            let now = now_secs();
-            for key in audit["keys"].as_array_mut().into_iter().flatten() {
-                let expired =
-                    key.get("expires_at_s").and_then(Value::as_u64).is_some_and(|at| at <= now);
-                let state = if key.get("revoked_at").is_some_and(|v| !v.is_null()) {
-                    "revoked"
-                } else if expired {
-                    "expired"
-                } else {
-                    "live"
-                };
-                key["state"] = json!(state);
-            }
-            Ok(audit)
+        Command::Ls => list(paths),
+        Command::Local(_) => Err("a stored key's command: local::run".into()),
+        Command::Revoke { id }
+            if read_audit(&paths.audit)?["keys"].as_array().is_some_and(|keys| {
+                keys.iter().any(|k| k["provider"] == "local" && k["name"] == id.as_str())
+            }) =>
+        {
+            local::revoke(paths, vault, &id)
         }
         Command::Connect { account } => {
             let token = sinks.read_bootstrap()?;
@@ -1100,6 +1170,7 @@ mod tests {
             &paths,
             &FakeCloudflare::new(true),
             &FakeSinks::default(),
+            &local::tests::MemoryVault::default(),
         )
         .unwrap();
         paths
@@ -1165,7 +1236,7 @@ mod tests {
         let paths = Paths { audit: dir.path().join("keys.json") };
         let sinks = FakeSinks::default();
         let http = FakeCloudflare::new(true);
-        run(Command::Connect { account: ACCOUNT.into() }, &paths, &http, &sinks).unwrap();
+        run(Command::Connect { account: ACCOUNT.into() }, &paths, &http, &sinks, &local::tests::MemoryVault::default()).unwrap();
         assert_eq!(
             sinks.saved.borrow().as_slice(),
             &[(format!("cloudflare/{ACCOUNT}"), "bootstrap".to_owned())]
@@ -1188,7 +1259,7 @@ mod tests {
         .unwrap() else {
             panic!()
         };
-        let answer = run(Command::MintR2(mint), &paths, &http, &sinks).unwrap();
+        let answer = run(Command::MintR2(mint), &paths, &http, &sinks, &local::tests::MemoryVault::default()).unwrap();
         let tokens = format!("/accounts/{ACCOUNT}/tokens");
         let buckets = format!("/accounts/{ACCOUNT}/r2/buckets");
         assert_eq!(
@@ -1251,7 +1322,7 @@ mod tests {
         else {
             panic!()
         };
-        let error = run(Command::MintR2(mint), &paths, &http, &sinks).unwrap_err();
+        let error = run(Command::MintR2(mint), &paths, &http, &sinks, &local::tests::MemoryVault::default()).unwrap_err();
         assert!(error.contains("revoked"), "{error}");
         assert!(http.paths().last().unwrap().ends_with("/tokens/key-id"));
         assert!(!std::fs::read_to_string(&paths.audit).unwrap().contains("key-id"));
@@ -1268,16 +1339,16 @@ mod tests {
         else {
             panic!()
         };
-        run(Command::MintR2(mint), &paths, &http, &FakeSinks::default()).unwrap();
-        let listed = run(Command::Ls, &paths, &http, &FakeSinks::default()).unwrap();
+        run(Command::MintR2(mint), &paths, &http, &FakeSinks::default(), &local::tests::MemoryVault::default()).unwrap();
+        let listed = run(Command::Ls, &paths, &http, &FakeSinks::default(), &local::tests::MemoryVault::default()).unwrap();
         assert_eq!(listed["keys"][0]["state"], "live");
-        run(Command::Revoke { id: "key-id".into() }, &paths, &http, &FakeSinks::default()).unwrap();
+        run(Command::Revoke { id: "key-id".into() }, &paths, &http, &FakeSinks::default(), &local::tests::MemoryVault::default()).unwrap();
         assert_eq!(
             http.paths().last().unwrap(),
             &format!("DELETE /accounts/{ACCOUNT}/tokens/key-id")
         );
         assert_eq!(
-            run(Command::Ls, &paths, &http, &FakeSinks::default()).unwrap()["keys"][0]["state"],
+            run(Command::Ls, &paths, &http, &FakeSinks::default(), &local::tests::MemoryVault::default()).unwrap()["keys"][0]["state"],
             "revoked"
         );
     }
