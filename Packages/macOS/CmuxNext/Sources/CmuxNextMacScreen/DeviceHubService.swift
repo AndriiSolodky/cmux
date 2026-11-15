@@ -61,8 +61,6 @@ public final class DeviceHubService {
     /// The signed-in account's user id; nil when signed out.
     private var user: String?
     private var watch: Task<Void, Never>?
-    /// Follows this Mac's kind (``follow(deviceKind:)``).
-    private var kindWatch: Task<Void, Never>?
     /// Follows the running hub's socket: another device removed this Mac.
     private var removalWatch: Task<Void, Never>?
     private struct TrackedTask {
@@ -88,11 +86,6 @@ public final class DeviceHubService {
     public var makeRemoteHub: (@MainActor (URL, String) async throws -> DeviceHub?)?
     /// The running hub, its account and address after every change (the App anchors cmux Remote).
     public var hubChanged: (@MainActor (DeviceHub?, String?, URL?) -> Void)?
-    /// This Mac's kind as its daemon reports it (`identify` `machine_device`: `macbook`, `mac-mini`),
-    /// which the hub records so the other devices draw what it is. The App sets it.
-    public var deviceKind: String? {
-        didSet { hub?.reportKind(deviceKind) }
-    }
 
     public init(pages: MacScreenPages, account: Account, bundleIdentifier: String?, loginKeychain: LoginKeychain, selectedBaseURL: URL? = nil,
                 retryClock: any Clock<Duration> = ContinuousClock(), makeAppHub: AppHubFactory? = nil) {
@@ -130,13 +123,10 @@ public final class DeviceHubService {
         loading?.cancel()
         watch?.cancel()
         removalWatch?.cancel()
-        kindWatch?.cancel()
     }
 
     /// Follows the hub address and the account from now on.
-    /// `deviceKind`, when given, is what kind of Mac this is (``follow(deviceKind:)``).
-    public func start(settings: SettingsController, deviceKind: (@MainActor () -> String?)? = nil) {
-        if let deviceKind { follow(deviceKind: deviceKind) }
+    public func start(settings: SettingsController) {
         guard watch == nil else { return }
         let account = account, selectedBaseURL = selectedBaseURL
         // task-owner: DeviceHubService.watch: follows deviceHub.url and sign-in for the app's life
@@ -149,20 +139,6 @@ public final class DeviceHubService {
                 self.user = user
                 pages.hubConfigured = url != nil
                 reconcile()
-            }
-        }
-    }
-
-    /// Follows what kind of Mac this is (`kind`: the local daemon's `identify` `machine_device`, read
-    /// under Observation) for the app's life, so the hub records it and Screen Sharing on the
-    /// other devices draws a MacBook or a Mac mini. A nil read (no daemon yet) keeps the last kind.
-    public func follow(deviceKind kind: @escaping @MainActor () -> String?) {
-        guard kindWatch == nil else { return }
-        // task-owner: DeviceHubService.kindWatch: lives with the app; follows the daemon across reconnects
-        kindWatch = Task { [weak self] in
-            for await next in ObservationStream(kind) {
-                guard let self else { return }
-                if let next { deviceKind = next }
             }
         }
     }
@@ -246,7 +222,6 @@ public final class DeviceHubService {
     private func install(_ hub: DeviceHub, url: URL, user: String) {
         self.hub = hub
         running = (url, user)
-        hub.deviceKind = deviceKind
         pages.hub = hub
         // task-owner: one registration and socket start; stop() cancels the socket
         trackHubStart(Task { await hub.start() })
