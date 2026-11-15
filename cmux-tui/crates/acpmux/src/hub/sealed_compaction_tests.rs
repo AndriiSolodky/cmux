@@ -318,14 +318,20 @@ const PAGES: &[(usize, Option<usize>)] = &[
 fn a_live_chats_sealed_segments_compact_and_every_page_shows_the_same() {
     let root = tempfile::tempdir().unwrap();
     let sessions = root.path().join("sessions");
-    let log = coordinator_chat(60);
-    write_chat(&sessions, "live", &log);
+    write_chat(&sessions, "live", &coordinator_chat(60));
     let events = sessions.join("live").join("events");
+    let hub = hub(Box::new(LocalStore::new(sessions.clone(), SEGMENT).unwrap()));
+    // The log as the hub holds it (it may log records of its own as it opens the chat).
+    let pages_of =
+        |logged: &[EventRecord]| -> Vec<Vec<u64>> {
+            PAGES.iter().map(|(limit, bytes)| page_back(&hub, "live", logged, *limit, *bytes)).collect()
+        };
+    let _ = pages_of(&all(hub.store.as_ref(), "live"));
+    let log = all(hub.store.as_ref(), "live");
+    let before_pages = pages_of(&log);
+    assert_eq!(all(hub.store.as_ref(), "live"), log, "nothing logged while paging");
     let before_files = segments(&events);
     assert!(before_files.len() >= 5, "{} segments", before_files.len());
-    let hub = hub(Box::new(LocalStore::new(sessions.clone(), SEGMENT).unwrap()));
-    let before_pages: Vec<Vec<u64>> =
-        PAGES.iter().map(|(limit, bytes)| page_back(&hub, "live", &log, *limit, *bytes)).collect();
 
     let stats = hub.compact_sealed("live", usize::MAX).unwrap();
 
