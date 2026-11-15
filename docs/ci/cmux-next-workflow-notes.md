@@ -3127,4 +3127,5 @@ queued runs had spent it. The red step could not be re-run, because a
 for over an hour, so the green pull request (#43350) was held. The cmux-bot
 App token has its own budget; scripts/ci/post_same_tree_status.sh moves to it
 on the first refusal, then waits out a rate limit inside a bounded budget,
-and only then turns the step red.
+and only then turns the step red. The App key is a repository secret, so both jobs run
+in the secrets-only ci-routing-agent environment off pull_request events, like swift-test.

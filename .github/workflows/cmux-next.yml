@@ -4571,6 +4571,8 @@ jobs:
     # Why: docs/ci/cmux-next-workflow-notes.md#note-240
     if: ${{ inputs.same_tree_origin != 'push' && !cancelled() && (needs.web-bundles.result == 'success' || needs.web-bundles.result == 'skipped') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository || contains(github.event.pull_request.labels.*.name, 'full-ci')) && ((inputs.same_tree_sha == '' && needs.path_route.outputs.daemon == 'true' && needs.push-head-preflight.outputs.current == 'true' && needs.path_route.outputs.tree_state == 'ready') || (inputs.same_tree_sha != '' && inputs.same_tree_state == 'ready' && contains(inputs.same_tree_tiers, 'daemon'))) }}
     name: cmux-next daemon tests
+    # Why: docs/ci/cmux-next-workflow-notes.md#note-352 (the cmux-bot status token's key)
+    environment: ${{ github.event_name != 'pull_request' && 'ci-routing-agent' || '' }}
     # A push's Mac job waits for the same job of the running push run and is
     # never cancelled once it runs; a newer push replaces only the waiting one
     # (see the workflow concurrency comment).
@@ -5966,6 +5968,8 @@ jobs:
     # Why: docs/ci/cmux-next-workflow-notes.md#note-294
     if: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci') || github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.author_association == 'MEMBER' || github.event.pull_request.author_association == 'OWNER') && contains(github.event.pull_request.labels.*.name, 'dev-build')) && (!cancelled() && ((inputs.same_tree_sha == '' && needs.path_route.outputs.scheme == 'true' && needs.push-head-preflight.outputs.current == 'true' && (needs.path_route.outputs.tree_state == 'ready' || needs.dev-daily-tree-wait.outputs.tree_state == 'ready')) || (inputs.same_tree_sha != '' && inputs.same_tree_state == 'ready' && contains(inputs.same_tree_tiers, 'scheme')))) }}
     name: ${{ inputs.dev_daily == true && 'cmux NEXT DEV Release compile' || 'cmux app scheme compile (Debug)' }}
+    # Why: docs/ci/cmux-next-workflow-notes.md#note-352 (the cmux-bot status token's key)
+    environment: ${{ github.event_name != 'pull_request' && 'ci-routing-agent' || '' }}
     # A push's Mac fallback waits only when the fleet compile check gives no verdict.
     # It is never cancelled once it runs; a newer push is filtered by the head
     # preflight before it can take a runner.
