@@ -2449,6 +2449,8 @@ Above `daemon-test: Report the same-tree result on the tested commit` in `.githu
 
 Same-tree mode: the result goes on the commit the run was for (a push,
 or the pull request head), whichever ref the dispatch ran on.
+The job posts it itself the moment it ends, never a run-level summary: a re-run
+of one failed job cannot start while any other job in the run is still queued.
 
 ## note-265
 
@@ -2883,10 +2885,13 @@ concurrency group is no red here: the newer push's run carries the verdict
 
 ## note-327
 
-Above `crash-ends-app: Report the same-tree result on the tested commit` in `.github/workflows/cmux-next.yml`.
+Above `cmux-scheme-compile: Report the same-tree result on the tested commit` in `.github/workflows/cmux-next.yml`.
 
 Same-tree mode: the result goes on the commit the run was for (a push,
-or the pull request head), whichever ref the dispatch ran on.
+or the pull request head), whichever ref the dispatch ran on. It used to sit in
+crash-ends-app, whose `permissions: {}` token could never post a status and which
+is skipped on the DEV daily; the compile job posts it now, with the crash gate's
+red folded in (SAME_TREE_STATUS_FROM_JOB).
 
 ## note-328
 
@@ -3109,3 +3114,17 @@ macOS job must select an owned sim-first or side route before its Blacksmith ove
 Blacksmith macOS label directly in `runs-on`. `BlacksmithMacosOffSwitch.test_every_blacksmith_macos_job_is_behind_the_off_switch`
 scans every workflow file and evaluates each route expression; add a regression case when a new picker shape is
 introduced so a direct label cannot return silently during a later attempt.
+
+## note-352
+
+Above `daemon-test: Mint the cmux-bot same-tree status token` and `cmux-scheme-compile: Mint the cmux-bot same-tree status token` in `.github/workflows/cmux-next.yml`.
+
+SAME_TREE_STATUS_FROM_JOB (2026-11-14, hq#11150). Run 43660624788's daemon
+tests passed and the status post got HTTP 403 on the workflow token: every
+workflow run in the repository shares that token's hourly budget, and ~750
+queued runs had spent it. The red step could not be re-run, because a
+`--failed` re-run waits for the whole run and its scheme compile sat queued
+for over an hour, so the green pull request (#43350) was held. The cmux-bot
+App token has its own budget; scripts/ci/post_same_tree_status.sh moves to it
+on the first refusal, then waits out a rate limit inside a bounded budget,
+and only then turns the step red.

@@ -30,8 +30,11 @@ class SameTreeStatusNeverSilent(unittest.TestCase):
         for step in posts:
             self.assertNotIn("continue-on-error", step)
             self.assertNotIn("::warning::could not post", step["run"])
-            self.assertIn("for wait in", step["run"])
-            self.assertIn("exit 1", step["run"])
+            # the bounded retry and the red live in the shared post (SAME_TREE_STATUS_FROM_JOB)
+            self.assertIn("scripts/ci/post_same_tree_status.sh", step["run"])
+        post = (ROOT / "scripts" / "ci" / "post_same_tree_status.sh").read_text()
+        self.assertIn("::error title=same-tree status not posted::", post)
+        self.assertIn("exit 1", post)
 
     def test_a_pull_request_never_defers_to_a_publisher_it_could_not_find(self):
         probe = PIN.read_text().split("probe_checkout_tree() {", 1)[1].split("\n}\n", 1)[0]
