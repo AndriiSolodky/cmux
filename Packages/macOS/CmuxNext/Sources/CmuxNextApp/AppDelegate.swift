@@ -358,7 +358,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 bundleID: bundleID
             )
         )
-        settings.start(announcingDiagnostics: true, rotatingFavoriteThemes: true)
+        // Glass on a fresh install and the theme rotation are written by the daemon once it is live.
+        settings.start(announcingDiagnostics: true, rotatingFavoriteThemes: true,
+                       untilWritable: { [daemon = services.daemon] in await daemon.untilLive() })
         AppProcessRoot.shared.hangReports?.start(settings: settings, asks: services.machineAsks, isFirstLaunch: OnboardingWindowPresenter.isFirstLaunch(), firstWindow: { [firstFrame] in await firstFrame.opened() })
         KeepAwakeService.shared.start(settings: settings, store: services.daemon.store, menuBar: services.menuBarExtra)
         let acpmux = QuitAgents.environment(services)
