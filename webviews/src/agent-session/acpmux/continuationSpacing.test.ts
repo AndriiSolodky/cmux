@@ -12,7 +12,7 @@ import {
 } from "./model";
 import {
   TRANSCRIPT_BLOCK_GAP,
-  TRANSCRIPT_COMPOSER_GAP,
+  liveStepLift,
   TRANSCRIPT_FOOTER_CONTROL,
   TRANSCRIPT_FOOTER_GAP,
   TRANSCRIPT_RUN_GAP,
@@ -208,6 +208,9 @@ test("estimated grid rows follow the Interface Size", () => {
   }
 });
 
+// Under a run the live line keeps the footer's slot it has under a reply (transcriptGrid.ts MARK_LIVE_STEP), so a run
+// or a reply landing over it never moves it (cmux#24569); the gap over it is less by liveStepLift, so its words stand
+// the run gap under the run's last line, where a one-line box put them.
 test("the live line keeps the scaled run gap after activity while activity rows stay flush", () => {
   const run = row("run", "activity", {
     items: [
@@ -231,9 +234,14 @@ test("the live line keeps the scaled run gap after activity while activity rows 
   const layout = layoutConversation([run, next, live], 720);
   expect(layout.heights[0]).toBe(22);
   expect(layout.tops[1]! - layout.tops[0]!).toBe(22);
-  expect(layout.tops[2]! - layout.tops[1]! - layout.heights[1]!).toBe(TRANSCRIPT_RUN_GAP);
-  expect(layout.heights[2]).toBe(22);
-  expect(layout.tailGap).toBe(TRANSCRIPT_COMPOSER_GAP);
+  expect(layout.tops[2]! - layout.tops[1]! - layout.heights[1]!).toBe(TRANSCRIPT_RUN_GAP - liveStepLift(1));
+  expect(layout.heights[2]).toBe(TRANSCRIPT_FOOTER_CONTROL);
+  // Its words, centred in the slot, stand where they did in a box one tool row tall the run gap under the run.
+  expect(layout.tops[2]! + (layout.heights[2]! - 22) / 2 - layout.tops[1]! - layout.heights[1]!).toBe(
+    TRANSCRIPT_RUN_GAP,
+  );
+  // The room under it is the slot's, as under a reply.
+  expect(layout.tailGap).toBe(layoutConversation([row("a", "assistant", { text: "Done." }), live], 720).tailGap);
   // The same live line right under its prompt still waits a block gap under it (grid.md 5.5).
   const prompt = row("p", "user", { text: "Go" });
   const waiting = layoutConversation([prompt, live], 720);

@@ -99,7 +99,12 @@ await requireBrowserLane("transcript-cohesion.test.ts", async () => {
                   previous = previous.previousElementSibling;
                 if (!previous) throw new Error("The live state has no preceding activity row");
                 return {
-                  gap: live.getBoundingClientRect().top - previous.getBoundingClientRect().bottom,
+                  // The line's words, not its box: under a step the box is the footer's slot (transcriptGrid.ts
+                  // MARK_LIVE_STEP), taller than the words, and the gap over it is less by as much.
+                  gap:
+                    live.querySelector(".cv-thinking")!.getBoundingClientRect().top -
+                    previous.getBoundingClientRect().bottom,
+                  label: live.querySelector(".cv-thinking")!.getBoundingClientRect().height,
                   // Read a resolved token rather than parsing a calc() or var() expression.
                   scale: Number.parseFloat(
                     getComputedStyle(document.documentElement).getPropertyValue("--cmux-interface-scale"),
@@ -112,8 +117,9 @@ await requireBrowserLane("transcript-cohesion.test.ts", async () => {
                 `transcript-live-gap ${phase} ${variant} ${label} ${density} ${interfaceScale}: ${JSON.stringify(measured)}`,
               );
               if (process.env.CMUX_COHESION_MEASURE_ONLY !== "1")
-                // The Codex transcript's run gap is 16px at scale 1 (transcriptGrid.ts TRANSCRIPT_RUN_GAP).
-                expect(measured.gap).toBeCloseTo(16 * interfaceScale, 1);
+                // The Codex transcript's run gap is 16px at scale 1 (transcriptGrid.ts TRANSCRIPT_RUN_GAP), to the top
+                // of a box one tool row (22) tall with the words centred in it.
+                expect(measured.gap).toBeCloseTo(16 * interfaceScale + (22 - measured.label) / 2, 1);
               expect(measured.wholeTurnFolds).toBe(0);
               if (process.env.FAST_CHECKS_OUT) {
                 await mkdir(process.env.FAST_CHECKS_OUT, { recursive: true });
