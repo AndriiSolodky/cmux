@@ -48,7 +48,13 @@ await requireBrowserLane("transcript-live-line-holds-browser.test.ts", async () 
 
   test("a run or a reply landing over the live line moves neither its box nor its words", async () => {
     const { port } = vite!.httpServer!.address() as { port: number };
-    const page = await browser!.newPage({ viewport: { width: 900, height: 640 } });
+    // FAST_CHECKS_OUT (a cmux-ci run): a video of the whole play, for the PR.
+    const out = process.env.FAST_CHECKS_OUT;
+    const context = await browser!.newContext({
+      viewport: { width: 900, height: 640 },
+      ...(out ? { recordVideo: { dir: out, size: { width: 900, height: 640 } } } : {}),
+    });
+    const page = await context.newPage();
     await installPaintedFrames(page);
     await page.goto(`http://127.0.0.1:${port}/test/browser/transcript-follow.html`);
     await page.waitForFunction(() => "__showLiveRows" in window);
@@ -148,7 +154,7 @@ await requireBrowserLane("transcript-live-line-holds-browser.test.ts", async () 
           },
         ),
     );
-    await page.close();
+    await context.close();
 
     console.log(
       ["step | row over the line | line height | words from the view's bottom | px from the end"]
