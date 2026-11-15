@@ -38,8 +38,8 @@ export function outputArtifacts(rows: readonly AcpmuxRow[]): OutputArtifact[] {
       artifact,
     });
   }
-  const replies = rows.flatMap((row) => (row.kind === "assistant" && !row.streaming && row.text ? [row.text] : []));
-  for (const artifact of chatDocuments(replies)) {
+  // The finished replies' documents, each reply parsed once (artifactVersions.ts `finishedReplyDocuments`).
+  for (const artifact of chatDocuments(rows)) {
     if (seen.has(artifact.code)) continue;
     seen.add(artifact.code);
     found.push({
