@@ -76,10 +76,30 @@ class HotApplyRust(unittest.TestCase):
         self.publish(self.new_body, self.new)
         self.env = dict(os.environ, CMUX_HOT_APPLY_TUI_BASE=(self.tmp / "tree").as_uri(),
                         CMUX_HOT_APPLY_COMMIT_BASE=(self.tmp / "commits").as_uri(),
-                        CMUX_HOT_APPLY_STATE_DIR=str(self.tmp / "state"))
+                        CMUX_HOT_APPLY_STATE_DIR=str(self.tmp / "state"),
+                        # Never the person's own web-dev.json or overlay.
+                        CMUX_NEXT_CONFIG_FILE=str(self.tmp / "config/cmux-next.json"),
+                        CMUX_WEB_OVERLAY_DIR=str(self.tmp / "overlay"))
 
     def tearDown(self):
         subprocess.run(["rm", "-rf", str(self.tmp)])
+
+    def test_plan_names_a_web_dev_pointer_the_app_refuses(self):
+        abi = self.app / "Contents/Resources/CmuxNext_CmuxNextPages.bundle/Contents/Resources/pages/web-abi.json"
+        abi.parent.mkdir(parents=True)
+        abi.write_text('{"abi": 7}\n')
+        (self.tmp / "overlay").mkdir()
+        (self.tmp / "overlay/manifest.json").write_text(json.dumps({"commit": "01192304", "abi": 4}))
+        (self.tmp / "config").mkdir()
+        (self.tmp / "config/web-dev.json").write_text(json.dumps({"overlay": str(self.tmp / "overlay"), "enabled": True}))
+        done = subprocess.run([sys.executable, str(SCRIPT), "plan", FIX, "--app", str(self.app)],
+                              capture_output=True, text=True, env=self.env)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        plan = json.loads(done.stdout)
+        self.assertEqual(plan["refused_overlay"]["abi"], 4)
+        self.assertTrue(any("drop-refused-overlay" in note for note in plan["notes"]), plan["notes"])
+        # plan only reads: the pointer is still there.
+        self.assertIn("overlay", json.loads((self.tmp / "config/web-dev.json").read_text()))
 
     def publish(self, body, digest, listed=None):
         tree = self.tmp / "tree" / self.key
@@ -1032,6 +1052,199 @@ class RunningAcpmux(unittest.TestCase):
         spec.loader.exec_module(fresh)
         self.assertIsNone(fresh.process_env(2 ** 22 + 12345))  # no such process
         self.assertIsNotNone(fresh.process_env(os.getpid()))
+
+
+def load_hot(name):
+    spec = importlib.util.spec_from_file_location(name, SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+# The real run (2026-11-15): a NIGHTLY built at APP_RUN took RUN_SHA's web overlay and Rust build.
+APP_RUN = "b1f76a2fb0061eb3929e8833dceb06a17358e3a8"
+RUN_SHA = "20a18ceaacf789f6ffe22ae7fa1e4ef7fa52a79f"
+
+
+class WebNeedsNative(unittest.TestCase):
+    """The web part waits for a new app when a commit in the range wrote its pages against native code the
+    app lacks, whatever the web ABI integer says (the bump is a person's to remember; the paired change shows)."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="hot-apply-webabi-test-"))
+        self.repo = self.tmp / "repo"
+        git_fixture_env.init_repo(self.repo)
+        self.write("webviews/src/web-abi.json", '{"abi": 7}\n')
+        self.write("webviews/src/cloud/list.ts", "export const op = 'cloud.machine.list';\n")
+        self.write("Packages/macOS/CmuxNext/Sources/CmuxNextApp/CloudList.swift", "func list() {}\n")
+        self.base = self.commit("base")
+        self.env = dict(git_fixture_env.fixture_env(), CMUX_HOT_APPLY_STATE_DIR=str(self.tmp / "state"),
+                        CMUX_NEXT_CONFIG_FILE=str(self.tmp / "config/cmux-next.json"),
+                        CMUX_WEB_OVERLAY_DIR=str(self.tmp / "overlay"))
+
+    def tearDown(self):
+        subprocess.run(["rm", "-rf", str(self.tmp)])
+
+    def write(self, path, text):
+        (self.repo / path).parent.mkdir(parents=True, exist_ok=True)
+        (self.repo / path).write_text(text)
+
+    def commit(self, message):
+        env = git_fixture_env.fixture_env()
+        for args in (["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", message]):
+            subprocess.run(["git", "-C", str(self.repo), *args], check=True, env=env, capture_output=True)
+        return subprocess.run(["git", "-C", str(self.repo), "rev-parse", "HEAD"], check=True, env=env,
+                              capture_output=True, text=True).stdout.strip()
+
+    def plan(self, sha, base=None):
+        done = subprocess.run([sys.executable, str(SCRIPT), "plan", sha, "--app", str(self.tmp / "no.app"),
+                               "--repo", str(self.repo), "--base", base or self.base],
+                              capture_output=True, text=True, env=self.env)
+        self.assertIn(done.returncode, (0, 3), done.stderr)
+        return json.loads(done.stdout)
+
+    def test_a_web_only_change_takes_the_web_part(self):
+        self.write("webviews/src/cloud/list.ts", "export const op = 'cloud.machine.list'; // copy\n")
+        plan = self.plan(self.commit("web only"))
+        self.assertEqual(plan["parts"], ["web"])
+
+    def test_a_page_written_against_new_swift_waits_for_an_app_with_that_swift(self):
+        # The same ABI on both sides; the page calls an op whose Swift handler lands in the same change.
+        self.write("webviews/src/cloud/list.ts", "export const op = 'cloud.machine.list2';\n")
+        self.write("Packages/macOS/CmuxNext/Sources/CmuxNextApp/CloudList.swift", "func list() {}\nfunc list2() {}\n")
+        paired = self.commit("cloud: list2, page and handler")
+        self.write("webviews/src/cloud/list.ts", "export const op = 'cloud.machine.list2'; // later web-only\n")
+        later = self.commit("web only, after")
+        for sha in (paired, later):  # a later web-only commit carries the earlier pairing with it
+            plan = self.plan(sha)
+            self.assertNotIn("web", plan["parts"], plan)
+            left = plan["left"]["web (needs native code the app lacks)"]
+            self.assertEqual(len(left), 1, left)
+            self.assertTrue(left[0].startswith(paired[:10]) and "CloudList.swift" in left[0], left)
+        # An app built at the paired commit has that Swift: the later web applies.
+        self.assertEqual(self.plan(later, base=paired)["parts"], ["web"])
+
+    def test_tests_and_docs_beside_the_web_pair_nothing(self):
+        self.write("webviews/src/cloud/list.ts", "export const op = 'cloud.machine.list'; // again\n")
+        self.write("Packages/macOS/CmuxNext/Tests/CmuxNextAppTests/CloudListTests.swift", "func test() {}\n")
+        self.write("docs/cmux-next/cloud.md", "notes\n")
+        self.assertEqual(self.plan(self.commit("web with tests"))["parts"], ["web"])
+
+    def test_a_page_written_against_daemon_rust_needs_the_rust_part(self):
+        self.write("webviews/src/cloud/list.ts", "export const op = 'cloud.machine.list3';\n")
+        self.write("cmux-tui/crates/cmux-cloud-handlers/src/list.rs", "pub fn list3() {}\n")
+        paired = self.commit("cloud: list3 in the daemon")
+        hot = load_hot("hot_apply_webabi_rust_under_test")
+        hot.linked_rust = lambda repo, paths: []  # not Rust the app links: the daemon's
+        app_side, daemon_side = hot.web_needs_native(self.repo, self.base, paired)
+        self.assertEqual(app_side, [])
+        self.assertEqual([c["commit"] for c in daemon_side], [paired])
+
+
+class TheRealRun(unittest.TestCase):
+    """The pair Leo's NIGHTLY ran on 2026-11-15: its web range pairs no page with native code. The Cloud
+    machine list that failed there (`cloud.machine.list`, which the app sends over the local daemon) is
+    not a call this web changed: RUN_SHA's only web change is the agent pane's draft-settle hold."""
+
+    @classmethod
+    def setUpClass(cls):
+        git_history.require_history(ROOT, [RUN_SHA, APP_RUN], depth=6)
+
+    def test_the_real_run_s_web_range_pairs_no_page_with_native_code(self):
+        hot = load_hot("hot_apply_webabi_real_under_test")
+        self.assertEqual(hot.web_needs_native(ROOT, APP_RUN, RUN_SHA), ([], []))
+        web = run_git("diff", "--name-only", APP_RUN, RUN_SHA, "--", "webviews/src").stdout.split()
+        self.assertTrue(web and all("/agent-session/acpmux/" in p for p in web), web)
+
+
+class RefusedOverlayRollback(unittest.TestCase):
+    """Rollback puts back what the app served: an overlay it refused (another web ABI) was its bundled pages."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="hot-apply-webabi-rollback-test-"))
+        self.overlay = self.tmp / "overlay"
+        self.web_dev = self.tmp / "config/web-dev.json"
+        self.web_dev.parent.mkdir(parents=True)
+        self.saved_env = dict(os.environ)
+        os.environ.update(CMUX_HOT_APPLY_STATE_DIR=str(self.tmp / "state"),
+                          CMUX_NEXT_CONFIG_FILE=str(self.tmp / "config/cmux-next.json"),
+                          CMUX_WEB_OVERLAY_DIR=str(self.overlay))
+        self.hot = load_hot("hot_apply_webabi_overlay_under_test")
+        self.live = self.hot.load("live_apply_loop", "live-apply.py")
+        self.app = self.tmp / "cmux NIGHTLY.app"
+        abi = self.app / self.hot.APP_ABI
+        abi.parent.mkdir(parents=True)
+        abi.write_text('{"abi": 7}\n')
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self.saved_env)
+        subprocess.run(["rm", "-rf", str(self.tmp)])
+
+    def install(self, commit, abi, **web_dev):
+        gen = self.overlay / f".gen-{commit[:8]}"
+        (gen / "pages/settings").mkdir(parents=True)
+        (gen / "pages/settings/index.html").write_text(commit)
+        link = self.overlay / "pages"
+        if link.is_symlink():
+            link.unlink()
+        link.symlink_to(f".gen-{commit[:8]}/pages")
+        (self.overlay / "manifest.json").write_text(json.dumps({"commit": commit, "abi": abi}))
+        self.web_dev.write_text(json.dumps({"overlay": str(self.overlay), "enabled": True, **web_dev}))
+
+    def apply_then_put_back(self, prior_abi, check_at_apply=True, **web_dev):
+        self.install("01192304" + "0" * 32, prior_abi, **web_dev)
+        snap = self.hot.overlay_snapshot(self.live)
+        if check_at_apply:
+            snap = self.hot.in_effect(snap, 7, self.overlay)
+        self.install("20a18cea" + "0" * 32, 7, **web_dev)  # the apply's overlay
+        return snap, self.hot.put_back(self.app, {"web": snap}, None, self.tmp / "state", self.live)["web"]
+
+    def test_a_refused_prior_overlay_rolls_back_to_the_bundled_pages(self):
+        snap, out = self.apply_then_put_back(4)
+        self.assertEqual(snap["refused"]["abi"], 4)  # the undo record says so from the apply on
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["in_effect"], "the app's bundled pages")
+        self.assertEqual(out["dropped_refused_pointer"]["commit"], "01192304" + "0" * 32)
+        self.assertFalse(self.web_dev.exists())  # nothing else was in it
+
+    def test_an_undo_written_before_the_check_rolls_back_to_the_bundled_pages_too(self):
+        _, out = self.apply_then_put_back(4, check_at_apply=False)
+        self.assertEqual(out["in_effect"], "the app's bundled pages")
+        self.assertFalse(self.web_dev.exists())
+
+    def test_the_dev_server_entry_stays_when_the_pointer_goes(self):
+        _, out = self.apply_then_put_back(4, server="http://127.0.0.1:4200/", token="t" * 48)
+        kept = json.loads(self.web_dev.read_text())
+        self.assertNotIn("overlay", kept)
+        self.assertEqual(kept["server"], "http://127.0.0.1:4200/")
+
+    def test_a_served_prior_overlay_comes_back(self):
+        snap, out = self.apply_then_put_back(7)
+        self.assertNotIn("refused", snap)
+        self.assertEqual(out["commit"], "01192304" + "0" * 32)
+        self.assertEqual(json.loads(self.web_dev.read_text())["overlay"], str(self.overlay))
+        self.assertEqual((self.overlay / "pages/settings/index.html").read_text(), "01192304" + "0" * 32)
+
+    def drop(self):
+        done = subprocess.run([sys.executable, str(SCRIPT), "drop-refused-overlay", "--app", str(self.app)],
+                              capture_output=True, text=True, env=os.environ)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return json.loads(done.stdout.strip().splitlines()[-1])
+
+    def test_drop_refused_overlay_cleans_an_install_left_pointing_at_one(self):
+        self.install("01192304" + "0" * 32, 4, gallery="http://127.0.0.1:4178/")
+        receipt = self.drop()
+        self.assertEqual(receipt["dropped"]["abi"], 4)
+        self.assertEqual(json.loads(self.web_dev.read_text()), {"enabled": True, "gallery": "http://127.0.0.1:4178/"})
+        self.assertIsNone(self.drop()["dropped"])  # once is enough
+        self.assertFalse((self.tmp / "state/last.json").exists())  # `rollback` is not moved by it
+
+    def test_drop_refused_overlay_leaves_a_served_pointer(self):
+        self.install("20a18cea" + "0" * 32, 7)
+        self.assertIsNone(self.drop()["dropped"])
+        self.assertIn("overlay", json.loads(self.web_dev.read_text()))
 
 
 if __name__ == "__main__":

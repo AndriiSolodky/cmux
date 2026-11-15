@@ -500,7 +500,12 @@ what feat-cmux-next published for SHA and diffs it against the app's `CMUXCommit
   running the swapped file. `rollback` hands them back the same way. From ssh on macOS they're left and
   the receipt says why.
 - **Web:** SHA's published web bundles go into the app's web overlay, as long as SHA's web ABI is
-  the app's.
+  the app's and no commit since the app's pairs a page with native code the app lacks. A commit
+  that edits `webviews/` together with the Swift, resources or FFI Rust the app is built from wrote
+  its pages against that native side, so the web waits for a nightly that has it, whatever the ABI
+  integer says (`left`: `web (needs native code the app lacks)`, naming the commit). A commit that
+  pairs the web with daemon Rust takes the web only with the Rust part (`web_needs_rust`; `--parts
+  web` alone leaves it).
 - **Neither:** Swift, resources, Rust the app links through FFI, and helpers such as
   cmux-mobile-host still need the nightly. `plan` lists them under `left`. C, Objective-C and Zig
   sources inside `cmux-tui/` (a companion's shim, the Zig binding) are not resources: the tree build
@@ -508,7 +513,14 @@ what feat-cmux-next published for SHA and diffs it against the app's `CMUXCommit
 
 Each part is checked after it goes in: `bin/cmux` hashes to the published sha256 and a new daemon
 answers from it, and the overlay names SHA. A part that fails its check is put back. SHA must come
-after the app's commit, and the swap carries every change between the two. Swapping `bin/cmux`
+after the app's commit, and the swap carries every change between the two.
+
+`rollback` puts back what the app served before the apply, not the files as they were. When
+`web-dev.json` pointed at an overlay the app refused (an older install for another web ABI, so the
+app served its bundled pages), it puts back no pointer: the bundled pages, and the receipt says so
+(`dropped_refused_pointer`). `plan` names such a pointer in `notes`, and
+`hot-apply.py drop-refused-overlay` drops it from an install by itself, keeping `web-dev.json`'s dev
+server and gallery entries. A pointer the app serves is left alone. Swapping `bin/cmux`
 breaks the bundle's seal until `rollback` or the next update. The running app does not notice.
 `scripts/measure/hot-apply-nightly.sh` runs apply and rollback on a copy of the newest nightly on a
 fleet Mac.
@@ -579,7 +591,7 @@ Built bundles carry none of this. The code is `webviews/src/devkit/perfBudgets.t
 | You see another tree's edits | A dev server that `web-overlay.sh` didn't start already answers on the port, and `server --local` reuses it. Stop it where it was started, or use `--port N` for a free port. |
 | You want the shipped pages without deleting anything | Set `"enabled": false` in `web-dev.json`, or turn **cmux Live** off (`cmux settings set updates.liveWebReload false`). |
 | Nothing changes, and `status` says the server runs | The first lines of `cmux live status` say what the app loads and why. `cmux settings get updates.liveWebReload` says `true`. The app's commit includes this change (older NIGHTLYs also needed Debug Settings > Pages > Live web reload on). |
-| `status` says `refused by <app>` | The overlay was built for another page bridge (`abi` in its `manifest.json`, from `webviews/src/web-abi.json`) than the app has, so the app serves its own pages instead of calling host ops it lacks. Build the overlay from a tree at the app's ABI (near its `CMUXCommit`), or run a build of that tree. A web update is refused the same way. |
+| `status` says `refused by <app>` | The overlay was built for another page bridge (`abi` in its `manifest.json`, from `webviews/src/web-abi.json`) than the app has, so the app serves its own pages instead of calling host ops it lacks. Build the overlay from a tree at the app's ABI (near its `CMUXCommit`), or run a build of that tree. A web update is refused the same way. To make `web-dev.json` say what the app serves, `scripts/cmux-next/hot-apply.py drop-refused-overlay` drops the pointer. |
 | A page's React content goes blank, or a page shows another page or its HTML | The dev server answered a file it does not have (a bundled page's chunk, a page newer than your checkout) with the diff viewer's `index.html`. A server from a checkout with this change answers cmux a 404 there, and the app serves the bundled copy: pull, then `cmux live start` again. Serve a tree near the app's commit, so every page the app opens is in it. A page drawn as its HTML source in Chromium is fixed in apps from #37247 on. |
 | Unstyled pages with no override running | Not the live loop. With no `web-dev.json`, the app serves its bundled files unchanged. Report it with the app's commit. |
 
