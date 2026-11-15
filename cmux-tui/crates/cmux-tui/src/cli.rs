@@ -81,6 +81,8 @@ mod cloud_run_account;
 #[cfg(unix)]
 mod cloud_secret;
 #[cfg(unix)]
+mod key_broker;
+#[cfg(unix)]
 mod cloud_start_chat;
 #[cfg(unix)]
 mod cloud_workspaces;
@@ -822,6 +824,7 @@ pub fn run(args: &[String], startup_usage: &str) -> i32 {
         .or_else(|| vnc::run_if_requested(args))
         .or_else(|| cloud_environment::run_if_requested(args))
         .or_else(|| cloud_secret::run_if_requested(args))
+        .or_else(|| key_broker::run_if_requested(args))
         .or_else(|| cloud_start_chat::run_if_requested(args))
         .or_else(|| cloud_run_account::run_if_requested(args))
         .or_else(|| cloud_retention::run_if_requested(args))
