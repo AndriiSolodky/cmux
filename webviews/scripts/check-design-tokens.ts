@@ -557,7 +557,8 @@ const MOTION_CURVE = /cubic-bezier\(\s*(?:0\.16\s*,\s*1\s*,\s*0\.3\s*,\s*1|0\s*,
 const SCALE_FALLBACK = /var\(\s*--cmux-(?:motion|ease|spinner)-[\w-]+\s*,(?:[^()]|\([^()]*\))*\)/g;
 const MS_NAME = /(?:^|_)MS$|[a-z]Ms$|^ms$|[Dd]uration$|DURATION$/;
 const MOTION_ALLOW = /motion(?::\s*allow|-allow:)\s*\S/;
-const SCRIPT_SKIP = /(?:^|\/)(?:motion\/scale\.generated\.ts)$|\.d\.ts$/;
+/** Generated copies of the scales (motion/scale.generated.ts, ui/designTokens.generated.ts) are the source. */
+const SCRIPT_SKIP = /\.generated\.ts$|\.d\.ts$/;
 
 function scriptFiles(): string[] {
   const walk = (dir: string): string[] =>
