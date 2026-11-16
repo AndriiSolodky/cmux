@@ -36,13 +36,18 @@ public nonisolated struct RemoteAccessUnit: Sendable, Hashable {
     /// Annex-B H.264 or HEVC.
     public var data: Data
     public var codec: RemoteVideoCodec
+    /// When the viewer's `cmux-rd connect` process released the frame (uptime microseconds,
+    /// the clock of `DispatchTime` and `CACurrentMediaTime`); nil when the app reassembled it.
+    public var releasedMicros: UInt64?
 
-    public init(frame: UInt32, flags: RemoteFrameFlags, tCaptureMicros: UInt64, data: Data, codec: RemoteVideoCodec) {
+    public init(frame: UInt32, flags: RemoteFrameFlags, tCaptureMicros: UInt64, data: Data, codec: RemoteVideoCodec,
+                releasedMicros: UInt64? = nil) {
         self.frame = frame
         self.flags = flags
         self.tCaptureMicros = tCaptureMicros
         self.data = data
         self.codec = codec
+        self.releasedMicros = releasedMicros
     }
 
     public var isKeyframe: Bool { flags.contains(.keyframe) }

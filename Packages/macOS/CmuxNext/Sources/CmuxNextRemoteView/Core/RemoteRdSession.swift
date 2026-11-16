@@ -66,7 +66,9 @@ public nonisolated final class RemoteRdSession {
         var frame = CmuxRdFrame()
         var stream: UInt16 = 0
         guard try RemoteRdCoreError.check(cmux_rd_session_pop_frame(handle, &frame, &stream)) == 1 else { return nil }
-        return (stream, RemoteRdCore.unit(frame, codec: codec))
+        var unit = RemoteRdCore.unit(frame, codec: codec)
+        unit.releasedMicros = lastReleaseMicros
+        return (stream, unit)
     }
 
     /// The oldest queued transport message.
@@ -78,6 +80,30 @@ public nonisolated final class RemoteRdSession {
 
     public func noteDecode(stream: UInt16, micros: UInt32) throws(RemoteRdCoreError) {
         _ = try RemoteRdCoreError.check(cmux_rd_session_note_decode(handle, stream, micros))
+    }
+
+    /// `stream` is reassembled by the viewer's `cmux-rd connect` process (screen-share design
+    /// D7): its frames arrive whole, and its feedback is that process's. Call before connecting.
+    public func assembleUpstream(stream: UInt16) throws(RemoteRdCoreError) {
+        _ = try RemoteRdCoreError.check(cmux_rd_session_assemble_upstream(handle, stream))
+    }
+
+    /// The decoder is done with `frame` (decoded in `decodeMicros`, or skipped: 0). An
+    /// assembled stream's connect process sends its next frame on this.
+    public func noteConsumed(stream: UInt16, frame: UInt32, decodeMicros: UInt32) throws(RemoteRdCoreError) {
+        _ = try RemoteRdCoreError.check(cmux_rd_session_note_consumed(handle, stream, frame, decodeMicros))
+    }
+
+    /// `frame` reached the glass at `presentedMicros` (uptime microseconds).
+    public func notePresented(stream: UInt16, frame: UInt32, presentedMicros: UInt64) throws(RemoteRdCoreError) {
+        _ = try RemoteRdCoreError.check(cmux_rd_session_note_presented(handle, stream, frame, presentedMicros))
+    }
+
+    /// When the connect process released the frame `popAccessUnit` returned last (uptime
+    /// microseconds), or nil for a frame this session reassembled.
+    public var lastReleaseMicros: UInt64? {
+        let value = cmux_rd_session_last_release_us(handle)
+        return value == 0 ? nil : value
     }
 
     /// Asks the host for a keyframe of `stream` until one is released there.
