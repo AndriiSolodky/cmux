@@ -18,6 +18,7 @@ use cmux_rd_core::flow::Rect;
 use cmux_rd_core::policy::Principal;
 use cmux_rd_core::session::{SessionId, SessionTable};
 use cmux_rd_engine::{Encoded, EngineConfig, MediaEngine, Output};
+use cmux_rd_proto::FrameTimes;
 use std::collections::VecDeque;
 
 #[derive(Clone)]
@@ -83,14 +84,20 @@ pub struct MediaSession {
     /// The cursor as metadata, when the viewer draws it (cap `cursor`) and the desktop
     /// reports it: the pictures leave it out.
     cursor: Option<CursorChannel>,
+    /// The viewer offered cap `ledger`: each frame's host times follow its last shard
+    /// (a `FrameTimes` datagram).
+    ledger: bool,
 }
 
 /// Where each encoded frame's time went, one JSON line a frame (measurement only; the eval's
 /// `scripts/measure/screen-stream-eval` reads it): `input_us`, the last viewer input injected before
 /// this frame, once; `shown_us`, when the display showed the frame (ScreenCaptureKit's display time);
 /// `arrived_us`, when the capture handed it over; `damage_us`, when the session first saw damage
-/// since the last frame; `release_us`, when the gate let the encode start; `encoded_us`, when the
-/// encode ended; `sent_us`, when its last datagram was handed to the carrier. Every injected
+/// since the last frame; `release_us`, when the engine's gate released the frame's request;
+/// `capture_us`, the frame's `t_capture_us` (the capture ended; also on the viewer's frame);
+/// `encode_start_us`, when the encoder was handed the picture; `encoded_us`, when the encode
+/// ended; `first_sent_us` and `sent_us`, when its first and last datagram were handed to the
+/// carrier (the times a `ledger` viewer gets in the frame's `FrameTimes`). Every injected
 /// input also gets a line of its own, `{"inject_us", "recv_us"}` (`recv_us`: when the datagram
 /// that carried it was read), so a remote viewer's key press can be matched to its injection
 /// (`scripts/screen-share-vs.py`). All on the protocol clock in µs.
@@ -100,6 +107,15 @@ struct Timing {
     damage_us: Option<u64>,
     /// When the datagram being handled now was read.
     recv_us: Option<u64>,
+}
+
+/// What [`Timing::frame`] logs besides the frame's [`FrameTimes`].
+struct FrameLog {
+    shown: Option<(u64, u64)>,
+    capture_us: u64,
+    release_us: u64,
+    encoded_bytes: usize,
+    idr: bool,
 }
 
 impl Timing {
@@ -114,26 +130,21 @@ impl Timing {
         }
     }
 
-    fn frame(
-        &mut self,
-        shown: Option<(u64, u64)>,
-        release_us: u64,
-        encoded_us: u64,
-        sent_us: u64,
-        encoded_bytes: usize,
-        idr: bool,
-    ) {
+    fn frame(&mut self, log: FrameLog, times: &FrameTimes) {
         use std::io::Write;
         let line = serde_json::json!({
             "input_us": self.input_us.take(),
-            "shown_us": shown.map(|t| t.0),
-            "arrived_us": shown.map(|t| t.1),
+            "shown_us": log.shown.map(|t| t.0),
+            "arrived_us": log.shown.map(|t| t.1),
             "damage_us": self.damage_us.take(),
-            "release_us": release_us,
-            "encoded_us": encoded_us,
-            "sent_us": sent_us,
-            "encoded_bytes": encoded_bytes,
-            "idr": idr,
+            "release_us": log.release_us,
+            "capture_us": log.capture_us,
+            "encode_start_us": times.encode_start_us,
+            "encoded_us": times.encoded_us,
+            "first_sent_us": times.first_sent_us,
+            "sent_us": times.last_sent_us,
+            "encoded_bytes": log.encoded_bytes,
+            "idr": log.idr,
         });
         let _ = writeln!(self.out, "{line}");
     }
@@ -249,6 +260,7 @@ impl MediaSession {
             settle_ns: cfg.settle_us * 1000,
             timing: Timing::from_env(),
             cursor: wants_cursor(negotiated_caps).then(CursorChannel::new),
+            ledger: negotiated_caps.iter().any(|c| c == cmux_rd_core::service::caps::LEDGER),
         })
     }
 
@@ -445,10 +457,19 @@ impl MediaSession {
     fn send_encoded(&mut self, carrier: &mut dyn Carrier) -> Res<()> {
         let Some(Done { req, result }) = self.encoder.take_done()? else { return Ok(()) };
         let frame = result?;
-        // Logged after the send, with the send time (`sent_us`).
-        let logged = self.timing.is_some().then(|| {
-            let len = frame.access_unit.len();
-            (frame.picked_times, frame.t_capture_us, frame.encoded_us, len, frame.idr)
+        let mut times = FrameTimes {
+            display_us: frame.picked_times.map_or(0, |(shown, _)| shown),
+            encode_start_us: frame.encode_start_us,
+            encoded_us: frame.encoded_us,
+            ..FrameTimes::default()
+        };
+        // Logged after the send, with the send times.
+        let logged = self.timing.is_some().then(|| FrameLog {
+            shown: frame.picked_times,
+            capture_us: frame.t_capture_us,
+            release_us: frame.released_us,
+            encoded_bytes: frame.access_unit.len(),
+            idr: frame.idr,
         });
         self.encode_ms.push_back(frame.encode_ms);
         if self.encode_ms.len() > 120 {
@@ -465,13 +486,17 @@ impl MediaSession {
             // Too large to send (about 4.6 MB): the engine dropped it and asks for a keyframe.
             self.encoder.halve_bitrate();
         }
+        times.first_sent_us = now_us();
         for datagram in &out.datagrams {
             carrier.send_datagram(datagram)?;
         }
-        if let (Some(timing), Some((shown, t_capture_us, encoded_us, len, idr))) =
-            (self.timing.as_mut(), logged)
-        {
-            timing.frame(shown, t_capture_us, encoded_us, now_us(), len, idr);
+        times.last_sent_us = now_us();
+        if self.ledger && !out.datagrams.is_empty() {
+            // Measurement only: a lost one leaves the viewer's row without host times.
+            let _ = carrier.send_datagram(&times.datagram(req.stream, req.frame));
+        }
+        if let (Some(timing), Some(log)) = (self.timing.as_mut(), logged) {
+            timing.frame(log, &times);
         }
         Ok(())
     }
