@@ -47,7 +47,7 @@ public struct MacScreenActions {
     }
 
     static func record(_ invocation: ActionInvocation, pages: MacScreenPages) throws -> MacScreenRecord {
-        try record(invocation, pages: pages, devices: pages.hub.map { MacScreenHomeSnapshot.listed($0.otherDevices) } ?? [])
+        try record(invocation, pages: pages, devices: pages.hub.map { MacScreenHomeSnapshot.listed($0.remoteDevices) } ?? [])
     }
 
     /// `device` is the hub's device id or, from the CLI and agents, a device name (the Mac's Computer Name) among
