@@ -8,6 +8,7 @@ and the sample stays installed. `cmux ext remove ID` uninstalls it.
 | Sample | What it shows | Install |
 | --- | --- | --- |
 | [Weather](weather) | The current conditions for a place you choose | `cmux ext dev examples/extensions/weather` |
+| [Leo weather](leo-weather) | The live sky where you are, animated: rain, snow, stars, sun, clouds, hourly bars | `cmux ext dev examples/extensions/leo-weather` |
 | [World clock](world-clock) | The time in the places you work with | `cmux ext dev examples/extensions/world-clock` |
 | [Recent PRs](recent-prs) | Your pull requests from the last 72 hours, in the sidebar | `cmux ext dev examples/extensions/recent-prs` |
 | [Agent pet](agent-pet) | A cat that reacts as your agents work, wait or fail | `cmux ext dev examples/extensions/agent-pet` |
