@@ -187,7 +187,7 @@ export async function traceUpwardAnchors({
       rowMarginTop: row?.style.marginTop,
       threadY: thread ? thread.getBoundingClientRect().top - view.top : undefined,
       threadTop: thread?.style.top,
-      origin: scroller.style.getPropertyValue("--acpmux-scroll-origin"),
+      origin: thread?.style.getPropertyValue("--acpmux-scroll-origin") ?? "",
     };
   };
   let previous = read();
