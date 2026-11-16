@@ -22,6 +22,15 @@ mod apps {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../examples/extensions")
     }
 
+    /// Whether bun, which packs the examples, is on PATH (CI's cmux-tui job installs it).
+    fn have_bun() -> bool {
+        let found = Command::new("bun").arg("--version").output().is_ok_and(|o| o.status.success());
+        if !found {
+            eprintln!("SKIPPED: bun is not on PATH");
+        }
+        found
+    }
+
     /// `dir` packed by `tools/pack.ts`, as `cmux ext dev` builds `src/main.ts`; nothing is written.
     fn packed(dir: &Path) -> String {
         let pack = Path::new(env!("CARGO_MANIFEST_DIR")).join("tools/pack.ts");
@@ -55,6 +64,9 @@ mod apps {
 
     #[test]
     fn the_newtab_clock_draws_the_time_and_ticks_in_the_native_vm() {
+        if !have_bun() {
+            return;
+        }
         let dir = examples().join("newtab-clock");
         let mut h = harness(&dir);
         assert_eq!(h.mount("m", "renderNewTab", json!({ "cwd": "/Users/someone/src" })), None);
@@ -88,6 +100,9 @@ mod apps {
 
     #[test]
     fn every_newtab_example_draws_something_in_the_native_vm() {
+        if !have_bun() {
+            return;
+        }
         let mut names: Vec<PathBuf> = std::fs::read_dir(examples())
             .expect("examples")
             .filter_map(|e| e.ok().map(|e| e.path()))
