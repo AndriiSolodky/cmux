@@ -51,6 +51,8 @@ parser.add_argument("--out", default="/tmp")
 parser.add_argument("--json")
 parser.add_argument("--shots", help="a folder: light and dark screen captures of the open session in each mode, with the window glass on")
 opts = parser.parse_args()
+if opts.typing_loads and not opts.activate:
+    parser.error("--typing-loads requires --activate on an isolated fleet Mac (foreground input/QoS)")
 if (opts.rows < 1 or opts.flings < 1 or not math.isfinite(opts.fling_seconds) or opts.fling_seconds <= 0
         or opts.target_hz is not None and (not math.isfinite(opts.target_hz) or opts.target_hz <= 0)):
     parser.error("--rows, --flings, --fling-seconds and --target-hz must be positive and finite")
@@ -391,12 +393,12 @@ def run_mode(mode):
     time.sleep(opts.settle)  # test harness: the chat settles before it is measured
     result["one_chat"] = memory("one chat", 1)
     result["session"] = open_session()
+    result["focus"] = focus_probe()
     if opts.typing_loads:
         from typing_load_bench import run_loads
         loads = run_loads(rpc, pane, open_chat, wait, opts.typing_loads.split(","), opts.keys, opts.key_gap_ms)
         return {**result, "typing_loads": loads, "summary": {"engine": first.get("engine")},
                 "measurement_complete": all(row.get("complete") is True for row in loads)}
-    result["focus"] = focus_probe()
     result["shots"] = screen_shots(mode)
     result["typing"] = typing()
     print(mode, "typing", json.dumps({k: result["typing"].get(k) for k in ("keys", "to_listener", "to_work", "to_frame", "to_paint", "native_posts")}), flush=True)
