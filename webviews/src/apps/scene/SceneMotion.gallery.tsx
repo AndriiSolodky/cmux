@@ -265,9 +265,12 @@ function SceneMotion({ look = "loops" }: { look?: Look }) {
   useEffect(() => {
     const { tick, every, store } = fixture;
     if (!tick) return;
-    let step = 0;
-    tick(store, ++step);
-    const timer = window.setInterval(() => tick(store, ++step), every ?? 1000);
+    const count = { step: 1 };
+    tick(store, count.step);
+    const timer = window.setInterval(() => {
+      count.step += 1;
+      tick(store, count.step);
+    }, every ?? 1000);
     return () => window.clearInterval(timer);
   }, [fixture]);
   return (
