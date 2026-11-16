@@ -50,8 +50,8 @@ fn the_outline_request_plans_hides_moves_and_restores() {
     assert_eq!(
         body["restorable"],
         json!([
-            {"kind": "section", "id": "recents", "key": "recents"},
-            {"kind": "workspace", "id": "ws-7", "key": "ws-7"}
+            {"kind": "section", "id": "recents", "key": "recents", "keys": ["recents"]},
+            {"kind": "workspace", "id": "ws-7", "key": "ws-7", "keys": ["ws-7"]}
         ])
     );
     assert!(body["revision"].as_u64().is_some());

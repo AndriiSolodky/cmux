@@ -170,8 +170,18 @@ fn outline_and_legacy_input_plan_the_same_rows() {
     assert_eq!(
         outline.restorable,
         [
-            Restorable { kind: "section", id: "recents".into(), key: "recents".into() },
-            Restorable { kind: "workspace", id: "ws-7".into(), key: "ws-7".into() },
+            Restorable {
+                kind: "section",
+                id: "recents".into(),
+                key: "recents".into(),
+                keys: vec!["recents".into()]
+            },
+            Restorable {
+                kind: "workspace",
+                id: "ws-7".into(),
+                key: "ws-7".into(),
+                keys: vec!["ws-7".into()]
+            },
         ]
     );
 }
@@ -352,4 +362,45 @@ fn planning_cost_is_constant_from_30_to_3000_rows() {
     );
     assert_eq!(small_bytes, large_bytes, "the request must not grow with rows");
     assert!(legacy_large_bytes > 50 * legacy_small_bytes / 10, "the legacy shape grows with rows");
+}
+
+#[test]
+fn a_section_hidden_through_two_aliases_comes_back_with_one_show() {
+    let sections = json!({"hidden": ["projects", "sec_m_local"]});
+    let plan = respond(&request(json!({
+        "sections": sections,
+        "outline": [{"id": "sec_m_local", "keys": ["projects"], "region": "middle"}]
+    })));
+    assert_eq!(plan.hidden_sections, ["sec_m_local"]);
+    let entry = &plan.restorable[0];
+    assert_eq!(entry.keys, ["projects", "sec_m_local"]);
+    let shown = edit_reply(
+        sections,
+        Value::Null,
+        json!({"op": "show_section", "id": entry.key, "keys": entry.keys}),
+    );
+    assert_eq!(shown.sections, Value::Null);
+    assert!(shown.changed);
+}
+
+#[test]
+fn repairing_a_malformed_value_is_a_change() {
+    let reset = edit_reply(json!([]), json!("nope"), json!({"op": "reset"}));
+    assert_eq!(reset.sections, Value::Null);
+    assert_eq!(reset.workspaces, Value::Null);
+    assert!(reset.changed, "a caller that checks changed must write the repair");
+    let untouched = edit_reply(Value::Null, Value::Null, json!({"op": "reset"}));
+    assert!(!untouched.changed);
+}
+
+#[test]
+fn a_show_naming_too_many_keys_is_refused() {
+    let keys: Vec<String> = (0..=MAX_ENTRIES).map(|index| format!("s{index}")).collect();
+    let reply = edit_reply(
+        json!({"hidden": ["s0"]}),
+        Value::Null,
+        json!({"op": "show_section", "id": "s0", "keys": keys}),
+    );
+    assert!(reply.refused.is_some());
+    assert!(!reply.changed);
 }

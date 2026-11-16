@@ -132,6 +132,10 @@ pub struct Restorable {
     /// The settings value to clear: the `sidebar.sections.hidden` entry as
     /// written (a section id or one of its keys), or the workspace id.
     pub key: String,
+    /// Every `sidebar.sections.hidden` entry that names this section (its id
+    /// and any of its keys), so a Show clears them together
+    /// (`show_section` with `keys`). Just `key` for a workspace.
+    pub keys: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -412,12 +416,10 @@ fn plan(
     let mut out = Plan::default();
     let mut hidden_section_set = BTreeSet::new();
     for section in &sections {
-        let Some(key) = hidden.iter().find(|key| section_matches(section, key)) else { continue };
-        out.restorable.push(Restorable {
-            kind: "section",
-            id: section.id.clone(),
-            key: key.clone(),
-        });
+        let keys: Vec<String> =
+            hidden.iter().filter(|key| section_matches(section, key)).cloned().collect();
+        let Some(key) = keys.first().cloned() else { continue };
+        out.restorable.push(Restorable { kind: "section", id: section.id.clone(), key, keys });
         if selected_section == Some(section.id.as_str()) {
             out.selection_overrides_hide = true;
         } else {
@@ -440,6 +442,7 @@ fn plan(
                 kind: "workspace",
                 id: workspace.clone(),
                 key: workspace.clone(),
+                keys: vec![workspace.clone()],
             });
             if selected == Some(workspace.as_str()) {
                 out.selection_overrides_hide = true;
@@ -597,8 +600,11 @@ pub enum Edit {
     HideSection {
         id: String,
     },
+    /// Clears `id` and every other alias in `keys` (a restorable's `keys`).
     ShowSection {
         id: String,
+        #[serde(default)]
+        keys: Vec<String>,
     },
     HideWorkspace {
         id: String,
@@ -680,11 +686,14 @@ pub fn edit(request: &EditRequest) -> EditReply {
     match &request.edit {
         Edit::HideSection { id }
         | Edit::HideWorkspace { id }
-        | Edit::ShowSection { id }
+        | Edit::ShowSection { id, .. }
         | Edit::ShowWorkspace { id }
             if !valid_id(id) =>
         {
             return refuse("expected a non-empty id of at most 128 characters");
+        }
+        Edit::ShowSection { keys, .. } if keys.len() > MAX_ENTRIES => {
+            return refuse("show_section names more keys than sidebar.sections.hidden can hold");
         }
         Edit::HideSection { id } => {
             let mut list = hidden_list(&sections);
@@ -696,9 +705,13 @@ pub fn edit(request: &EditRequest) -> EditReply {
             }
             set_hidden_list(&mut sections, list);
         }
-        Edit::ShowSection { id } => {
+        Edit::ShowSection { id, keys } => {
             let mut list = hidden_list(&sections);
-            list.retain(|value| value.as_str() != Some(id));
+            list.retain(|value| {
+                value
+                    .as_str()
+                    .is_none_or(|value| value != id && !keys.iter().any(|key| key == value))
+            });
             set_hidden_list(&mut sections, list);
         }
         Edit::HideWorkspace { id } => {
@@ -734,11 +747,13 @@ pub fn edit(request: &EditRequest) -> EditReply {
     EditReply { sections, workspaces, changed, refused: None }
 }
 
+/// The request value as the edit compares it: an empty object is absent, and a
+/// malformed value (an array, a string) stays as it was, so an edit that
+/// replaces it reports `changed`.
 fn normalized(value: &Value) -> Value {
     match value.as_object() {
         Some(map) if map.is_empty() => Value::Null,
-        Some(_) => value.clone(),
-        None => Value::Null,
+        _ => value.clone(),
     }
 }
 
