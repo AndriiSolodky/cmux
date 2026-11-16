@@ -2870,10 +2870,8 @@ export class AcpmuxDirectClient {
   private ingestHead = 0;
   /// Records a drain parsed and did not fold before its slice ended: folded first next slice.
   private ingestParsed: EventRecord[] = [];
-  /// A drain is running (it never nests), and whether it runs in the frame lane: then its snapshots wait
-  /// for the end of its slice and draw once, in this frame (`emitInFrame`).
+  /// A drain is running (it never nests).
   private ingestDraining = false;
-  private ingestInFrame = false;
   /// The stream records one drain step read, folded together (`collectOrApply`).
   private ingestBatch?: EventRecord[];
   private readonly ingestKey = `acpmux-ingest-${(ingestClients += 1)}`;
@@ -5227,7 +5225,6 @@ export class AcpmuxDirectClient {
   private drainIngest(slice?: Slice): void {
     if (this.ingestDraining || !this.ingestWaiting()) return;
     this.ingestDraining = true;
-    this.ingestInFrame = slice !== undefined && pageShown();
     try {
       acpmuxPerf.timed("client.ingest", () => {
         while (this.ingestWaiting()) {
@@ -5256,9 +5253,7 @@ export class AcpmuxDirectClient {
         }
       });
     } finally {
-      const inFrame = this.ingestInFrame;
       this.ingestDraining = false;
-      this.ingestInFrame = false;
       if (this.ingestHead >= this.ingestQueue.length) {
         this.ingestQueue = [];
         this.ingestHead = 0;
@@ -5269,14 +5264,8 @@ export class AcpmuxDirectClient {
       }
       if (this.ingestWaiting() && !this.closed)
         AcpmuxDirectClient.ingestLanes?.frame(this.ingestKey, (next) => this.drainIngest(next));
-      // One snapshot for everything this slice folded, drawn in this frame. A drain outside the frame
-      // lane left its snapshot to `emitInFrame`'s own frame, as any record's.
-      const pending = this.frameSnapshot;
-      if (inFrame && pending !== undefined && !this.closed) {
-        this.frameRequest?.cancel?.();
-        this.frameRequest = undefined;
-        this.emit(pending);
-      }
+      // What it folded draws with `emitInFrame`'s one display frame, as any record's: never inside a
+      // slice, which would put the commit in the lane's task, once a slice (fleet run 43836887488).
     }
   }
 
@@ -8134,11 +8123,6 @@ export class AcpmuxDirectClient {
 
   /// Snapshots before the next display frame, once for every event that lands before it.
   private emitInFrame(connection: string, streamGrew = false): void {
-    // The frame lane is folding the ingest queue: it draws once at the end of its slice, in this frame.
-    if (this.ingestInFrame) {
-      this.frameSnapshot = connection;
-      return;
-    }
     const schedule = AcpmuxDirectClient.scheduleFrame;
     if (!schedule) return this.emit(connection);
     const scheduled = this.frameSnapshot !== undefined;
