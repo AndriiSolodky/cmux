@@ -347,6 +347,13 @@ fn same_stem(a: &[char], b: &[char]) -> bool {
     a == b || doubled(a, b) || doubled(b, a)
 }
 
+/// Whether `head` starts a word of `text`.
+fn starts_a_word(head: &[char], text: &FoldedText) -> bool {
+    head.len() <= text.folded.len()
+        && (0..=text.folded.len() - head.len())
+            .any(|start| text.bonus[start] >= 7 && text.folded[start..start + head.len()] == *head)
+}
+
 /// The query with each token that starts no title word replaced by the title word it shares a
 /// stem with ("screen share" reads "screen sharing" for the title "Screen Sharing"). None when a
 /// token matches neither way, or no token needed a stem.
@@ -354,13 +361,19 @@ fn stem_correction(query: &Query, title: &FoldedText) -> Option<Query> {
     let mut stemmed = 0;
     let mut corrected: Vec<String> = Vec::with_capacity(query.tokens.len());
     for (token, &mask) in query.tokens.iter().zip(&query.token_masks) {
+        // Either way the token's first letters start a title word: a token that starts a word
+        // does, and a shared stem keeps at least MINIMUM_STEM letters. Most rows fail here, before
+        // any substring search.
+        let head = &token[..token.len().min(MINIMUM_STEM)];
+        let head_mask = mask_of(head);
+        if title.mask & head_mask != head_mask || !starts_a_word(head, title) {
+            return None;
+        }
         if token_level(token, mask, title) == 3 {
             corrected.push(token.iter().collect());
             continue;
         }
-        // A stem keeps the token's first letters: a title without them has no such word.
-        let head = mask_of(&token[..token.len().min(MINIMUM_STEM)]);
-        if token.len() < MINIMUM_STEM || title.mask & head != head {
+        if token.len() < MINIMUM_STEM {
             return None;
         }
         let word = title.words().iter().find(|word| same_stem(token, word))?;
