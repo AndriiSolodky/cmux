@@ -67,11 +67,16 @@ describe("local/reader-mode page key", () => {
 })
 
 // The capture tour (scripts/cmux-next/media/tours/reader-mode.json) loads this packed copy on a Mac
-// with no bun; it must be what the source packs to. Refresh it with
+// with no bun; its Reader mode code (the page script and the command) must be what the source packs
+// to. The SDK it bundles may lag the base's (an event added to events.json changes it and nothing
+// Reader mode does), so only Reader mode's own part is compared. Refresh it with
 // `bun cmux-tui/crates/cmux-app-host/tools/pack.ts examples/extensions/reader-mode` and copy dist/main.js.
 test("the capture tour's packed copy is current", () => {
   const fixture = join(import.meta.dir, "../../../../../examples/extensions/reader-mode/test/packed/main.js")
-  // bun's `// path/to/module.js` lines depend on the folder it packs from; the code does not.
-  const code = (text: string) => text.replace(/^\s*\/\/ \S+\.(?:js|ts)$/gm, "")
-  expect(code(readFileSync(fixture, "utf8"))).toBe(code(built))
+  const own = (text: string) => {
+    const start = text.indexOf("var page_default = `")
+    expect(start).toBeGreaterThan(0)
+    return text.slice(start)
+  }
+  expect(own(readFileSync(fixture, "utf8"))).toBe(own(built))
 })
