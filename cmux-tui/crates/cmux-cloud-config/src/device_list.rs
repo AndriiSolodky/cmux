@@ -100,11 +100,17 @@ fn better(a: &Device, b: &Device) -> bool {
 
 /// The hub's records as physical devices: this device's records, and one entry per other device.
 pub fn listing(this: &This, devices: &[Device]) -> Listing {
+    // This device's keys: its listed record's (a name pinned in Settings) and the name it registers
+    // with (the Computer Name now, after a rename or while its record is blank or not listed yet).
     let own = devices.iter().find(|d| d.id == this.id);
-    let this_key = match own {
-        Some(d) => Some(key(&d.id, &d.name, d.platform.as_deref())),
-        None => this.name.as_deref().map(|name| key(&this.id, name, this.platform.as_deref())),
-    };
+    let platform = own.and_then(|d| d.platform.as_deref()).or(this.platform.as_deref());
+    let this_keys: Vec<String> = own
+        .map(|d| d.name.as_str())
+        .into_iter()
+        .chain(this.name.as_deref())
+        .filter(|name| name.chars().any(char::is_alphanumeric))
+        .map(|name| key(&this.id, name, platform))
+        .collect();
     let mut this_device = vec![this.id.clone()];
     let mut order: Vec<String> = Vec::new();
     let mut groups: HashMap<String, Vec<&Device>> = HashMap::new();
@@ -113,7 +119,7 @@ pub fn listing(this: &This, devices: &[Device]) -> Listing {
             continue;
         }
         let k = key(&device.id, &device.name, device.platform.as_deref());
-        if this_key.as_deref() == Some(k.as_str()) {
+        if this_keys.contains(&k) {
             this_device.push(device.id.clone());
             continue;
         }

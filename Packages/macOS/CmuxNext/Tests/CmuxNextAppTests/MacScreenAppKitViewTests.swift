@@ -198,17 +198,17 @@ struct MacScreenAppKitViewTests {
         let ask = MacScreenAccess(.ask)
         let (pages, home) = try homeView([
             MacScreenHomeSnapshot.Device(id: "a", name: "Studio", online: true, macScreenShared: true, access: ask),
-            MacScreenHomeSnapshot.Device(id: "b", name: "cmux16", online: true, macScreenShared: false, access: ask),
+            MacScreenHomeSnapshot.Device(id: "b", name: "Mini", online: true, macScreenShared: false, access: ask),
             MacScreenHomeSnapshot.Device(id: "c", name: "Den", online: false, macScreenShared: true, access: ask),
         ], look: look)
         #expect(findView("macScreen.home.connect.Studio", under: home) is NSButton)
-        #expect((findView("macScreen.home.notShared.cmux16", under: home) as? NSTextField)?.stringValue
-            == "Screen sharing is off on cmux16.")
-        #expect(findView("macScreen.home.connect.cmux16", under: home) == nil)
+        #expect((findView("macScreen.home.notShared.Mini", under: home) as? NSTextField)?.stringValue
+            == "Screen sharing is off on Mini.")
+        #expect(findView("macScreen.home.connect.Mini", under: home) == nil)
         #expect((findView("macScreen.home.offline.Den", under: home) as? NSTextField)?.stringValue
             == "Open cmux on Den to share its screen.")
         // The reason wraps: its label is a wrapping field, never cut off at one line.
-        let reason = try #require(findView("macScreen.home.notShared.cmux16", under: home) as? NSTextField)
+        let reason = try #require(findView("macScreen.home.notShared.Mini", under: home) as? NSTextField)
         #expect(reason.cell?.wraps == true)
         pages.tabClosed("home")
     }

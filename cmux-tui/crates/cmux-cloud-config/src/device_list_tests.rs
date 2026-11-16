@@ -15,7 +15,7 @@ fn this_macs_other_builds_are_this_mac_not_remotes() {
         device("dev", "Desk Mac"),
         device("nightly", "Desk Mac"),
         Device { online: true, mac_screen_shared: true, ..device("air", "Laptop") },
-        device("old", "Cosmic Gray"),
+        device("old", "desk-mac"),
     ];
     let listing = listing(&this("nightly"), &devices);
     assert_eq!(listing.this_device, ["nightly", "dev", "old"]);
@@ -81,4 +81,15 @@ fn before_the_hub_lists_this_device_its_name_still_marks_it() {
     let listing = listing(&mine, &devices);
     assert_eq!(listing.this_device, ["nightly", "dev"]);
     assert_eq!(listing.others.len(), 1);
+}
+
+#[test]
+fn a_renamed_or_blank_own_record_still_marks_this_macs_builds_by_its_registered_name() {
+    let devices = [device("nightly", ""), device("dev", "Desk Mac"), device("air", "Laptop")];
+    let mine = This {
+        id: "nightly".into(),
+        name: Some("Desk Mac".into()),
+        platform: Some("macos".into()),
+    };
+    assert_eq!(listing(&mine, &devices).this_device, ["nightly", "dev"]);
 }
