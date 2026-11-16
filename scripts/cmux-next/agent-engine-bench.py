@@ -35,8 +35,6 @@ parser.add_argument("--app", required=True)
 parser.add_argument("--modes", default="own,page,chromium")
 parser.add_argument("--chats", type=int, default=10)
 parser.add_argument("--keys", type=int, default=40)
-parser.add_argument("--typing-loads", help="comma-separated idle,streaming-3,background-wake,cpu,100k; typing-only run")
-parser.add_argument("--key-gap-ms", type=float, default=20, help="typing-loads: scheduled interval between keys")
 parser.add_argument("--flings", type=int, default=3)
 parser.add_argument("--rows", type=int, default=5000, help="seeded transcript rows")
 parser.add_argument("--fling-seconds", type=float, default=3, help="duration of each measured bottom-to-top fling")
@@ -51,8 +49,6 @@ parser.add_argument("--out", default="/tmp")
 parser.add_argument("--json")
 parser.add_argument("--shots", help="a folder: light and dark screen captures of the open session in each mode, with the window glass on")
 opts = parser.parse_args()
-if opts.typing_loads and not opts.activate:
-    parser.error("--typing-loads requires --activate on an isolated fleet Mac (foreground input/QoS)")
 if (opts.rows < 1 or opts.flings < 1 or not math.isfinite(opts.fling_seconds) or opts.fling_seconds <= 0
         or opts.target_hz is not None and (not math.isfinite(opts.target_hz) or opts.target_hz <= 0)):
     parser.error("--rows, --flings, --fling-seconds and --target-hz must be positive and finite")
@@ -394,11 +390,6 @@ def run_mode(mode):
     result["one_chat"] = memory("one chat", 1)
     result["session"] = open_session()
     result["focus"] = focus_probe()
-    if opts.typing_loads:
-        from typing_load_bench import run_loads
-        loads = run_loads(rpc, pane, open_chat, wait, opts.typing_loads.split(","), opts.keys, opts.key_gap_ms)
-        return {**result, "typing_loads": loads, "summary": {"engine": first.get("engine")},
-                "measurement_complete": all(row.get("complete") is True for row in loads)}
     result["shots"] = screen_shots(mode)
     result["typing"] = typing()
     print(mode, "typing", json.dumps({k: result["typing"].get(k) for k in ("keys", "to_listener", "to_work", "to_frame", "to_paint", "native_posts")}), flush=True)
