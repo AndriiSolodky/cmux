@@ -90,17 +90,24 @@ const initialState: RenderTerminalViewState = {
   history: emptyHistory,
 };
 
-function renderTerminalViewReducer(
+export function renderTerminalViewReducer(
   state: RenderTerminalViewState,
   action: RenderTerminalViewAction,
 ): RenderTerminalViewState {
   if (action.type === "bind") {
-    return { ...initialState, client: action.client, surface: action.surface };
+    // The replacement transport has not delivered a frame yet. Keep the last
+    // frame for this surface until it does; a different surface starts empty.
+    return {
+      ...(state.surface === action.surface ? state : initialState),
+      client: action.client,
+      surface: action.surface,
+      focused: false,
+    };
   }
   if (state.client !== action.client || state.surface !== action.surface) return state;
   switch (action.type) {
     case "reset":
-      return initialState;
+      return { ...state, client: null, focused: false };
     case "frame":
       return {
         ...state,
@@ -112,6 +119,12 @@ function renderTerminalViewReducer(
     case "history":
       return { ...state, history: action.history };
   }
+}
+
+export function renderTerminalFrame(state: RenderTerminalViewState, surface: Id | null) {
+  return state.surface === surface
+    ? { model: state.model, history: state.history }
+    : { model: null, history: emptyHistory };
 }
 
 interface RenderTerminalController {
@@ -665,8 +678,9 @@ export function useRenderTerminal({ client, surface, active, focusOnMount = fals
   return {
     terminalRef,
     focused: bound && state.focused,
-    model: bound ? state.model : null,
-    history: bound ? state.history : emptyHistory,
+    // A client's handshake can finish before its first terminal snapshot.
+    // Transport identity gates input/focus, not the last displayed frame.
+    ...renderTerminalFrame(state, surface),
     backToLive,
     sendKey,
     sendText,

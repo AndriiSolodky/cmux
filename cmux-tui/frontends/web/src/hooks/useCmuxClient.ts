@@ -28,7 +28,14 @@ export interface ConnectionConfig {
 
 export interface Toast extends NotificationEvent {}
 
-type ConnectionStatus = "idle" | "connecting" | "pairing" | "connected" | "reconnecting" | "error";
+type ConnectionStatus =
+  | "idle"
+  | "connecting"
+  | "pairing"
+  | "connected"
+  | "reconnecting"
+  | "reconnect-failed"
+  | "error";
 
 interface ConnectionState {
   status: ConnectionStatus;
@@ -62,12 +69,17 @@ export function useCmuxClient() {
   const clientsRefreshRef = useRef<(() => void) | null>(null);
   const localToastId = useRef(-1n);
   const pairingCredential = useRef<string | undefined>(undefined);
+  const retryRequested = useRef(false);
 
   useEffect(() => {
     if (!config) return;
+    const isManualRetry = retryRequested.current;
+    retryRequested.current = false;
     let cancelled = false;
     let activeClient: CmuxClient | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let reconnectNoticeTimer: ReturnType<typeof setTimeout> | undefined;
+    let reconnectNeedsAction = false;
     let titleFlushTimer: ReturnType<typeof setTimeout> | undefined;
     const pendingSurfaceTitles = new Map<Id, string>();
     let titleReconciler = new SurfaceTitleReconciler();
@@ -176,15 +188,30 @@ export function useCmuxClient() {
       const { queueClientsRefresh, queueTreeRefresh } = makeRefreshQueues(generation, client, reconciler);
 
       const scheduleRetry = () => {
-        if (cancelled || dropHandled || generation !== transportGeneration) return;
+        if (cancelled || dropHandled || reconnectNeedsAction || generation !== transportGeneration) return;
         dropHandled = true;
         activeClient = null;
         cancelRefreshQueues();
+        if (reconnectNoticeTimer === undefined) {
+          reconnectNoticeTimer = setTimeout(() => {
+            reconnectNoticeTimer = undefined;
+            if (cancelled) return;
+            reconnectNeedsAction = true;
+            if (retryTimer !== undefined) clearTimeout(retryTimer);
+            setState((current) => ({
+              ...current,
+              status: "reconnect-failed",
+              error: null,
+              reconnect: current.reconnect,
+              pairing: null,
+            }));
+          }, 10_000);
+        }
         const step = reconnectTransition({ attempt: previousAttempt, delayMs: 0 }, "retry");
         setState((current) => ({
           ...current,
           status: "reconnecting",
-          client: null,
+          // Retain the last renderer; terminal input and mutations are disabled.
           error: null,
           reconnect: step,
           pairing: null,
@@ -214,6 +241,9 @@ export function useCmuxClient() {
         const [tree, clients] = await Promise.all([client.listWorkspaces(), client.listClients().catch(() => [])]);
         if (cancelled) return;
         canReconnect = true;
+        if (reconnectNoticeTimer !== undefined) clearTimeout(reconnectNoticeTimer);
+        reconnectNoticeTimer = undefined;
+        reconnectNeedsAction = false;
         // A successful (re)connect resets the retry baseline so the next drop
         // starts from the first backoff step, not the cap.
         previousAttempt = 0;
@@ -301,7 +331,7 @@ export function useCmuxClient() {
         client.close();
         if (client === activeClient) activeClient = null;
         if (cancelled) return;
-        if (reconnecting) {
+        if (reconnecting && !reconnectNeedsAction) {
           scheduleRetry();
         } else {
           setState({
@@ -325,10 +355,11 @@ export function useCmuxClient() {
       reconnect: null,
       pairing: null,
     }));
-    void start(false);
+    void start(isManualRetry);
     return () => {
       cancelled = true;
       if (retryTimer !== undefined) clearTimeout(retryTimer);
+      if (reconnectNoticeTimer !== undefined) clearTimeout(reconnectNoticeTimer);
       discardPendingSurfaceTitles();
       cancelRefreshQueues();
       refreshRef.current = null;
@@ -340,14 +371,22 @@ export function useCmuxClient() {
   }, [config]);
 
   const connect = useCallback((next: ConnectionConfig) => {
+    // This is an explicit session switch, not a reconnect. Never carry a
+    // renderer's cached frame into a different server with reused surface IDs.
+    setState(initialState);
     dispatchSelection({ type: "reset" });
     pairingCredential.current = undefined;
     setConfig({ ...next, token: next.token || undefined });
   }, []);
 
+  const retryConnection = useCallback(() => {
+    retryRequested.current = true;
+    setConfig((current) => (current ? { ...current } : current));
+  }, []);
+
   const runMutation = useCallback(
     async (mutation: (client: CmuxClient) => Promise<unknown>) => {
-      if (!state.client) return false;
+      if (!state.client || state.status !== "connected") return false;
       try {
         await mutation(state.client);
         return true;
@@ -364,7 +403,7 @@ export function useCmuxClient() {
         return false;
       }
     },
-    [state.client],
+    [state.client, state.status],
   );
 
   const selectScreen = useCallback((workspaceId: Id, screenId: Id, surface: Id | null) => {
@@ -474,6 +513,7 @@ export function useCmuxClient() {
     active: activeScreen(view),
     toasts,
     connect,
+    retryConnection,
     selectScreen,
     selectPane,
     selectTab,
