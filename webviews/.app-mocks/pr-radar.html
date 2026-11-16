@@ -1,0 +1,47 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="mock.css"><style>
+.ci { display: inline-flex; gap: 2px; vertical-align: middle; }
+.ci i { width: 9px; height: 12px; border-radius: 2px; background: var(--mock-ok); }
+.ci i.bad { background: var(--mock-bad); } .ci i.run { background: color-mix(in srgb, var(--mock-warn) 70%, transparent); }
+.ci i.wait { background: var(--page-selection); }
+.prt { font-weight: 500; } .br { color: var(--page-text-3); font-size: 11px; }
+.log { margin: 0; padding: 10px 14px; border-top: 1px solid var(--page-separator); background: var(--cmux-surface-solid); font: 11.5px/1.55 var(--font-mono); color: var(--page-text-2); white-space: pre; }
+.log .e { color: var(--mock-bad); } .log .h { color: var(--page-text); }
+.logbar { display: flex; gap: 10px; align-items: center; padding: 7px 14px; border-top: 1px solid var(--page-separator); font-size: 12px; }
+</style></head><body><div class="page">
+<div class="toolbar"><div class="tabs"><span class="tab sel">Discover</span><span class="tab">Installed</span><span class="tab">Updates</span></div><div class="search">Search apps</div></div>
+<div class="body">
+<div class="back">‹ Discover</div>
+<div class="header">
+  <div class="icon" style="--icon: var(--mock-ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12 L19 6"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></div>
+  <div class="title"><h1 class="name">PR Radar</h1><div class="meta"><span class="verified">✓</span> cmux · Developer Tools · Free · reads GitHub</div></div>
+  <div style="display:flex;gap:8px"><span class="btn">Preview</span><span class="btn primary">Get</span></div>
+</div>
+<p class="desc">Your open pull requests, and the ones your agents opened, with CI, review and merge state in one list. Click a red check and its failing log opens in a pane beside the chat.</p>
+<p class="why"><b>Why:</b> “is it green yet” is the thing people and agents check most here, today by tab-hopping to GitHub or burning API quota on loops.</p>
+<div class="columns"><div>
+<h2>Preview</h2>
+<div class="preview">
+  <div class="pane-bar"><span class="pt">PR Radar</span><span class="t3">12 open · 3 need you</span>
+    <div class="right"><div class="seg"><span class="sel">Mine 7</span><span>Agents 5</span><span>Review requested 3</span></div><span class="t3" style="font-size:11px">updated 14s ago</span></div></div>
+  <table>
+    <tr><th>PR</th><th>Title</th><th>CI</th><th>Review</th><th>Merge</th><th>Opened by</th><th style="text-align:right">Age</th></tr>
+    <tr><td class="mono t2">#44301</td><td><div class="prt">One-click install from the App Store card</div><div class="br mono">lane/store-one-click → feat-cmux-next</div></td><td><span class="ci"><i></i><i></i><i></i><i></i><i></i></span> <span class="t3">18/18</span></td><td><span class="tag ok">Approved</span></td><td><span class="tag ok">Ready to land</span></td><td class="t2">store-install-proof</td><td class="t3 num" style="text-align:right">3h</td></tr>
+    <tr class="sel"><td class="mono t2">#44188</td><td><div class="prt">Sidebar rail keeps its tonal step under One Color</div><div class="br mono">lane/sidebar-rail-tone → feat-cmux-next</div></td><td><span class="ci"><i></i><i></i><i class="bad"></i><i></i><i></i></span> <span class="bad">1 failing</span></td><td><span class="tag">Waiting</span></td><td><span class="tag bad">Blocked</span></td><td class="t2">cx-next-ui-scale</td><td class="t3 num" style="text-align:right">5h</td></tr>
+    <tr><td class="mono t2">#44290</td><td><div class="prt">App Store: curated first-party catalog</div><div class="br mono">lane/appstore-curation → feat-cmux-next</div></td><td><span class="ci"><i></i><i></i><i></i><i class="run"></i><i class="wait"></i></span> <span class="warn">running 6m</span></td><td><span class="tag warn">Changes requested</span></td><td><span class="tag">Behind 4</span></td><td class="t2">appstore-curation</td><td class="t3 num" style="text-align:right">1d</td></tr>
+    <tr><td class="mono t2">#44276</td><td><div class="prt">acpmux: resume a hibernated chat without replaying tools</div><div class="br mono">lane/acpmux-resume-fast → main</div></td><td><span class="ci"><i></i><i></i><i></i><i></i><i></i></span> <span class="t3">24/24</span></td><td><span class="tag ok">Approved</span></td><td><span class="tag ok">Merging</span></td><td class="t2">you</td><td class="t3 num" style="text-align:right">1d</td></tr>
+    <tr><td class="mono t2">#44262</td><td><div class="prt">New Tab: snapshot paint before the live grid</div><div class="br mono">lane/newtab-first-frame → feat-cmux-next</div></td><td><span class="ci"><i></i><i class="bad"></i><i class="bad"></i><i></i><i></i></span> <span class="bad">2 failing</span></td><td><span class="tag">2 comments</span></td><td><span class="tag bad">Conflicts</span></td><td class="t2">newtab-extension-slot</td><td class="t3 num" style="text-align:right">2d</td></tr>
+    <tr><td class="mono t2">#44215</td><td><div class="prt">Ports: list listeners per workspace from cmux-tui</div><div class="br mono">lane/ports-core → main</div></td><td><span class="ci"><i class="run"></i><i class="wait"></i><i class="wait"></i><i class="wait"></i><i class="wait"></i></span> <span class="warn">queued</span></td><td><span class="tag">Draft</span></td><td><span class="tag">—</span></td><td class="t2">you</td><td class="t3 num" style="text-align:right">2d</td></tr>
+  </table>
+  <div class="logbar"><span class="bad">●</span><span class="mono">#44188 · webviews / vp lint</span><span class="t3">failed after 2m 41s · attempt 1</span><div style="margin-left:auto;display:flex;gap:6px"><span class="btn sm">Open in pane</span><span class="btn sm">Send to cx-next-ui-scale</span><span class="btn sm">Re-run</span></div></div>
+<pre class="log"><span class="h">$ bun run check:design-tokens</span>
+src/sidebar/rail.css:41:3  <span class="e">error</span>  raw color #2b2b2e; use --cmux-sidebar-surface  design-tokens/no-raw-color
+src/sidebar/rail.css:58:12 <span class="e">error</span>  border-radius 999px on a row; use --r-row        design-tokens/no-capsule
+<span class="e">✕ 2 problems (2 errors, 0 warnings)</span>   <span class="t3">exit 1 · log 312 lines · showing the failing step</span></pre>
+</div></div>
+<div class="side">
+  <div><h2>Reads</h2><ul><li><span class="k">GitHub</span><span>Pull requests, checks and reviews on repos you pick (read only)</span></li><li><span class="k">Sessions</span><span>Which agent session opened each branch</span></li><li><span class="k">Panes</span><span>Opens a log or diff beside the current chat</span></li></ul></div>
+  <div><h2>Shows up in</h2><ul><li><span class="k">Sidebar</span><span>Red dot on a workspace whose PR failed</span></li><li><span class="k">New Tab</span><span>“Needs you” row: 3 PRs</span></li><li><span class="k">Palette</span><span><span class="kbd">⌘⇧P</span> Open failing check</span></li></ul></div>
+  <div><h2>Cost</h2><ul><li><span class="k">GitHub API</span><span>One shared poller for every pane and agent, about 40 calls an hour</span></li></ul></div>
+  <div><h2>Version</h2><ul><li><span class="k">Proposed</span><span class="t2">Not built yet</span></li></ul></div>
+</div></div>
+</div></div></body></html>
