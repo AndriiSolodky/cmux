@@ -424,7 +424,8 @@ export function ThreadMinimap({
   const { side, menu: sideMenu } = useRailSide();
   // Right-click: whose prompts it shows, then which edge it sits on. Only other agents' messages is
   // offered while the chat has one.
-  const hasIncoming = read.ticks.some((tick) => tick.from !== undefined);
+  // Once per prompt list, not per render: a scroll's band move renders the rail every frame.
+  const hasIncoming = useMemo(() => read.ticks.some((tick) => tick.from !== undefined), [read.ticks]);
   const menu: ContextMenuItem[] = [
     ...(["all", "mine", "agents"] as const).map((each) => ({
       id: `rail-filter-${each}`,
@@ -1616,7 +1617,10 @@ const TickList = memo(function TickList({
   if (!entrance || entrance.sessionId !== sessionId || entrance.ticks !== ticks) {
     const initial = !entrance || entrance.sessionId !== sessionId;
     const tail = initial ? undefined : entrance!.ticks.at(-1)?.key;
-    const after = tail === undefined ? -1 : (ticks.keyIndex(tail) ?? -1);
+    // An older page lands above the old tail, which is still the last tick: read it there, so a
+    // prepend builds no key map over every held prompt (RailRows.keyIndex is O(prompts) once a list).
+    const after =
+      tail === undefined ? -1 : ticks.at(-1)?.key === tail ? ticks.length - 1 : (ticks.keyIndex(tail) ?? -1);
     const pending = new Set(initial ? [] : entrance!.pending);
     if (!initial && (after >= 0 || entrance!.ticks.length === 0)) {
       for (let index = Math.max(ticks.pendingCount, after + 1); index < ticks.length; index++)
