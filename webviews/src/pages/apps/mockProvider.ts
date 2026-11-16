@@ -34,6 +34,9 @@ export class MockAppsProvider implements PageClient {
   installed: Record<string, InstalledApp>;
   grants: Record<string, Grants>;
   offline = false;
+  /** `tabs.newTabApp`: the app New Tab shows. */
+  newTabApp?: string;
+  private readonly newTabWatchers = new Map<number, (data: unknown, seq: number) => void>();
   /** Errors the next call of an op throws once (a timeout, a refusal). */
   private readonly failures = new Map<string, Error>();
   /** The host's page streams (connection, dispatcher commands). */
@@ -48,6 +51,7 @@ export class MockAppsProvider implements PageClient {
     this.details = data.details;
     this.installed = data.installed;
     this.grants = data.grants;
+    this.newTabApp = data.newTabApp;
   }
 
   async call<R>(op: string, rawParams: unknown): Promise<R> {
@@ -89,6 +93,7 @@ export class MockAppsProvider implements PageClient {
             name: row.name,
             tier: row.tier ?? "verified",
             hide_only: row.tier === "first-party",
+            new_tab: row.new_tab ?? this.details[row.id]?.new_tab === true,
             state: {
               installed: true,
               enabled: row.enabled,
@@ -200,6 +205,14 @@ export class MockAppsProvider implements PageClient {
         }
         return this.changed(app) as R;
       }
+      case AppsOps.newTabGet:
+        return { app: this.newTabApp ?? null } as R;
+      case AppsOps.newTabSet: {
+        this.newTabApp = typeof params.app === "string" ? params.app : undefined;
+        const event = { app: this.newTabApp ?? null };
+        for (const [sub, watcher] of this.newTabWatchers) watcher(event, sub);
+        return event as R;
+      }
       case OPEN_ACTION.op:
         return { ran: true } as R;
       default:
@@ -217,6 +230,10 @@ export class MockAppsProvider implements PageClient {
     if (this.offline) throw pageError(LINK_CLOSED, "disconnected", true);
     const sub = this.nextSub++;
     const emit = onEvent as (data: unknown, seq: number) => void;
+    if (stream === AppsOps.newTabChanged) {
+      this.newTabWatchers.set(sub, emit);
+      return () => void this.newTabWatchers.delete(sub);
+    }
     if (stream === AppsOps.watch) {
       this.watchers.set(sub, emit);
       return () => void this.watchers.delete(sub);
@@ -252,6 +269,7 @@ export class MockAppsProvider implements PageClient {
       categories: detail.categories,
       keywords: detail.keywords,
       hide_only: detail.tier === "first-party",
+      new_tab: detail.new_tab === true,
       install: installed
         ? {
             installed: true,
@@ -293,6 +311,8 @@ export function sampleApps(): {
   details: Record<string, AppDetail>;
   installed: Record<string, InstalledApp>;
   grants: Record<string, Grants>;
+  /** The app New Tab shows (`tabs.newTabApp`), when one is set. */
+  newTabApp?: string;
 } {
   const base = { install_count: 0, installed: false, screenshots: [] as string[], icon: { path: ICON } };
   const details: Record<string, AppDetail> = {

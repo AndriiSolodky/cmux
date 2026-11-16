@@ -2,6 +2,7 @@
 // AppInstalledView); first-party apps have no Remove (FIRST-PARTY-APPS). Logs show the owner's last lines.
 import type { Strings } from "../shared/i18n";
 import { GrantsPanel } from "./GrantsPanel";
+import { NewTabAction, NewTabBadge } from "./items";
 import { isRemovable } from "./model";
 import { AppIcon, Badge, Switch } from "./parts";
 import type { AppsSnapshot, AppsStore } from "./store";
@@ -37,6 +38,7 @@ export function InstalledView({ snap, store, strings }: { snap: AppsSnapshot; st
                     {app.name} <span className="apps-version">{app.version}</span>
                     {app.source === "local" && <Badge text={t("store.badge.local")} />}
                   </span>
+                  <NewTabBadge app={app} newTabApp={snap.newTabApp} strings={strings} />
                   <span className={app.failure ? "apps-failure selectable" : "apps-muted"}>
                     {app.failure ?? app.id}
                   </span>
@@ -55,6 +57,7 @@ export function InstalledView({ snap, store, strings }: { snap: AppsSnapshot; st
                     label={t("store.action.enabled")}
                     onChange={(on) => void store.setEnabled(app.id, on)}
                   />
+                  <NewTabAction app={app} newTabApp={snap.newTabApp} store={store} strings={strings} />
                   {app.update && (
                     <button type="button" className="apps-button primary" onClick={() => void store.update(app.id)}>
                       {t("store.action.update")}

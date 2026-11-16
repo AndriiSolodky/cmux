@@ -66,6 +66,44 @@ export function ItemAction({ app, store, strings }: ItemProps) {
   );
 }
 
+/**
+ * Use as New Tab on an installed app that draws on the New Tab page (`cmux.newtab/1`); on the app
+ * New Tab shows now (`tabs.newTabApp`), Stop Using as New Tab. Nothing for any other app.
+ */
+export function NewTabAction({
+  app,
+  newTabApp,
+  store,
+  strings,
+}: {
+  app: { id: string; new_tab?: boolean };
+  newTabApp?: string;
+  store: AppsStore;
+  strings: Strings;
+}) {
+  if (!app.new_tab) return null;
+  const { t } = strings;
+  const current = newTabApp === app.id;
+  return (
+    <button
+      type="button"
+      className="apps-button"
+      data-new-tab-action={current ? "stop" : "use"}
+      onClick={(event) => {
+        event.stopPropagation();
+        void store.setNewTabApp(current ? undefined : app.id);
+      }}
+    >
+      {t(current ? "store.action.stopNewTab" : "store.action.useAsNewTab")}
+    </button>
+  );
+}
+
+/** On New Tab, as quiet text, on the app New Tab shows now (`tabs.newTabApp`). */
+export function NewTabBadge({ app, newTabApp, strings }: { app: { id: string }; newTabApp?: string; strings: Strings }) {
+  return newTabApp === app.id ? <Badge text={strings.t("store.badge.onNewTab")} /> : null;
+}
+
 /** Installed or Disabled; nothing for an app that is not installed. */
 export function StateBadge({ app, strings }: { app: CatalogApp; strings: Strings }) {
   const state = itemState(app);
@@ -102,7 +140,8 @@ export function ItemCard({
   strings,
   style,
   featured = false,
-}: ItemProps & { style: CardStyle; featured?: boolean }) {
+  newTabApp,
+}: ItemProps & { style: CardStyle; featured?: boolean; newTabApp?: string }) {
   const { t } = strings;
   const id = descriptionId(app);
   const classes = `apps-card${featured ? " featured" : ""}${style === "standard" ? "" : ` ${style}`}`;
@@ -147,10 +186,12 @@ export function ItemCard({
           <Badge text={t(TierLabel[app.tier])} />
           {app.categories[0] && <Badge text={categoryLabel(app.categories[0], t)} />}
           <StateBadge app={app} strings={strings} />
+          <NewTabBadge app={app} newTabApp={newTabApp} strings={strings} />
           <span className="apps-card-actions">
             <button type="button" className="apps-button apps-button-subtle" onClick={() => void store.select(app.id)}>
               {t("store.detail.preview")}
             </button>
+            {app.installed && <NewTabAction app={app} newTabApp={newTabApp} store={store} strings={strings} />}
             <ItemAction app={app} store={store} strings={strings} />
           </span>
         </footer>
@@ -269,7 +310,7 @@ export function AddsList({ contributes, strings }: { contributes?: readonly AppC
 }
 
 /** An installed app's settings on its page: Enabled, the same switch as the Installed tab. */
-export function ItemSettings({ app, store, strings }: ItemProps) {
+export function ItemSettings({ app, store, strings, newTabApp }: ItemProps & { newTabApp?: string }) {
   if (!app.installed) return null;
   const { t } = strings;
   return (
@@ -282,6 +323,14 @@ export function ItemSettings({ app, store, strings }: ItemProps) {
           onChange={(on) => void store.setEnabled(app.id, on)}
         />
       </div>
+      {app.new_tab && (
+        <div className="apps-setting">
+          <span>
+            <NewTabBadge app={app} newTabApp={newTabApp} strings={strings} />
+          </span>
+          <NewTabAction app={app} newTabApp={newTabApp} store={store} strings={strings} />
+        </div>
+      )}
     </DetailSection>
   );
 }

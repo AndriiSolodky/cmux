@@ -70,6 +70,8 @@ export interface AppsSnapshot {
   detailError?: string;
   connection: Connection;
   error?: string;
+  /** The app New Tab shows (`tabs.newTabApp`); undefined when unset or not yet read. */
+  newTabApp?: string;
 }
 
 const LOG_LINES = 200;
@@ -82,6 +84,7 @@ export class AppsStore {
   private readonly listeners = new Set<() => void>();
   private unwatch?: () => void;
   private unpage?: () => void;
+  private unNewTab?: () => void;
   /** Icon data URLs by `app\u0000asset`; a failed load is "" so it is not asked again. */
   private readonly icons = new Map<string, string>();
   private starting = false;
@@ -175,6 +178,20 @@ export class AppsStore {
         if (lifetime !== this.lifetime) return;
         this.set(failure(error));
       }
+      try {
+        // `tabs.newTabApp` from any writer (Settings, the CLI, this page). A host without the
+        // stream still answers the reload's read.
+        const unNewTab = await this.client.subscribe<{ app?: string | null }>(AppsOps.newTabChanged, (event) => {
+          if (lifetime === this.lifetime) this.set({ newTabApp: event?.app ?? undefined });
+        });
+        if (lifetime !== this.lifetime) {
+          unNewTab();
+          return;
+        }
+        this.unNewTab = unNewTab;
+      } catch {
+        // No live updates; the page still reads the value on every reload.
+      }
       if (lifetime === this.lifetime) await this.reload();
     } finally {
       if (lifetime === this.lifetime) this.starting = false;
@@ -203,6 +220,8 @@ export class AppsStore {
     this.starting = false;
     this.unwatch?.();
     this.unwatch = undefined;
+    this.unNewTab?.();
+    this.unNewTab = undefined;
   }
 
   /** Re-reads the catalog, installed list, and update list owned by the supervisor. */
@@ -212,12 +231,17 @@ export class AppsStore {
     const updatesGeneration = ++this.updatesGeneration;
     this.set({ loading: true, catalogStatus: "loading", catalogError: undefined });
     try {
-      const [catalog, installed, updateResponse] = await Promise.all([
+      const [catalog, installed, updateResponse, newTab] = await Promise.all([
         listCatalog(this.client),
         listInstalled(this.client),
         listUpdates(this.client)
           .then((result) => ({ result, error: undefined as unknown }))
           .catch((error: unknown) => ({ result: undefined, error })),
+        // The host's `tabs.newTabApp`; a host without the op leaves the value as it was.
+        this.client
+          .call<{ app?: string | null }>(AppsOps.newTabGet, {})
+          .then((reply) => ({ app: reply?.app ?? undefined }))
+          .catch(() => undefined),
       ]);
       if (generation !== this.generation) return;
       const listed = catalog.apps.filter(listedInStore);
@@ -263,6 +287,7 @@ export class AppsStore {
         catalogStatus: "ready",
         catalogError: undefined,
         connection: "connected",
+        ...(newTab ? { newTabApp: newTab.app } : {}),
         error: undefined,
       });
       if (generation !== this.generation) return;
@@ -530,6 +555,23 @@ export class AppsStore {
     return granted
       ? this.intent(AppsOps.grantSet, { app, scope, granted })
       : this.intent(AppsOps.grantRevoke, { app, scope });
+  }
+
+  /**
+   * Makes `app` the one New Tab shows (`tabs.newTabApp`), or resets it with undefined. The host
+   * writes it only on the person's click; the page shows the value the host answers.
+   */
+  async setNewTabApp(app: string | undefined): Promise<void> {
+    if (!this.client) return;
+    const lifetime = this.lifetime;
+    try {
+      const reply = await this.client.call<{ app?: string | null }>(AppsOps.newTabSet, { app: app ?? null });
+      if (lifetime !== this.lifetime) return;
+      this.set({ newTabApp: reply?.app ?? undefined, ...(this.snapshot.error ? { error: undefined } : {}) });
+    } catch (error) {
+      if (lifetime !== this.lifetime) return;
+      if (!(isPageError(error) && error.code === CANCELLED)) this.set(failure(error));
+    }
   }
 
   /** Opens the app's page: the host action `app.open` (a host verb, not a daemon op). */

@@ -148,7 +148,7 @@ function Discover({ snap, store, strings }: { snap: AppsSnapshot; store: AppsSto
               </div>
               <div className="apps-featured-grid">
                 {featured.map((app) => (
-                  <ItemCard key={app.id} app={app} store={store} strings={strings} style={snap.card} featured />
+                  <ItemCard key={app.id} app={app} store={store} strings={strings} style={snap.card} featured newTabApp={snap.newTabApp} />
                 ))}
               </div>
             </section>
@@ -167,7 +167,7 @@ function Discover({ snap, store, strings }: { snap: AppsSnapshot; store: AppsSto
               <div className={snap.layout === "grid" ? "apps-grid" : "apps-rows"}>
                 {catalog.map((app) =>
                   snap.layout === "grid" ? (
-                    <ItemCard key={app.id} app={app} store={store} strings={strings} style={snap.card} />
+                    <ItemCard key={app.id} app={app} store={store} strings={strings} style={snap.card} newTabApp={snap.newTabApp} />
                   ) : (
                     <ItemRow
                       key={app.id}

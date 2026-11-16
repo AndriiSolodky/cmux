@@ -37,6 +37,8 @@ export interface CatalogApp {
   hidden?: boolean;
   /** The owner's word: hidable, never removable (first-party apps; FIRST-PARTY-APPS). */
   hide_only?: boolean;
+  /** The app draws on the New Tab page (`cmux.newtab/1`), so it can be the New Tab app. */
+  new_tab?: boolean;
 }
 
 export interface CatalogListResult {
@@ -111,6 +113,8 @@ export interface InstalledApp {
   tier?: AppTier;
   /** The owner's word on Hide versus Remove; wins over `tier`. */
   hide_only?: boolean;
+  /** The app draws on the New Tab page (`cmux.newtab/1`). */
+  new_tab?: boolean;
   icon?: AppIconRef;
   update?: { version: string };
   /** The host's last failure for this app, when it has one. */
@@ -200,6 +204,12 @@ export const AppsOps = {
   updatesList: "cmux.apps.updates.list",
   update: "cmux.apps.update",
   logs: "cmux.apps.logs",
+  /** The app New Tab shows (`tabs.newTabApp`): the host's own setting, `{app}` (null when unset). */
+  newTabGet: "cmux.apps.newtab.get",
+  /** Sets or resets (`app: null`) `tabs.newTabApp`, only on the person's click. */
+  newTabSet: "cmux.apps.newtab.set",
+  /** `{app}` each time `tabs.newTabApp` changes, from any writer. */
+  newTabChanged: "cmux.apps.newtab.changed",
   /** The daemon's `apps-changed` on the page relay (page-router.json `events`; DaemonPageRelay). */
   watch: "cmux.apps.changed",
 } as const;

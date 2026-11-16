@@ -142,7 +142,7 @@ export function AppDetailView({
             </ul>
           )}
         </DetailSection>
-        <ItemSettings app={detail} store={store} strings={strings} />
+        <ItemSettings app={detail} store={store} strings={strings} newTabApp={snap.newTabApp} />
         <DetailSection title={t("store.detail.versions")}>
           <ul className="apps-versions">
             {detail.versions.map((version) => (
