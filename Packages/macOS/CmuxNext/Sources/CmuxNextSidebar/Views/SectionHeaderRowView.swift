@@ -81,9 +81,8 @@ final class SectionHeaderRowView: SidebarRowView {
         }
     }
 
-    /// The machine as its header draws it: a link that has been coming up, dropped or out of reach for
-    /// less than the grace (`holdsStatusLabel`, `SidebarPlaceholderGrace.holdingConnectingLabels`)
-    /// keeps the connected look, with no spinner and no "Reconnecting…", since it redials on its own
+    /// The machine as its header draws it: automatic recovery (`holdsStatusLabel`)
+    /// keeps the cached connected look, with no spinner or connection label, since it redials on its own
     /// (Leo, 2026-11-14: "i also want all our connectivity stuff to shut the fuck up"). The tooltip and
     /// VoiceOver still read the real state.
     static func drawn(_ machine: SidebarMachine) -> SidebarMachine {
