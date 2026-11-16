@@ -2,7 +2,7 @@ import "../shared/desktop";
 import { createRoot } from "react-dom/client";
 import { UiProvider, languageDirection } from "../../ui/UiProvider";
 import { createPageClient, type PageClient } from "../shared/pageClient";
-import { createStrings } from "../shared/i18n";
+import { renderLocalized } from "../shared/localizedRoot";
 import table from "./generated/strings.json";
 import { MockOnboardingProvider } from "./mockProvider";
 import { OnboardingPage } from "./Onboarding";
@@ -13,11 +13,14 @@ import "./styles.css";
 
 export function mountOnboarding(root: HTMLElement, client: PageClient | null = defaultClient()): OnboardingStore {
   const store = new OnboardingStore(client);
-  const strings = createStrings(table);
-  createRoot(root).render(
-    <UiProvider container={root} dir={languageDirection(strings.language)}>
-      <OnboardingPage store={store} strings={strings} />
-    </UiProvider>,
+  renderLocalized(
+    createRoot(root),
+    table,
+    (strings) => (
+      <UiProvider container={root} dir={languageDirection(strings.language)}>
+        <OnboardingPage store={store} strings={strings} />
+      </UiProvider>
+    ),
   );
   void store.start();
   return store;
