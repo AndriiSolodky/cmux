@@ -162,6 +162,49 @@ mod tests {
         assert_eq!(lines[5], "GATE_ROUND row=row side=god round=3 p95=150");
     }
 
+    fn pair_notices(lines: &[String]) -> Vec<&String> {
+        lines.iter().filter(|line| line.starts_with("GATE_ROUND_PAIR_SPREAD")).collect()
+    }
+
+    #[test]
+    fn two_rounds_far_apart_are_compared_with_each_other() {
+        // Each round is within 2x of the median round (10,000 ns), so the median check says
+        // nothing, yet rounds one and three are 3.7x apart: one of them did different work.
+        let small = [5_100, 10_000, 19_000].map(round).to_vec();
+        let god = [10_000, 10_100, 10_200].map(round).to_vec();
+        let lines = report_lines("row", &[("small", &small), ("god", &god)]);
+        assert!(notices(&lines).is_empty(), "{lines:#?}");
+        assert_eq!(
+            pair_notices(&lines),
+            [
+                "GATE_ROUND_PAIR_SPREAD row=row side=small fast_round=1 fast_p95=5100 slow_round=3 slow_p95=19000 factor=2"
+            ]
+        );
+    }
+
+    #[test]
+    fn the_replay_append_gate_at_a59587e5_names_its_farthest_rounds() {
+        let foreign = [9_700, 2_004, 2_400, 2_800, 3_100].map(round).to_vec();
+        let own = [14_500, 1_993, 2_300, 2_700, 3_000].map(round).to_vec();
+        let lines =
+            report_lines("replay-append-at-a59587e5", &[("small", &foreign), ("god", &own)]);
+        assert_eq!(
+            pair_notices(&lines),
+            [
+                "GATE_ROUND_PAIR_SPREAD row=replay-append-at-a59587e5 side=small fast_round=2 fast_p95=2004 slow_round=1 slow_p95=9700 factor=2",
+                "GATE_ROUND_PAIR_SPREAD row=replay-append-at-a59587e5 side=god fast_round=2 fast_p95=1993 slow_round=1 slow_p95=14500 factor=2",
+            ]
+        );
+    }
+
+    #[test]
+    fn rounds_within_the_factor_of_each_other_make_no_pair_notice() {
+        let small = [10_151, 10_400, 9_900, 11_200, 10_610].map(round).to_vec();
+        let god = [10_000, 19_999, 12_000].map(round).to_vec();
+        let lines = report_lines("row", &[("small", &small), ("god", &god)]);
+        assert!(pair_notices(&lines).is_empty(), "{lines:#?}");
+    }
+
     #[test]
     fn a_round_far_below_the_median_is_named_too() {
         let notices = spread_notices("row", "god", &[10_000, 10_500, 2_000, 9_800, 10_200], 2.0);
