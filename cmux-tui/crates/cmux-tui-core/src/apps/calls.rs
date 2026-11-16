@@ -10,7 +10,9 @@ use cmux_app_host::ToHost;
 use serde_json::{Value, json};
 
 use super::actions::{self, ActionDecision};
+use super::agent_ask;
 use super::egress;
+use super::page_ops;
 use super::grants::{Decision, GestureCheck, Grant, OpClass, ScopeTable, needs_gesture};
 use super::host::HostProcess;
 use super::mirror::Origin;
@@ -118,11 +120,18 @@ impl Supervisor {
         });
         // Ops the daemon does not own go to their provider (the Mac app), or
         // fail at once when none is connected (APP-R1).
-        let supervisor_op = op.starts_with("app.storage.") || op == "net.fetch";
+        let supervisor_op = op.starts_with("app.storage.")
+            || op == "net.fetch"
+            || op == "agent.ask"
+            || page_ops::daemon_owned(&op);
         if !supervisor_op && !self.router.owns(&op) {
             if op == "integration.request" {
                 // The provider sees the method the grant check decided on.
                 provider::normalize_method(&mut params);
+            }
+            if op == "page.read" {
+                // The Mac app runs the daemon's script, never one from the app.
+                params = page_ops::read_params(&params);
             }
             let routed =
                 self.route_to_provider_locked(inner, key, cb, &op, params, origin, idempotency_key);
@@ -176,6 +185,14 @@ impl Supervisor {
                 .call(&app, &op, &params)
                 .map(|value| json!({ "value": value }))
                 .map_err(|e| error(e.code, e.message));
+        }
+        if page_ops::daemon_owned(&op) {
+            return self.page_style_call(&app, &op, &params);
+        }
+        if op == "agent.ask" {
+            return agent_ask::ask(self.asker(), &self.asks, &app, &params)
+                .map(|value| json!({ "value": value }))
+                .map_err(|e| e.body());
         }
         if op == "net.fetch" {
             let request = egress::admit(&params, &grant.scopes, grant.sandboxed)
