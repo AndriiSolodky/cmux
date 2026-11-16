@@ -503,7 +503,14 @@ impl CongestionController {
             }
         }
         if loss > 0.10 {
-            let target = self.target_bps as f64 * (1.0 - 0.5 * loss.min(1.0));
+            let before = self.target_bps as f64;
+            let target = before * (1.0 - 0.5 * loss.min(1.0));
+            // Heavy loss while the stream fills the target is a full queue (a queue too
+            // short or too fast-filling for the delay trend to see): what still arrives
+            // is the capacity, so growth afterwards is slow near it, not a 2x probe.
+            if let Some(acked) = self.acked_bps().filter(|&a| a >= 0.5 * before || loss > 0.3) {
+                self.capacity_bps = Some(acked);
+            }
             self.target_bps = target as u64;
             self.last_increase_us = Some(now_us);
         }
