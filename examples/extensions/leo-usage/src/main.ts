@@ -108,7 +108,7 @@ function sectionRow(p: () => Provider): View {
 /** The 24-hour total tokens and dollars. */
 function counter(shown: { tokens: () => number | null; cost: () => number | null }, big: boolean): View {
   return HStack({ spacing: 6 }, [
-    Text(() => tokens(shown.tokens())).font(big ? "largeTitle" : "title3").monospaced().weight("semibold").lineLimit(1),
+    Text(() => tokens(shown.tokens())).font(big ? "largeTitle" : "title3").monospaced().weight("semibold").fixedSize("horizontal"),
     Text(() => `tokens · ${dollars(shown.cost())} today`).font(big ? "title3" : "caption").color(cmux.theme.text.secondary).lineLimit(1),
     Spacer()
   ])

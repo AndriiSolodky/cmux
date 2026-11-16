@@ -22,11 +22,17 @@
   align-items: center;
   gap: var(--grid-base);
 }
+/* Each child centered in the stack, as the native ZStack lays them out; a child holding a Spacer
+   fills the stack's width there (it has no natural width), so it stretches here. */
 .cmux-app-scene-zstack {
   display: grid;
+  place-items: center;
 }
 .cmux-app-scene-zstack > * {
   grid-area: 1 / 1;
+}
+.cmux-app-scene-zstack > :has(.cmux-app-scene-spacer) {
+  justify-self: stretch;
 }
 .cmux-app-scene-group,
 .cmux-app-scene-foreach,

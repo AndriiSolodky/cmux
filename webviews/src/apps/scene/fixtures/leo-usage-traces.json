@@ -9,7 +9,13 @@
         "op": "create",
         "id": "n5",
         "type": "Text",
-        "props": { "font": "title3", "monospaced": true, "weight": "semibold", "lineLimit": 1, "text": "59.90M" }
+        "props": {
+          "font": "title3",
+          "monospaced": true,
+          "weight": "semibold",
+          "fixedSize": "horizontal",
+          "text": "59.90M"
+        }
       },
       {
         "op": "create",
@@ -359,7 +365,13 @@
         "op": "create",
         "id": "n5",
         "type": "Text",
-        "props": { "font": "largeTitle", "monospaced": true, "weight": "semibold", "lineLimit": 1, "text": "59.90M" }
+        "props": {
+          "font": "largeTitle",
+          "monospaced": true,
+          "weight": "semibold",
+          "fixedSize": "horizontal",
+          "text": "59.90M"
+        }
       },
       {
         "op": "create",
@@ -811,7 +823,13 @@
         "op": "create",
         "id": "n5",
         "type": "Text",
-        "props": { "font": "title3", "monospaced": true, "weight": "semibold", "lineLimit": 1, "text": "59.90M" }
+        "props": {
+          "font": "title3",
+          "monospaced": true,
+          "weight": "semibold",
+          "fixedSize": "horizontal",
+          "text": "59.90M"
+        }
       },
       {
         "op": "create",
@@ -1167,7 +1185,13 @@
         "op": "create",
         "id": "n5",
         "type": "Text",
-        "props": { "font": "largeTitle", "monospaced": true, "weight": "semibold", "lineLimit": 1, "text": "59.90M" }
+        "props": {
+          "font": "largeTitle",
+          "monospaced": true,
+          "weight": "semibold",
+          "fixedSize": "horizontal",
+          "text": "59.90M"
+        }
       },
       {
         "op": "create",
@@ -1584,7 +1608,13 @@
         "op": "create",
         "id": "n7",
         "type": "Text",
-        "props": { "font": "title3", "monospaced": true, "weight": "semibold", "lineLimit": 1, "text": "59.90M" }
+        "props": {
+          "font": "title3",
+          "monospaced": true,
+          "weight": "semibold",
+          "fixedSize": "horizontal",
+          "text": "59.90M"
+        }
       },
       {
         "op": "create",
@@ -1943,7 +1973,13 @@
         "op": "create",
         "id": "n7",
         "type": "Text",
-        "props": { "font": "largeTitle", "monospaced": true, "weight": "semibold", "lineLimit": 1, "text": "59.90M" }
+        "props": {
+          "font": "largeTitle",
+          "monospaced": true,
+          "weight": "semibold",
+          "fixedSize": "horizontal",
+          "text": "59.90M"
+        }
       },
       {
         "op": "create",
