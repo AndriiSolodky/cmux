@@ -96,6 +96,39 @@ for helper_dir in bin libexec; do
 done
 echo "==> entitlements, helpers, Chromium helpers and browser host: OK"
 
+# The Screen Share helper (design D9): cmux copies it out of the app as it does
+# the Computer Use helper, so it gets the same checks when the app carries it.
+SCREEN_SHARE_HELPER="$APP_PATH/Contents/Library/cmux Screen Share.app"
+check_screen_share_helper() {
+  [[ -d "$SCREEN_SHARE_HELPER" ]] || return 0
+  /usr/bin/codesign --verify --strict --verbose=2 "$SCREEN_SHARE_HELPER"
+  if /usr/bin/codesign -d --entitlements :- "$SCREEN_SHARE_HELPER" 2>&1 | grep -q "application-identifier"; then
+    echo "error: nested Screen Share helper unexpectedly carries application-identifier" >&2
+    exit 1
+  fi
+  if [[ ! -f "$SCREEN_SHARE_HELPER/Contents/CodeResources" ]]; then
+    if [[ "$REQUIRE_TICKET" == true ]]; then
+      echo "error: the Screen Share helper has no stapled ticket of its own" >&2
+      exit 1
+    fi
+    echo "::notice title=Screen Share helper::no stapled ticket of its own in this copy of the app; the DMG ticket covers it"
+    return 0
+  fi
+  local share_copy="$work/standalone/cmux Screen Share.app"
+  mkdir -p "$work/standalone"
+  /usr/bin/ditto "$SCREEN_SHARE_HELPER" "$share_copy"
+  xcrun stapler validate "$share_copy"
+  verify_stapled_ticket_covers_slices "$share_copy"
+  /usr/bin/codesign --verify --strict --verbose=2 "$share_copy"
+  assess_with_gatekeeper "$share_copy"
+  echo "==> Screen Share helper: a copy out of the app keeps its own stapled ticket"
+}
+# shellcheck source=lib/notarization-ticket.sh
+source "$SCRIPT_DIR/lib/notarization-ticket.sh"
+# shellcheck source=lib/gatekeeper-assessment.sh
+source "$SCRIPT_DIR/lib/gatekeeper-assessment.sh"
+check_screen_share_helper
+
 if [[ ! -d "$COMPUTER_USE_HELPER" ]]; then
   [[ "$REQUIRE_TICKET" == false ]] || { echo "error: no Computer Use helper in this app" >&2; exit 1; }
   echo "==> no Computer Use helper in this app"
@@ -114,10 +147,6 @@ if [[ ! -f "$COMPUTER_USE_HELPER/Contents/CodeResources" ]]; then
   echo "::notice title=Computer Use helper::no stapled ticket of its own in this copy of the app; the DMG ticket covers it"
   exit 0
 fi
-# shellcheck source=lib/notarization-ticket.sh
-source "$SCRIPT_DIR/lib/notarization-ticket.sh"
-# shellcheck source=lib/gatekeeper-assessment.sh
-source "$SCRIPT_DIR/lib/gatekeeper-assessment.sh"
 copy="$work/standalone/cmux Computer Use.app"
 mkdir -p "$work/standalone"
 /usr/bin/ditto "$COMPUTER_USE_HELPER" "$copy"

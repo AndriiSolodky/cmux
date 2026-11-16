@@ -8,9 +8,10 @@ import os
 /// This Mac serving one approved device hub session on cmux.rd/1
 /// (plans/cmux-next/remote-desktop-mac-host.md section 7): `cmux rd serve`
 /// captures, encodes and injects input, and holds the secure link; this object
-/// carries its offer, answer and candidates over the session's signaling. The
-/// app is the process's responsible process, so the Screen Recording and
-/// Accessibility grants the person gave cmux apply to it.
+/// carries its offer, answer and candidates over the session's signaling. When
+/// cmux Screen Share has Screen Recording, the process runs as that helper under
+/// its own grants (`MacScreenShareHelper`, screen-share D9); otherwise the app is
+/// its responsible process, so the grants the person gave cmux apply to it.
 ///
 /// The viewer chooses the protocol with its offer. A viewer that offers WebRTC
 /// (the iPhone's Screen Sharing viewer, or a Mac from before cmux.rd/1) is served
@@ -48,8 +49,13 @@ nonisolated final class MacScreenRdHost: Sendable {
     /// Serves a WebRTC viewer; nil is `ScreenStreamHost` (tests replace it: no WebRTC or capture there).
     private let webRTCServer: (@Sendable (MacScreenForwardedSignaling) async throws -> Void)?
 
-    init(session: Session, webRTCServer: (@Sendable (MacScreenForwardedSignaling) async throws -> Void)? = nil) {
+    /// Who runs the rd host when the viewer's offer arrives (`MacScreenShareHelper.launch`).
+    private let launch: @Sendable () -> MacScreenRdProcess.Launch
+
+    init(session: Session, webRTCServer: (@Sendable (MacScreenForwardedSignaling) async throws -> Void)? = nil,
+         launch: @escaping @Sendable () -> MacScreenRdProcess.Launch = { .app }) {
         self.session = session
+        self.launch = launch
         self.webRTCServer = webRTCServer
     }
 
@@ -154,7 +160,7 @@ nonisolated final class MacScreenRdHost: Sendable {
                 }
                 logger.info("cmux rd: offer received (\(offer.candidates.count, privacy: .public) candidates); starting the host")
                 started = true
-                do { try process.start(.serve) } catch {
+                do { try process.start(.serve, launch: launch()) } catch {
                     emit(.sourceFailed("the screen host could not start: \(error.localizedDescription)"))
                     return
                 }

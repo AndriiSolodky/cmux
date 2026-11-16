@@ -12,6 +12,8 @@
 #
 # Optional env:
 #   CMUX_HELPER_ENTITLEMENTS  (default: cmux-helper.entitlements)
+#   CMUX_SCREEN_SHARE_ENTITLEMENTS  (default: cmux-screen-share-helper.entitlements
+#                              beside this script's parent: no exceptions)
 #   CMUX_TIMESTAMP             set to "none" for un-timestamped local sigs
 #   CMUX_SIGN_SKIP_NUCLEO_FFI  set to "1" for an app that embeds no command palette
 #                              Nucleo FFI (cmux NEXT DEV: cmux-next removed it)
@@ -28,8 +30,9 @@
 #   CMUX_SIGN_MODE             "all" (default), "all-except-computer-use", or
 #                              "main-only". The split Computer Use notarization
 #                              flow uses all-except-computer-use while Apple's
-#                              service processes the helper, then main-only after
-#                              stapling so the submitted helper CDHash survives.
+#                              service processes the helpers (Computer Use and
+#                              Screen Share, one submission), then main-only after
+#                              stapling so the submitted helper CDHashes survive.
 #
 # Signs in the Apple-documented inside-out order:
 #   0. scripts/sign-cmux-bundle-helpers.sh stamps the cmux server's launchd
@@ -40,7 +43,8 @@
 #      scripts/sign-cmux-bundle-helpers.sh; libexec/cmux-server-helper gets none.
 #      The macOS cmux-tui SSH payloads under Resources/bin/cmux-tui-ssh/ are
 #      signed the same way (scripts/sign-cmux-tui-ssh-payloads.sh).
-#   2. The nested cmux Computer Use app with the Developer ID identity.
+#   2. The nested cmux Computer Use app with the Developer ID identity, then
+#      the nested cmux Screen Share app (design D9) with its own entitlements.
 #   3. Each nested plugin under Contents/PlugIns/* with --deep.
 #   4. The embedded Chromium engine (CEF framework, its libraries, the shim
 #      and the five helper apps with their own entitlements) through
@@ -69,6 +73,7 @@ APP_PATH="$1"
 APP_ENTITLEMENTS="$2"
 IDENTITY="$3"
 HELPER_ENTITLEMENTS="${CMUX_HELPER_ENTITLEMENTS:-cmux-helper.entitlements}"
+SCREEN_SHARE_ENTITLEMENTS="${CMUX_SCREEN_SHARE_ENTITLEMENTS:-$SCRIPT_DIR/../cmux-screen-share-helper.entitlements}"
 SIGN_MODE="${CMUX_SIGN_MODE:-all}"
 SIGNING_KEYCHAIN_TOOL="${CMUX_SIGNING_KEYCHAIN_TOOL:-$SCRIPT_DIR/ci/signing-keychain.sh}"
 
@@ -103,6 +108,11 @@ fi
 
 COMMON=(--force --options runtime "${TS_FLAG[@]}" --sign "$IDENTITY")
 COMPUTER_USE_HELPER="$APP_PATH/Contents/Library/cmux Computer Use.app"
+SCREEN_SHARE_HELPER="$APP_PATH/Contents/Library/cmux Screen Share.app"
+if [[ -d "$SCREEN_SHARE_HELPER" && ! -f "$SCREEN_SHARE_ENTITLEMENTS" ]]; then
+  echo "error: screen share helper entitlements not found at $SCREEN_SHARE_ENTITLEMENTS" >&2
+  exit 1
+fi
 SYSTEM_EXTENSIONS_DIR="$APP_PATH/Contents/Library/SystemExtensions"
 CEF_FRAMEWORK_NAME="Chromium Embedded Framework.framework"
 
@@ -148,6 +158,14 @@ if [[ "$SIGN_MODE" == "all" || "$SIGN_MODE" == "all-except-computer-use" ]]; the
       "${COMMON[@]}" \
       --entitlements "$HELPER_ENTITLEMENTS" \
       "$COMPUTER_USE_HELPER"
+  fi
+  # The Screen Share helper is in the same early submission, so the same rule.
+  if [[ "$SIGN_MODE" == "all" && -d "$SCREEN_SHARE_HELPER" ]]; then
+    echo "==> signing nested helper $(basename "$SCREEN_SHARE_HELPER")"
+    "$SCRIPT_DIR/codesign-retry.sh" \
+      "${COMMON[@]}" \
+      --entitlements "$SCREEN_SHARE_ENTITLEMENTS" \
+      "$SCREEN_SHARE_HELPER"
   fi
 
   # 3. Plugins
@@ -211,6 +229,9 @@ for alias in cmux-tui acpmux; do
 done
 if [[ -d "$COMPUTER_USE_HELPER" ]]; then
   /usr/bin/codesign --verify --strict --verbose=2 "$COMPUTER_USE_HELPER"
+fi
+if [[ -d "$SCREEN_SHARE_HELPER" ]]; then
+  /usr/bin/codesign --verify --strict --verbose=2 "$SCREEN_SHARE_HELPER"
 fi
 # The sidecar must carry exactly the slices the app does: universal for stable
 # and the transitional nightly, one architecture for thinned nightlies.

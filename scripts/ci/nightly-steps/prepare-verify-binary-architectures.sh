@@ -8,7 +8,8 @@ for binary in \
   "$APP/Contents/Resources/bin/cmux" \
   "$APP/Contents/Resources/bin/ghostty" \
   "$APP/Contents/Resources/bin/cmux-diff-sidecar" \
-  "$APP/Contents/Library/cmux Computer Use.app/Contents/MacOS/cmux-cua"
+  "$APP/Contents/Library/cmux Computer Use.app/Contents/MacOS/cmux-cua" \
+  "$APP/Contents/Library/cmux Screen Share.app/Contents/MacOS/cmux-screen-share"
 do
   archs="$(lipo -archs "$binary")"
   echo "$binary: $archs"

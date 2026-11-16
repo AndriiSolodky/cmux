@@ -15,6 +15,11 @@ import SystemConfiguration
 public final class MacScreenShareHost {
     public private(set) var screenRecordingGranted = false
     public private(set) var accessibilityGranted = false
+    /// cmux Screen Share's own grants (screen-share D9). Sharing works with either cmux's grants or the
+    /// helper's, so the two flags above are true when either has them.
+    @ObservationIgnored let helper: MacScreenShareHelper
+    /// The helper's status read; tests replace it.
+    @ObservationIgnored var checkHelper: @Sendable () async -> MacScreenShareHelper.Status
     @ObservationIgnored private var activation: (any NSObjectProtocol)?
     /// Permission checks; tests replace them. Each is a synchronous TCC query (an IPC to tccd: Screen
     /// Recording waits on TCC's serial `com.apple.tcc.preflight.kTCCServiceScreenCapture` queue), so they
@@ -28,6 +33,9 @@ public final class MacScreenShareHost {
     /// - Parameter work: the app's blocking-work lanes; the permission checks run on its system lane.
     public init(work: BackgroundWork) {
         self.work = work
+        let helper = MacScreenShareHelper()
+        self.helper = helper
+        checkHelper = { await helper.refresh() }
     }
 
     /// At launch: reads the permissions and rechecks them whenever the app becomes active.
@@ -48,21 +56,36 @@ public final class MacScreenShareHost {
     public func refreshPermissions() async {
         reads &+= 1
         let read = reads
-        let screenRecording = checkScreenRecording, accessibility = checkAccessibility
+        let screenRecording = checkScreenRecording, accessibility = checkAccessibility, checkHelper = checkHelper
+        // The helper answers from its own process, beside the app's own checks.
+        async let helperStatus = checkHelper()
         // Shown on the Mac Screen page and in Settings soon: userVisible.
-        guard let granted = try? await work.run(.userVisible, mayBlock: .system, { (screenRecording(), accessibility()) }),
-              read == reads else { return }
-        screenRecordingGranted = granted.0
-        accessibilityGranted = granted.1
+        let app = try? await work.run(.userVisible, mayBlock: .system, { (screenRecording(), accessibility()) })
+        let helper = await helperStatus
+        guard let app, read == reads else { return }
+        screenRecordingGranted = app.0 || helper.granted
+        accessibilityGranted = app.1 || helper.control
     }
 
     public func requestScreenRecording() {
+        if MacScreenShareHelper.requestsGoToHelper { return requestFromHelper() }
         if !CGRequestScreenCaptureAccess() { openSettings(screenRecording: true) }
     }
 
     public func requestAccessibility() {
+        if MacScreenShareHelper.requestsGoToHelper { return requestFromHelper() }
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         if !AXIsProcessTrustedWithOptions(options) { openSettings(screenRecording: false) }
+    }
+
+    /// The helper asks for its own grants (its name is in the macOS prompt); a grant applies at its
+    /// next start, cmux keeps running.
+    private func requestFromHelper() {
+        let helper = helper
+        Task {
+            _ = await helper.requestPermissions()
+            await refreshPermissions()
+        }
     }
 
     public func openSettings(screenRecording: Bool) {

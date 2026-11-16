@@ -1,4 +1,5 @@
 import CmuxNextCompat
+import CmuxNextComputerUse
 import CmuxNextRemoteView
 import Foundation
 import os
@@ -29,6 +30,14 @@ private nonisolated final class MacScreenRdLineSink: Sendable {
 nonisolated final class MacScreenRdProcess: Sendable {
     enum Role: String { case serve, connect }
 
+    /// Who runs it: the bundled `cmux rd` as this app's child (under this app's grants), or the
+    /// screen share helper's `cmux-rd` with responsibility disclaimed (under the helper's own
+    /// grants, `MacScreenShareHelper`). Both speak the same lines.
+    enum Launch: Sendable, Equatable {
+        case app
+        case helper(URL)
+    }
+
     let lines: AsyncStream<MacScreenRdMessage>
     private let continuation: AsyncStream<MacScreenRdMessage>.Continuation
     private let state = Mutex(State())
@@ -38,6 +47,7 @@ nonisolated final class MacScreenRdProcess: Sendable {
 
     private struct State {
         var process: Process?
+        var helper: DisclaimedProcess?
         var stdin: FileHandle?
         var stderrTail = Data()
     }
@@ -55,7 +65,27 @@ nonisolated final class MacScreenRdProcess: Sendable {
     }
 
     /// Starts `cmux rd <role>`. Throws when the binary is missing or will not launch.
-    func start(_ role: Role) throws {
+    func start(_ role: Role, launch: Launch = .app) throws {
+        // The Rust line reader (cmux_rd_line_reader_*): one per process, used only on the pipe's queue.
+        guard let reader = RemoteRdLineReader() else { throw CocoaError(.fileReadUnknown) }
+        let lines = MacScreenRdLineSink(reader: reader)
+        switch launch {
+        case let .helper(executable):
+            // The helper's `cmux-rd` takes the role as its first word (no `rd`).
+            let helper = try DisclaimedProcess.spawn(executable, arguments: [role.rawValue],
+                                                     environment: MacScreenShareHelper.environment())
+            read(stdout: helper.output, stderr: helper.errorOutput, lines: lines)
+            // Its stdout reaching end of file ends `lines`; the reaper only collects it.
+            helper.reapOnExit { [logger] status in logger.info("cmux Screen Share helper ended (wait status \(status, privacy: .public))") }
+            logger.info("cmux rd \(role.rawValue, privacy: .public) runs as cmux Screen Share (pid \(helper.pid, privacy: .public))")
+            state.withLock { state in
+                state.helper = helper
+                state.stdin = helper.input
+            }
+            return
+        case .app:
+            break
+        }
         // A missing or unlaunchable binary throws from run() below (no disk check on the caller's thread).
         guard let binary = Self.binary else { throw CocoaError(.fileNoSuchFile) }
         let process = Process()
@@ -66,10 +96,19 @@ nonisolated final class MacScreenRdProcess: Sendable {
         process.standardOutput = stdout
         process.standardError = stderr
         let continuation = continuation
-        // The Rust line reader (cmux_rd_line_reader_*): one per process, used only on the pipe's queue.
-        guard let reader = RemoteRdLineReader() else { throw CocoaError(.fileReadUnknown) }
-        let lines = MacScreenRdLineSink(reader: reader)
-        stdout.fileHandleForReading.readabilityHandler = { handle in
+        read(stdout: stdout.fileHandleForReading, stderr: stderr.fileHandleForReading, lines: lines)
+        process.terminationHandler = { _ in continuation.finish() }
+        try process.run()
+        state.withLock { state in
+            state.process = process
+            state.stdin = stdin.fileHandleForWriting
+        }
+    }
+
+    /// Reads the process's stdout into `lines` (ending them at end of file) and keeps its stderr's tail.
+    private func read(stdout: FileHandle, stderr: FileHandle, lines: MacScreenRdLineSink) {
+        let continuation = continuation
+        stdout.readabilityHandler = { handle in
             // concurrency-allow: readabilityHandler runs on Foundation's pipe queue, never main; data is ready.
             let data = handle.blockingAvailableData()
             guard !data.isEmpty else {
@@ -83,7 +122,7 @@ nonisolated final class MacScreenRdProcess: Sendable {
             }
         }
         let logger = logger
-        stderr.fileHandleForReading.readabilityHandler = { [weak self] handle in
+        stderr.readabilityHandler = { [weak self] handle in
             // concurrency-allow: readabilityHandler runs on Foundation's pipe queue, never main; data is ready.
             let data = handle.blockingAvailableData()
             guard !data.isEmpty else {
@@ -98,12 +137,6 @@ nonisolated final class MacScreenRdProcess: Sendable {
                 if state.stderrTail.count > 4096 { state.stderrTail.removeFirst(state.stderrTail.count - 4096) }
             }
         }
-        process.terminationHandler = { _ in continuation.finish() }
-        try process.run()
-        state.withLock { state in
-            state.process = process
-            state.stdin = stdin.fileHandleForWriting
-        }
     }
 
     /// Writes one JSON line to the process (dropped once it ended).
@@ -116,7 +149,7 @@ nonisolated final class MacScreenRdProcess: Sendable {
     }
 
     /// Whether `start` launched the process.
-    var started: Bool { state.withLock { $0.process != nil } }
+    var started: Bool { state.withLock { $0.process != nil || $0.helper != nil } }
 
     /// The last stderr bytes, for an error message.
     var stderrTail: String { state.withLock { String(data: $0.stderrTail, encoding: .utf8) ?? "" } }

@@ -50,6 +50,7 @@ mod encoder;
 mod eval;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 mod fdwait;
+mod helper_status;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 mod host;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -114,7 +115,7 @@ pub type Res<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub fn run_cli(args: &[String]) -> i32 {
     let Some(cmd) = args.first() else {
         eprintln!(
-            "usage: cmux-rd host|bench|observe|observe-cpu|testapp|serve|connect|permissions|linux-host|encode-selftest|openh264-install [--key value ...]"
+            "usage: cmux-rd host|bench|observe|observe-cpu|testapp|serve|connect|permissions|status|request-permissions|linux-host|encode-selftest|openh264-install [--key value ...]"
         );
         return 2;
     };
@@ -126,6 +127,24 @@ pub fn run_cli(args: &[String]) -> i32 {
     if cmd == "permissions" && args.len() != 1 {
         eprintln!("cmux-rd permissions takes no arguments");
         return 2;
+    }
+    // The screen share helper's grants (helper_status.rs), read before `Opts`, as `permissions`
+    // is, so no option can reach a command that may prompt.
+    if cmd == "status" || cmd == "request-permissions" {
+        let rest = &args[1..];
+        let usage_ok = if cmd == "status" { rest.iter().all(|a| a == "--json") } else { rest.is_empty() };
+        if !usage_ok {
+            eprintln!("cmux-rd {cmd}: unexpected options (status takes only --json; request-permissions takes none)");
+            return 2;
+        }
+        let result = if cmd == "status" { helper_status::run_status() } else { helper_status::run_request() };
+        return match result {
+            Ok(()) => 0,
+            Err(e) => {
+                eprintln!("cmux-rd {cmd}: {e}");
+                1
+            }
+        };
     }
     let opts = match args::Opts::parse(&args[1..]) {
         Ok(o) => o,

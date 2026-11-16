@@ -117,7 +117,8 @@ rm -f "$app/Contents/embedded.provisionprofile"
 
 # Whole bundle, inside out, as the nightly-identity copy does (nightly-next-legacy-identity.sh):
 # launchd plists re-stamped from the new bundle id, helpers, SSH payloads, plugins, the Chromium
-# engine, frameworks, then the app. The Computer Use helper keeps its own notarized signature.
+# engine, frameworks, then the app. The Computer Use and Screen Share helpers keep their own
+# notarized signatures.
 timestamp=()
 [[ "$APPLE_SIGNING_IDENTITY" == "-" ]] && timestamp=(CMUX_TIMESTAMP=none)
 env ${timestamp[@]+"${timestamp[@]}"} CMUX_SIGN_MODE=all-except-computer-use \

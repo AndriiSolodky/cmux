@@ -269,6 +269,8 @@ nonisolated struct ComputerUseHelperStaging: Sendable {
         return Stamp(version: version, codeDirectoryHash: hash)
     }
 
+    static func designatedRequirementOf(_ source: URL) -> SecRequirement? { designatedRequirement(of: source) }
+
     private static func designatedRequirement(of source: URL) -> SecRequirement? {
         var sourceCode: SecStaticCode?
         guard SecStaticCodeCreateWithPath(source as CFURL, [], &sourceCode) == errSecSuccess, let sourceCode else { return nil }
