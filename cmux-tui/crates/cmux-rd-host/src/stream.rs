@@ -464,7 +464,7 @@ impl MediaSession {
             ..FrameTimes::default()
         };
         // Logged after the send, with the send times.
-        let logged = self.timing.is_some().then(|| FrameLog {
+        let logged = self.timing.is_some().then_some(FrameLog {
             shown: frame.picked_times,
             capture_us: frame.t_capture_us,
             release_us: frame.released_us,
