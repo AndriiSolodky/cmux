@@ -1,0 +1,74 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="mock.css"><style>
+.split { display: grid; grid-template-columns: 1fr 250px; }
+.doc { padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; line-height: 1.5; }
+.doc h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.doc h4 { margin: 6px 0 0; font-size: 12px; font-weight: 600; color: var(--page-text-2); }
+.doc ul { margin: 0; padding-left: 18px; } .doc li { margin: 2px 0; }
+.doc .task { list-style: none; margin-left: -18px; display: flex; gap: 7px; align-items: baseline; }
+.box { display: inline-block; width: 12px; height: 12px; border: 1.5px solid var(--page-text-3); border-radius: 3px; flex: none; position: relative; top: 1px; }
+.box.on { background: var(--page-text-2); border-color: var(--page-text-2); }
+.doc code { font: 11.5px var(--font-mono); background: var(--page-hover); padding: 0 4px; border-radius: 3px; }
+.append { border-left: 2px solid var(--cmux-accent); padding: 4px 10px; background: color-mix(in srgb, var(--cmux-accent) 7%, transparent); border-radius: 0 4px 4px 0; }
+.append .who { font-size: 11px; color: var(--page-text-3); }
+.rail { border-left: 1px solid var(--page-separator); padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; font-size: 12px; }
+.rail .t { font-size: 11px; font-weight: 600; color: var(--page-text-3); }
+.act { display: flex; flex-direction: column; gap: 8px; }
+.act div { display: flex; flex-direction: column; gap: 1px; }
+.act .m { font-size: 11px; color: var(--page-text-3); }
+.composer { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-top: 1px solid var(--page-separator); }
+.composer .in { flex: 1; padding: 5px 10px; border: 1px solid var(--page-separator); border-radius: 6px; color: var(--page-text-3); }
+</style></head><body><div class="page">
+<div class="toolbar"><div class="tabs"><span class="tab sel">Discover</span><span class="tab">Installed</span><span class="tab">Updates</span></div><div class="search">Search apps</div></div>
+<div class="body">
+<div class="back">‹ Discover</div>
+<div class="header">
+  <div class="icon" style="--icon: var(--mock-warn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 11h7M9 14.5h7M9 18h4"/></svg></div>
+  <div class="title"><h1 class="name">Workspace Notes</h1><div class="meta"><span class="verified">✓</span> cmux · Productivity · Free · syncs with your cmux account</div></div>
+  <div style="display:flex;gap:8px"><span class="btn">Preview</span><span class="btn primary">Get</span></div>
+</div>
+<p class="desc">A Markdown note pinned to each workspace, synced across your machines. Agents in the workspace read it when they start and append what they did, so the next session picks up where the last one stopped.</p>
+<p class="why"><b>Why:</b> handoff notes live in scratch files, issues and chat scrollback today; this keeps them next to the work, readable by people and agents alike.</p>
+<div class="columns"><div>
+<h2>Preview</h2>
+<div class="preview">
+  <div class="pane-bar"><span class="pt">Notes</span><span class="t2">· appstore-curation</span>
+    <div class="right"><span class="t3" style="font-size:11px">synced 08:02 · huge-blue, cosmic-gray</span><div class="seg"><span class="sel">Note</span><span>History 23</span></div></div></div>
+  <div class="split">
+    <div class="doc">
+      <h3>App Store curation</h3>
+      <div class="t2">Goal: replace the SDK-demo samples with apps people would open every day. Owner: <code>appstore-curation</code>.</div>
+      <h4>Open</h4>
+      <ul>
+        <li class="task"><span class="box"></span><span>#44290 waits on review; refresh the screenshots after the token pass</span></li>
+        <li class="task"><span class="box"></span><span>One-click install: CLI and MCP still show the old card</span></li>
+        <li class="task"><span class="box on"></span><span class="t3" style="text-decoration:line-through">Drop the clock sample; it moves into New Tab</span></li>
+      </ul>
+      <h4>Decisions</h4>
+      <ul><li>No capsule pills on cards: small-radius rects only.</li><li>Featured row shows 4 apps, not 6; the rest go under Developer Tools.</li></ul>
+      <div class="append"><div class="who">app-ideas-mocks appended · 07:58</div>Mocks rendered for PR Radar, Usage, Ports and Notes, light and dark, in <code>mocks/</code>.</div>
+      <div class="append"><div class="who">store-install-proof appended · 07:41</div>Push landed <code>0410494</code>; install proof passes on cmux-ci-7 (3/3).</div>
+    </div>
+    <div class="rail">
+      <div class="t">In this workspace</div>
+      <div class="act">
+        <div><span class="mono">appstore-curation</span><span class="m">Claude · read the note at start · 07:12</span></div>
+        <div><span class="mono">store-install-proof</span><span class="m">Claude · appended 07:41</span></div>
+        <div><span class="mono">app-ideas-mocks</span><span class="m">Claude · appended 07:58</span></div>
+      </div>
+      <div class="t">Linked</div>
+      <div class="act">
+        <div><span>#44290 App Store: curated catalog</span><span class="m">PR · changes requested</span></div>
+        <div><span>#44301 One-click install</span><span class="m">PR · ready to land</span></div>
+        <div><span class="mono">mocks/pr-radar-dark.png</span><span class="m">file · 2.1 MB</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="composer"><span class="in">Add to the note, or ask an agent here to update it</span><span class="btn sm">Append</span></div>
+</div></div>
+<div class="side">
+  <div><h2>Reads and writes</h2><ul><li><span class="k">Note</span><span>One Markdown file per workspace, versioned</span></li><li><span class="k">Agents</span><span>Read at session start, append through one tool; no deletes</span></li></ul></div>
+  <div><h2>Shows up in</h2><ul><li><span class="k">Sidebar</span><span>Note icon on workspaces with open items</span></li><li><span class="k">New session</span><span>“Read the note” is on by default</span></li><li><span class="k">Palette</span><span><span class="kbd">⌘⇧P</span> Open workspace note</span></li></ul></div>
+  <div><h2>Sync</h2><ul><li><span class="k">Account</span><span>Every machine signed in to your cmux account</span></li></ul></div>
+  <div><h2>Version</h2><ul><li><span class="k">Proposed</span><span class="t2">Not built yet</span></li></ul></div>
+</div></div>
+</div></div></body></html>

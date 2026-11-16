@@ -1,0 +1,76 @@
+/* App idea mocks: the App Store detail page (pages/apps/styles.css) with the real --cmux-* tokens,
+   which render.ts injects from the gallery's theme code for the default Apple System Colors pair. */
+:root {
+  --page-text: var(--cmux-text);
+  --page-text-2: var(--cmux-text-secondary);
+  --page-text-3: var(--cmux-text-tertiary);
+  --page-separator: var(--cmux-separator);
+  --page-hover: var(--cmux-hover);
+  --page-selection: var(--cmux-selection);
+  --page-elevated: var(--cmux-elevated-background);
+  --page-edge: 24px;
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, "DejaVu Sans Mono", monospace;
+  --r: 6px;
+}
+html { background: var(--cmux-surface-background); }
+body { margin: 0; color: var(--page-text); font: 13px/1.35 var(--font-ui); -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+.mono { font-family: var(--font-mono); font-size: 12px; }
+.t2 { color: var(--page-text-2); } .t3 { color: var(--page-text-3); }
+.num { font-variant-numeric: tabular-nums; }
+.ok { color: var(--mock-ok); } .bad { color: var(--mock-bad); } .warn { color: var(--mock-warn); }
+
+.page { width: 1240px; display: flex; flex-direction: column; }
+.toolbar { display: flex; align-items: center; gap: 12px; padding: 12px var(--page-edge); border-bottom: 1px solid var(--page-separator); }
+.tabs { display: flex; gap: 2px; padding: 2px; border-radius: var(--r); background: var(--page-hover); }
+.tab { padding: 3px 12px; border-radius: 4px; font-weight: 500; color: var(--page-text-2); }
+.tab.sel { background: var(--page-selection); color: var(--page-text); }
+.search { margin-left: auto; width: 280px; padding: 5px 10px; border-radius: var(--r); border: 1px solid var(--page-separator); color: var(--page-text-3); }
+
+.body { padding: 18px var(--page-edge) 28px; display: flex; flex-direction: column; gap: 16px; }
+.back { color: var(--page-text-2); }
+.header { display: flex; align-items: center; gap: 14px; }
+.icon { width: 56px; height: 56px; border-radius: 13px; display: grid; place-items: center; flex: none;
+  background: color-mix(in srgb, var(--icon) 22%, var(--page-elevated)); border: 1px solid var(--page-separator); color: var(--icon); }
+.icon svg { width: 30px; height: 30px; }
+.title { flex: 1; min-width: 0; }
+.name { margin: 0; font-size: 20px; font-weight: 600; }
+.meta { display: flex; gap: 6px; align-items: center; color: var(--page-text-2); font-size: 11px; margin-top: 4px; }
+.verified { display: inline-grid; place-items: center; width: 13px; height: 13px; border-radius: 50%; background: var(--page-text-2); color: var(--page-elevated); font-size: 9px; font-weight: 700; }
+.btn { border: 1px solid var(--page-separator); background: var(--page-hover); color: var(--page-text); border-radius: var(--r); padding: 5px 14px; font-weight: 500; white-space: nowrap; }
+.btn.primary { background: var(--cmux-accent); color: var(--cmux-on-accent); border-color: transparent; }
+.btn.sm { padding: 2px 8px; font-size: 11.5px; }
+.desc { margin: 0; max-width: 80ch; line-height: 1.45; }
+.why { margin: 0; max-width: 90ch; color: var(--page-text-2); line-height: 1.45; }
+.why b { color: var(--page-text); font-weight: 600; }
+
+.columns { display: grid; grid-template-columns: 1fr 260px; gap: 22px; align-items: start; }
+h2 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--page-text-2); }
+.side { display: flex; flex-direction: column; gap: 18px; font-size: 12px; }
+.side ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.side li { display: flex; gap: 8px; align-items: baseline; }
+.side li .k { color: var(--page-text-3); min-width: 74px; }
+
+/* The preview: the app as it runs in a cmux pane. */
+.preview { border: 1px solid var(--page-separator); border-radius: 10px; overflow: hidden;
+  background: color-mix(in srgb, var(--page-elevated) 55%, var(--cmux-surface-solid)); }
+.pane-bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--page-separator); }
+.pane-bar .pt { font-weight: 600; }
+.pane-bar .right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.seg { display: flex; gap: 2px; padding: 2px; border-radius: var(--r); background: var(--page-hover); font-size: 11.5px; }
+.seg span { padding: 1px 8px; border-radius: 4px; color: var(--page-text-2); }
+.seg span.sel { background: var(--page-selection); color: var(--page-text); }
+.tag { display: inline-block; padding: 0 5px; border-radius: 3px; font-size: 10.5px; font-weight: 600; line-height: 16px; background: var(--page-hover); color: var(--page-text-2); white-space: nowrap; }
+.tag.ok { background: color-mix(in srgb, var(--mock-ok) 16%, transparent); color: var(--mock-ok); }
+.tag.bad { background: color-mix(in srgb, var(--mock-bad) 16%, transparent); color: var(--mock-bad); }
+.tag.warn { background: color-mix(in srgb, var(--mock-warn) 18%, transparent); color: var(--mock-warn); }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-weight: 500; font-size: 11px; color: var(--page-text-3); padding: 6px 10px; border-bottom: 1px solid var(--page-separator); white-space: nowrap; }
+td { padding: 7px 10px; border-bottom: 1px solid var(--page-separator); vertical-align: middle; white-space: nowrap; }
+tr.sel td { background: var(--page-selection); }
+tr:last-child td { border-bottom: 0; }
+.bar { height: 6px; border-radius: 2px; background: var(--page-hover); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--page-text-2); }
+.kbd { font-family: var(--font-mono); font-size: 10.5px; padding: 0 4px; border: 1px solid var(--page-separator); border-radius: 3px; color: var(--page-text-3); }

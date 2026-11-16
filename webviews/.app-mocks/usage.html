@@ -1,0 +1,52 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="mock.css"><style>
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 12px; }
+.card { border: 1px solid var(--page-separator); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; }
+.card .h { display: flex; align-items: baseline; gap: 8px; } .card .h b { font-weight: 600; } .card .h .r { margin-left: auto; font-size: 11px; }
+.big { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bar.w > i { background: var(--mock-warn); } .bar.b > i { background: var(--mock-bad); } .bar.g > i { background: var(--mock-ok); }
+.row2 { display: flex; justify-content: space-between; font-size: 11px; color: var(--page-text-3); }
+.alert { display: flex; gap: 10px; align-items: center; margin: 0 12px; padding: 8px 12px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--mock-warn) 40%, transparent); background: color-mix(in srgb, var(--mock-warn) 10%, transparent); font-size: 12px; }
+.spark { display: flex; align-items: flex-end; gap: 2px; height: 22px; }
+.spark i { width: 5px; border-radius: 1px; background: var(--page-text-3); }
+.sect { padding: 4px 12px 2px; font-size: 11px; font-weight: 600; color: var(--page-text-3); }
+</style></head><body><div class="page">
+<div class="toolbar"><div class="tabs"><span class="tab sel">Discover</span><span class="tab">Installed</span><span class="tab">Updates</span></div><div class="search">Search apps</div></div>
+<div class="body">
+<div class="back">‹ Discover</div>
+<div class="header">
+  <div class="icon" style="--icon: var(--mock-warn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 16a8 8 0 0 1 16 0"/><path d="M12 16 L16.5 10.5"/><circle cx="12" cy="16" r="1.3" fill="currentColor"/><path d="M4 20h16"/></svg></div>
+  <div class="title"><h1 class="name">Usage</h1><div class="meta"><span class="verified">✓</span> cmux · Developer Tools · Free · reads agent sessions</div></div>
+  <div style="display:flex;gap:8px"><span class="btn">Preview</span><span class="btn primary">Get</span></div>
+</div>
+<p class="desc">Tokens, cost and rate-limit windows for every agent session and account, across Claude, Codex and the rest. It warns before a window runs out and says which session is spending it.</p>
+<p class="why"><b>Why:</b> running out partway through a task is the biggest surprise in agent work today, and nothing shows the window until it is gone.</p>
+<div class="columns"><div>
+<h2>Preview</h2>
+<div class="preview">
+  <div class="pane-bar"><span class="pt">Usage</span><span class="t3">4 accounts · 11 live sessions</span>
+    <div class="right"><div class="seg"><span>Today</span><span class="sel">This week</span><span>30 days</span></div></div></div>
+  <div class="cards">
+    <div class="card"><div class="h"><b>Claude · team</b><span class="r t3">5h window</span></div><div class="big">78%</div><div class="bar w"><i style="width:78%"></i></div><div class="row2"><span>resets in 2h 14m</span><span>at this pace: full in 41m</span></div></div>
+    <div class="card"><div class="h"><b>Codex · pro</b><span class="r t3">weekly</span></div><div class="big">31%</div><div class="bar g"><i style="width:31%"></i></div><div class="row2"><span>resets Thu 09:00</span><span>on pace</span></div></div>
+    <div class="card"><div class="h"><b>OpenRouter · API key</b><span class="r t3">credits</span></div><div class="big">$18.40 <span class="t3" style="font-size:12px;font-weight:400">of $50</span></div><div class="bar"><i style="width:37%"></i></div><div class="row2"><span>$3.10 today</span><span>~10 days left</span></div></div>
+  </div>
+  <div class="alert"><span class="warn">▲</span><span><b>Claude · team</b> fills in about 41 minutes; <span class="mono">appstore-curation</span> and <span class="mono">cx-next-ui-scale</span> use 62% of it.</span><div style="margin-left:auto;display:flex;gap:6px"><span class="btn sm">Move cx-next-ui-scale to Codex</span><span class="btn sm">Pause until reset</span></div></div>
+  <div class="sect" style="margin-top:10px">Sessions, this week</div>
+  <table>
+    <tr><th>Session</th><th>Harness · model</th><th>Machine</th><th style="text-align:right">Input</th><th style="text-align:right">Output</th><th style="text-align:right">Cache hit</th><th style="text-align:right">Cost</th><th>Last 24h</th></tr>
+    <tr class="sel"><td class="mono">appstore-curation</td><td class="t2">Claude · Opus 5.5</td><td class="t2">huge-blue</td><td class="num" style="text-align:right">14.8M</td><td class="num" style="text-align:right">612K</td><td class="num" style="text-align:right">91%</td><td class="num" style="text-align:right">$42.10</td><td><span class="spark"><i style="height:30%"></i><i style="height:45%"></i><i style="height:20%"></i><i style="height:60%"></i><i style="height:85%"></i><i style="height:100%"></i><i style="height:70%"></i></span></td></tr>
+    <tr><td class="mono">cx-next-ui-scale</td><td class="t2">Claude · Opus 5.5</td><td class="t2">big-red</td><td class="num" style="text-align:right">11.2M</td><td class="num" style="text-align:right">488K</td><td class="num" style="text-align:right">88%</td><td class="num" style="text-align:right">$33.75</td><td><span class="spark"><i style="height:50%"></i><i style="height:55%"></i><i style="height:40%"></i><i style="height:65%"></i><i style="height:90%"></i><i style="height:80%"></i><i style="height:95%"></i></span></td></tr>
+    <tr><td class="mono">acpmux-resume-fast</td><td class="t2">Codex · high</td><td class="t2">cmux-ci-7</td><td class="num" style="text-align:right">8.9M</td><td class="num" style="text-align:right">301K</td><td class="num" style="text-align:right">94%</td><td class="num" style="text-align:right">incl.</td><td><span class="spark"><i style="height:20%"></i><i style="height:35%"></i><i style="height:60%"></i><i style="height:40%"></i><i style="height:25%"></i><i style="height:30%"></i><i style="height:15%"></i></span></td></tr>
+    <tr><td class="mono">newtab-extension-slot</td><td class="t2">Claude · Sonnet 5.5</td><td class="t2">big-red</td><td class="num" style="text-align:right">4.3M</td><td class="num" style="text-align:right">205K</td><td class="num" style="text-align:right">86%</td><td class="num" style="text-align:right">$6.20</td><td><span class="spark"><i style="height:10%"></i><i style="height:15%"></i><i style="height:30%"></i><i style="height:25%"></i><i style="height:40%"></i><i style="height:20%"></i><i style="height:35%"></i></span></td></tr>
+    <tr><td class="mono">store-install-proof</td><td class="t2">Claude · Haiku 5.5</td><td class="t2">huge-blue</td><td class="num" style="text-align:right">2.0M</td><td class="num" style="text-align:right">64K</td><td class="num" style="text-align:right">79%</td><td class="num" style="text-align:right">$0.90</td><td><span class="spark"><i style="height:5%"></i><i style="height:10%"></i><i style="height:5%"></i><i style="height:15%"></i><i style="height:30%"></i><i style="height:45%"></i><i style="height:20%"></i></span></td></tr>
+    <tr><td class="t2">6 more sessions</td><td></td><td></td><td class="num t2" style="text-align:right">0.0M</td><td></td><td></td><td class="num t2" style="text-align:right">$1.40</td><td></td></tr>
+  </table>
+  <div class="pane-bar" style="border-top:1px solid var(--page-separator);border-bottom:0"><span class="t2">This week</span><span class="num"><b>41.2M</b> tokens · <b>$84.35</b></span><span class="t3">vs last week +18%</span></div>
+</div></div>
+<div class="side">
+  <div><h2>Reads</h2><ul><li><span class="k">Sessions</span><span>Token counts each harness reports per turn</span></li><li><span class="k">Accounts</span><span>Rate-limit headers and credit balances, no keys leave the machine</span></li></ul></div>
+  <div><h2>Shows up in</h2><ul><li><span class="k">Sidebar</span><span>A window meter under each agent row</span></li><li><span class="k">Composer</span><span>“78% of 5h window” before you send</span></li><li><span class="k">Notifications</span><span>At 80% and 95%, and when a window resets</span></li></ul></div>
+  <div><h2>Actions</h2><ul><li><span class="k">Move</span><span>Continue a session on another harness or account</span></li><li><span class="k">Pause</span><span>Hold queued turns until the reset</span></li></ul></div>
+  <div><h2>Version</h2><ul><li><span class="k">Proposed</span><span class="t2">Not built yet</span></li></ul></div>
+</div></div>
+</div></div></body></html>
