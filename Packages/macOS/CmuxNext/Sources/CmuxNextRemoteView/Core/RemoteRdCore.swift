@@ -30,7 +30,8 @@ public nonisolated final class RemoteRdCore {
     public let carrier: Carrier
     private let handle: OpaquePointer
 
-    /// `deadlineMicros`: how long a frame may wait for missing shards.
+    /// `deadlineMicros`: the longest a frame may wait for missing shards. The core NACKs
+    /// each gap once and waits one measured round trip plus 10 ms, capped by this.
     /// `nackAfterMicros`: how long a frame waits before its gaps are NACKed.
     /// Nil only when the core cannot allocate a receiver.
     public init?(carrier: Carrier, deadlineMicros: UInt64 = 200_000, nackAfterMicros: UInt64 = 5_000) {
