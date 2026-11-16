@@ -132,7 +132,8 @@ impl InterArrival {
         let arrival_delta = arrival_us - cur.last_arrival_us;
         let send_delta = send_us - cur.last_send_us;
         let burst = send_delta == 0
-            || (arrival_delta - send_delta < 0
+            || (arrival_delta >= 0
+                && arrival_delta - send_delta < 0
                 && arrival_delta <= BURST_ARRIVAL_US
                 && arrival_us - cur.first_arrival_us < MAX_BURST_US);
         if burst || send_us - cur.first_send_us <= GROUP_SPAN_US {
@@ -565,7 +566,7 @@ impl CongestionController {
             }
         }
         let growth = match self.capacity_bps {
-            Some(c) if target < 0.85 * c => RECOVER_GROWTH_PER_S,
+            Some(c) if target < 0.8 * c => RECOVER_GROWTH_PER_S,
             Some(c) if target <= 1.5 * c => NEAR_GROWTH_PER_S,
             _ => {
                 // Well over the last measured capacity without a queue: it moved.
@@ -576,7 +577,7 @@ impl CongestionController {
         let mut next = target * growth.powf(dt_s);
         if let Some(c) = self.capacity_bps {
             if growth == RECOVER_GROWTH_PER_S {
-                next = next.min(0.85 * c).max(target);
+                next = next.min(0.9 * c).max(target);
             }
         }
         self.target_bps = next as u64;
