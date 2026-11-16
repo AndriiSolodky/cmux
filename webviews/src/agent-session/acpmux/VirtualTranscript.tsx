@@ -119,6 +119,7 @@ import {
 import { stopReadingAloud } from "./conversation/readAloud";
 import { heightFoldInFlight, heightFoldPlaying, settleFoldsIn } from "./conversation/fold";
 import { FoldRide } from "./conversation/foldRide";
+import { inputPending } from "./conversation/revealedMarkdownModel";
 import { deliberateClick } from "./conversation/useAnchoredCollapse";
 import { isRegroupHold } from "./conversation/keepOpenedLineModel";
 import {
@@ -3126,12 +3127,15 @@ function TranscriptView({
             // it's lagging, there's a breif moment where ther'es overlapping text between the sent
             // out text (from you) and the subequent tool calls/thinking"). A row in sight is placed
             // before paint, as a followed view's is.
+            // Not while a key or pointer event waits: a synchronous render here holds the typed
+            // character behind it, so the frame's own commit places the rows instead.
             else if (
-              rode ||
-              followingRef.current ||
-              targets.some(heightFoldInFlight) ||
-              foldHolding(foldAnchor.current) ||
-              inSight(ref.current, targets)
+              !inputPending() &&
+              (rode ||
+                followingRef.current ||
+                targets.some(heightFoldInFlight) ||
+                foldHolding(foldAnchor.current) ||
+                inSight(ref.current, targets))
             ) {
               for (let pass = 0; pass < 3; pass += 1) {
                 if (!changesDrawn(drawnRef.current, pendingDrawn.current)) {
