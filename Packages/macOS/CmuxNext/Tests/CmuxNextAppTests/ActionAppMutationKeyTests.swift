@@ -82,3 +82,49 @@ import Testing
         #expect(executor.requests.allSatisfy { $0.origin == "script" })
     }
 }
+
+/// `browser.page.eval` from an app (`browserPage.eval`) runs the control socket's
+/// `browser.page.eval` with only the script and the tab: an app cannot pose as an agent driver.
+struct BrowserPageAppOpsTests {
+    final class Calls: @unchecked Sendable {
+        var seen: [(String, [String: JSONValue], String)] = []
+    }
+
+    private func make() -> (BrowserPageAppOps, Calls) {
+        let calls = Calls()
+        return (BrowserPageAppOps(control: { method, params, app throws(AppHostCapabilityError) in
+            calls.seen.append((method, params, app))
+            return .object(["tab": .string("tab_1"), "value": .string("Title")])
+        }), calls)
+    }
+
+    private func request(_ params: [String: AppJSON], op: String = "browser.page.eval") -> AppHostCapabilityRequest {
+        AppHostCapabilityRequest(app: "local/reader-mode", op: op, params: .object(params), origin: "user",
+                                 idempotencyKey: nil, actor: nil)
+    }
+
+    @Test func aScriptReachesTheControlVerbWithOnlyScriptAndTab() async throws {
+        let (ops, calls) = make()
+        #expect(ops.families == ["browser.page"])
+        let value = try await ops.handle(request(["script": .string("document.title"), "tab": .string("tab_1"),
+                                                  "agent": .string("forged")]))
+        #expect(value["value"]?.stringValue == "Title")
+        #expect(calls.seen.count == 1)
+        #expect(calls.seen.first?.0 == "browser.page.eval")
+        #expect(calls.seen.first?.1 == ["script": .string("document.title"), "tab": .string("tab_1")])
+        #expect(calls.seen.first?.2 == "local/reader-mode")
+    }
+
+    @Test func noScriptOrAnOversizedOneIsRefusedBeforeAnyPageRuns() async {
+        let (ops, calls) = make()
+        for params: [String: AppJSON] in [[:], ["script": .string("")], ["script": .string(String(repeating: "x", count: BrowserPageAppOps.maxScript + 1))]] {
+            do {
+                _ = try await ops.handle(request(params))
+                Issue.record("a bad page script ran")
+            } catch {
+                #expect(error.code == "invalid_params")
+            }
+        }
+        #expect(calls.seen.isEmpty)
+    }
+}
