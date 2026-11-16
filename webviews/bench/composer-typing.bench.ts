@@ -598,7 +598,7 @@ try {
     const runs: Record<string, unknown>[] = [];
     for (let round = 1; round <= ROUNDS; round += 1)
       for (const arm of perRound(round)) {
-        const run = { arm: arm.name, round, ...(await measure(arm.port, length, mode)) };
+        const run: Record<string, unknown> = { arm: arm.name, round, ...(await measure(arm.port, length, mode)) };
         runs.push(run);
         if (ARMS_FLAG)
           console.log(
