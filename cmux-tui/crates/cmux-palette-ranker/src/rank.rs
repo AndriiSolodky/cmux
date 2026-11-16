@@ -379,7 +379,7 @@ pub(crate) fn rank(
             || prepared
                 .aliases
                 .get(index)
-                .is_some_and(|aliases| aliases.iter().any(|alias| *alias == alias_query))
+                .is_some_and(|aliases| aliases.contains(&alias_query))
     };
     // A query that may name a row's handle (`a612`, `612`).
     let handle_query = js_trim(raw).to_lowercase();
