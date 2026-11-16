@@ -95,7 +95,7 @@ test("a slow scroll mid-chat renders the transcript only when what it draws chan
     });
     const mountedBefore = scroller.querySelectorAll(".acpmux-row").length;
     expect(mountedBefore).toBeGreaterThan(0);
-    acpmuxPerf.resetRenders();
+    acpmuxPerf.resetRenders(); (globalThis as any).__why = []; // DIAG
     // Then reads on, a pixel a frame, inside the rows already mounted and far from either end.
     for (let step = 0; step < STEPS; step += 1)
       await act(async () => {
@@ -104,7 +104,7 @@ test("a slow scroll mid-chat renders the transcript only when what it draws chan
         scroller.dispatchEvent(new dom.window.Event("scroll"));
         await nextFrame();
       });
-    const renders = acpmuxPerf.renders.get("transcript") ?? 0;
+    const renders = acpmuxPerf.renders.get("transcript") ?? 0; console.log(((globalThis as any).__why ?? []).join("\n")); // DIAG
     console.log(`SCROLL-FRAME-COMMITS steps=${STEPS} transcript_renders=${renders}`);
     // A row boundary or a warm step may fall inside the run: a few renders, never one a frame.
     expect(renders).toBeLessThanOrEqual(3);

@@ -1857,7 +1857,7 @@ function TranscriptView({
   // Debug measurement (acpmuxPerf): off until the first debug call.
   const renderStart = acpmuxPerf.enabled ? performance.now() : 0;
   acpmuxPerf.span("vt.renders", 1);
-  if (acpmuxPerf.enabled) acpmuxPerf.render("transcript");
+  if (acpmuxPerf.enabled) { acpmuxPerf.render("transcript"); ((globalThis as any).__why ??= []).push("render"); } // DIAG
   const scrollRef = useRef({ top: 0, delta: 0 });
   /// What the last committed render drew from the scroll offset (`scrollDrawsAt` below): a scroll
   /// frame whose offset draws the same skips the transcript's render (`scrollUnchanged`).
@@ -1886,12 +1886,16 @@ function TranscriptView({
   /// placement pass has not placed, a fold, a flow, an older-history hold, another chat) renders.
   const scrollUnchanged = (followNow: boolean) => {
     const drawn = scrollDrawn.current;
-    if (!drawn || drawn.layout !== previousLayout.current || drawn.following !== followNow) return false;
+    const W = ((globalThis as any).__why ??= []) as string[]; // DIAG
+    if (W) return false; // RED-RUN-REVERT
+    if (!drawn || drawn.layout !== previousLayout.current || drawn.following !== followNow) { W.push(`pre ${!drawn} ${drawn?.layout !== previousLayout.current} ${drawn?.following}/${followNow}`); return false; }
     if (olderScrollTarget.current !== undefined || liveResize.current.flow !== undefined || turnFold.current)
-      return false;
+      { W.push("hold"); return false; }
     drawn.key ??= drawn.at(drawn.top, drawn.delta, drawn.followed, drawn.jumpShown);
     const { top, delta } = scrollRef.current;
-    if (drawn.at(top, delta, followNow, jumpShown.current) !== drawn.key) return false;
+    const DK = drawn.at(top, delta, followNow, jumpShown.current); // DIAG
+    if (DK !== drawn.key) { W.push(`key ${drawn.top},${drawn.delta} -> ${top},${delta}\n  ${drawn.key}\n  ${DK}`); return false; }
+    W.push(`skip ${top}`); // DIAG
     // A commit's effect keeps the reader's idle stretch (jumpUp.ts `keepSoon`); a skipped one keeps it here.
     idle.keepSoon();
     return true;
