@@ -295,3 +295,23 @@ describe("isEditableTarget", () => {
     expect(isEditableTarget(null)).toBe(false);
   });
 });
+
+describe("Standard", () => {
+  test("has no rows, so every key a list sees passes on to the list's own handler", () => {
+    expect((table.styles as Record<string, unknown[]>).standard).toEqual([]);
+    const keys = createListKeys("standard", "followLayout");
+    const presses: KeyEvent[] = [
+      { code: "KeyJ", key: "j", mods: [] },
+      { code: "KeyK", key: "k", mods: [] },
+      { code: "KeyG", key: "g", mods: [] },
+      { code: "KeyG", key: "g", shiftedKey: "G", mods: ["shift"] },
+      { code: "Slash", key: "/", mods: [] },
+      { code: "Escape", key: "escape", mods: [] },
+      { code: "KeyN", key: "n", mods: ["ctrl"] },
+      { code: "KeyP", key: "p", mods: ["ctrl"] },
+      { code: "KeyG", key: "g", mods: ["ctrl"] },
+    ];
+    for (const inText of [false, true])
+      for (const press of presses) expect(keys.feed(press, inText)).toBe("pass");
+  });
+});
