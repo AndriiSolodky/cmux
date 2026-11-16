@@ -79,11 +79,12 @@ const SETTLE_PCT = Number(process.env.SETTLE_PCT ?? 2);
 const SETTLE_MAX_S = Number(process.env.SETTLE_MAX_S ?? 60);
 // A grown-many run's rows carry their own prefix: the perf cron stores them from a part of their own.
 const ROW = CASES === "grown-many" ? "chat_100k_flat.grown_many" : "chat_100k_flat";
-if (!["all", "main", "grown-many", "running"].includes(CASES)) {
-  console.error("chat-100k-flat: CASES is all, main, grown-many or running");
+if (!["all", "main", "grown-many", "running", "long"].includes(CASES)) {
+  console.error("chat-100k-flat: CASES is all, main, grown-many, running or long");
   process.exit(2);
 }
 const GROW_OPEN = process.env.GROW_OPEN === "1";
+const HEAP_SNAPSHOT = process.env.HEAP_SNAPSHOT;
 const WAKES = process.env.WAKES === "1";
 type Wakes = { timers: number; raf: number; posts: number; mutations: number };
 if (!Number.isInteger(ROWS) || ROWS < 2 || !Number.isInteger(CHATS) || CHATS < 2) {
@@ -727,6 +728,23 @@ try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       const pids = renderers(root);
       const mb = pids.reduce((sum, pid) => sum + pssMB(pid), 0);
+      if (HEAP_SNAPSHOT) {
+        // HEAP_SNAPSHOT=DIR: the first page's (hidden in an xN launch) and the shown page's V8 heap, for DevTools.
+        fs.mkdirSync(HEAP_SNAPSHOT, { recursive: true });
+        const which = count > 1 ? ([["hidden", pages[0]!], ["shown", pages.at(-1)!]] as const) : ([["shown", pages[0]!]] as const);
+        for (const [label, { page, cdp }] of which) {
+          const dom = await page.evaluate(() => document.getElementsByTagName("*").length);
+          const { usedSize } = (await cdp.send("Runtime.getHeapUsage")) as { usedSize: number };
+          console.log(`  ${name}: ${label} page heap ${(usedSize / 1048576).toFixed(1)} MB, ${dom} elements`);
+          await cdp.send("HeapProfiler.enable");
+          const chunks: string[] = [];
+          const onChunk = (event: { chunk: string }) => chunks.push(event.chunk);
+          cdp.on("HeapProfiler.addHeapSnapshotChunk", onChunk);
+          await cdp.send("HeapProfiler.takeHeapSnapshot", { reportProgress: false } as never);
+          cdp.off("HeapProfiler.addHeapSnapshotChunk", onChunk);
+          fs.writeFileSync(path.join(HEAP_SNAPSHOT, `${name}-${label}.heapsnapshot`), chunks.join(""));
+        }
+      }
       if (count === 1 && RESIZE) {
         const { page, cdp } = pages[0]!;
         await cdp.send("Performance.enable", { timeDomain: "threadTicks" });
@@ -787,18 +805,23 @@ try {
     const emptyOne = await runLaunch("empty_x1", small, 1);
     if (CASES !== "running") {
       const longOne = await runLaunch("long_x1", long, 1, { profile: PROFILE });
-      const grownOne = await runLaunch("grown_x1", small, 1, { profile: PROFILE, grow: long.turns });
-      pairs.push(["long_x1", longOne, emptyOne], ["grown_x1", grownOne, emptyOne]);
+      pairs.push(["long_x1", longOne, emptyOne]);
+      if (CASES !== "long") {
+        const grownOne = await runLaunch("grown_x1", small, 1, { profile: PROFILE, grow: long.turns });
+        pairs.push(["grown_x1", grownOne, emptyOne]);
+      }
     }
     // Running: one chat whose single open turn takes about ROWS records live (a chunk, a tool call and its update per
     // step), the coordinator chat that never finishes its turn.
-    const runningOne = await runLaunch("running_x1", small, 1, { profile: PROFILE, runGrow: Math.ceil(ROWS / 3) });
-    pairs.push(["running_x1", runningOne, emptyOne]);
+    if (CASES !== "long") {
+      const runningOne = await runLaunch("running_x1", small, 1, { profile: PROFILE, runGrow: Math.ceil(ROWS / 3) });
+      pairs.push(["running_x1", runningOne, emptyOne]);
+    }
   }
   const emptyMany = CASES === "running" ? undefined : await runLaunch(`empty_x${CHATS}`, small, CHATS);
   if (emptyMany && CASES !== "grown-many")
     pairs.push([`long_x${CHATS}`, await runLaunch(`long_x${CHATS}`, long, CHATS), emptyMany]);
-  if (emptyMany && CASES !== "main")
+  if (emptyMany && CASES !== "main" && CASES !== "long")
     pairs.push([`grown_x${CHATS}`, await runLaunch(`grown_x${CHATS}`, small, CHATS, { grow: long.turns }), emptyMany]);
   const cpuRatio = (a: number, b: number) => Math.max(a, CPU_FLOOR_PCT) / Math.max(b, CPU_FLOOR_PCT);
   const ratios: [string, number][] = [];
