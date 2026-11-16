@@ -1,0 +1,3092 @@
+{
+ "date": "2026-11-15",
+ "machine": {
+  "host": "cmux22",
+  "model": "Mac18,5",
+  "chip": "Apple M6",
+  "cores": 12,
+  "ram_gb": 16,
+  "macos": "27.0",
+  "build": "26A425",
+  "load_start": 16.42,
+  "displays": {
+   "count": 1,
+   "displays": [
+    {
+     "w": 1920,
+     "h": 1080,
+     "hz": 60.0,
+     "builtin": false
+    }
+   ]
+  },
+  "session": "Aqua"
+ },
+ "cmux_ref": "2667136414e398ac2be40cad35459fdcd0c994bb",
+ "browsers": {
+  "cmux-budget": {
+   "name": "cmux NEXT (resource budget)",
+   "bundle": "/Users/cmux/cmux-ci-bench/step/src/.build/DerivedData/cmux-measure/Build/Products/Release/cmux DEV perfbench.app",
+   "version": "1.0.0",
+   "team": "not set"
+  }
+ },
+ "rows": {
+  "budget-idle-disk-writes-home": {
+   "cmux-budget": {
+    "median": 2224.251,
+    "min": 2224.251,
+    "max": 2224.251,
+    "n": 1
+   }
+  },
+  "budget-idle-cpu-home": {
+   "cmux-budget": {
+    "median": 9.18,
+    "min": 9.18,
+    "max": 9.18,
+    "n": 1
+   }
+  },
+  "budget-idle-wakeups-home": {
+   "cmux-budget": {
+    "median": 16.136,
+    "min": 16.136,
+    "max": 16.136,
+    "n": 1
+   }
+  },
+  "budget-memory-home": {
+   "cmux-budget": {
+    "median": 809.8,
+    "min": 809.8,
+    "max": 809.8,
+    "n": 1
+   }
+  },
+  "budget-memory-per-terminal": {
+   "cmux-budget": {
+    "median": 7.8,
+    "min": 7.8,
+    "max": 7.8,
+    "n": 1
+   }
+  },
+  "budget-memory-first-chromium-tab": {
+   "cmux-budget": {
+    "median": 127.6,
+    "min": 127.6,
+    "max": 127.6,
+    "n": 1
+   }
+  },
+  "budget-memory-per-chromium-tab": {
+   "cmux-budget": {
+    "median": 49.86,
+    "min": 49.86,
+    "max": 49.86,
+    "n": 1
+   }
+  },
+  "budget-memory-first-webkit-tab": {
+   "cmux-budget": {
+    "median": 46.1,
+    "min": 46.1,
+    "max": 46.1,
+    "n": 1
+   }
+  },
+  "budget-memory-per-webkit-tab": {
+   "cmux-budget": {
+    "median": 21.44,
+    "min": 21.44,
+    "max": 21.44,
+    "n": 1
+   }
+  },
+  "budget-idle-cpu": {
+   "cmux-budget": {
+    "median": 1.184,
+    "min": 1.184,
+    "max": 1.184,
+    "n": 1
+   }
+  },
+  "budget-idle-wakeups": {
+   "cmux-budget": {
+    "median": 43.973,
+    "min": 43.973,
+    "max": 43.973,
+    "n": 1
+   }
+  },
+  "budget-memory-total": {
+   "cmux-budget": {
+    "median": 1525.2,
+    "min": 1525.2,
+    "max": 1525.2,
+    "n": 1
+   }
+  },
+  "budget-idle-disk-writes": {
+   "cmux-budget": {
+    "median": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "n": 1
+   }
+  },
+  "budget-idle-mach-msgs": {
+   "cmux-budget": {
+    "median": 109.21,
+    "min": 109.21,
+    "max": 109.21,
+    "n": 1
+   }
+  },
+  "budget-idle-syscalls": {
+   "cmux-budget": {
+    "median": 505.386,
+    "min": 505.386,
+    "max": 505.386,
+    "n": 1
+   }
+  },
+  "budget-processes": {
+   "cmux-budget": {
+    "median": 53.0,
+    "min": 53.0,
+    "max": 53.0,
+    "n": 1
+   }
+  },
+  "budget-threads": {
+   "cmux-budget": {
+    "median": 712.0,
+    "min": 712.0,
+    "max": 712.0,
+    "n": 1
+   }
+  },
+  "budget-spinners-0-cpu": {
+   "cmux-budget": {
+    "median": 0.958,
+    "min": 0.958,
+    "max": 0.958,
+    "n": 1
+   }
+  },
+  "budget-spinners-0-main-cpu": {
+   "cmux-budget": {
+    "median": 0.133,
+    "min": 0.133,
+    "max": 0.133,
+    "n": 1
+   }
+  },
+  "budget-spinners-0-wakeups": {
+   "cmux-budget": {
+    "median": 27.415,
+    "min": 27.415,
+    "max": 27.415,
+    "n": 1
+   }
+  },
+  "budget-spinners-1-cpu": {
+   "cmux-budget": {
+    "median": 1.338,
+    "min": 1.338,
+    "max": 1.338,
+    "n": 1
+   }
+  },
+  "budget-spinners-1-main-cpu": {
+   "cmux-budget": {
+    "median": 0.116,
+    "min": 0.116,
+    "max": 0.116,
+    "n": 1
+   }
+  },
+  "budget-spinners-1-wakeups": {
+   "cmux-budget": {
+    "median": 23.358,
+    "min": 23.358,
+    "max": 23.358,
+    "n": 1
+   }
+  },
+  "budget-spinners-20-cpu": {
+   "cmux-budget": {
+    "median": 0.549,
+    "min": 0.549,
+    "max": 0.549,
+    "n": 1
+   }
+  },
+  "budget-spinners-20-main-cpu": {
+   "cmux-budget": {
+    "median": 0.1,
+    "min": 0.1,
+    "max": 0.1,
+    "n": 1
+   }
+  },
+  "budget-spinners-20-wakeups": {
+   "cmux-budget": {
+    "median": 33.566,
+    "min": 33.566,
+    "max": 33.566,
+    "n": 1
+   }
+  }
+ },
+ "errors": [
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-samples",
+   "note": "call trees"
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-cpu-app-hidden",
+   "note": "the app did not hide"
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-wakeups-app-hidden",
+   "note": "the app did not hide"
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-disk-writes-app-hidden",
+   "note": "the app did not hide"
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-csw-app-hidden",
+   "note": "the app did not hide"
+  }
+ ],
+ "budgets": {
+  "measured": true,
+  "failed": 0,
+  "budgets": [
+   {
+    "row": "budget-idle-cpu",
+    "value": 1.184,
+    "limit": 1.0,
+    "unit": "%",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-idle-cpu-app-hidden",
+    "value": null,
+    "limit": 1.0,
+    "unit": "%",
+    "verdict": "missing",
+    "mode": "advisory",
+    "n": null
+   },
+   {
+    "row": "budget-idle-cpu-home",
+    "value": 9.18,
+    "limit": 1.0,
+    "unit": "%",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-idle-wakeups",
+    "value": 43.973,
+    "limit": 30,
+    "unit": "/s",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-idle-wakeups-app-hidden",
+    "value": null,
+    "limit": 30,
+    "unit": "/s",
+    "verdict": "missing",
+    "mode": "advisory",
+    "n": null
+   },
+   {
+    "row": "budget-memory-home",
+    "value": 809.8,
+    "limit": 400,
+    "unit": "MB",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-memory-total",
+    "value": 1525.2,
+    "limit": 800,
+    "unit": "MB",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-memory-per-terminal",
+    "value": 7.8,
+    "limit": 10,
+    "unit": "MB",
+    "verdict": "ok",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-memory-first-chromium-tab",
+    "value": 127.6,
+    "limit": 250,
+    "unit": "MB",
+    "verdict": "ok",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-memory-per-chromium-tab",
+    "value": 49.86,
+    "limit": 30,
+    "unit": "MB",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-memory-first-webkit-tab",
+    "value": 46.1,
+    "limit": 120,
+    "unit": "MB",
+    "verdict": "ok",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-memory-per-webkit-tab",
+    "value": 21.44,
+    "limit": 20,
+    "unit": "MB",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-idle-disk-writes-home",
+    "value": 2224.251,
+    "limit": 1.0,
+    "unit": "KB/s",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-idle-disk-writes",
+    "value": 0.0,
+    "limit": 1.0,
+    "unit": "KB/s",
+    "verdict": "ok",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-idle-disk-writes-app-hidden",
+    "value": null,
+    "limit": 1.0,
+    "unit": "KB/s",
+    "verdict": "missing",
+    "mode": "advisory",
+    "n": null
+   },
+   {
+    "row": "budget-idle-mach-msgs",
+    "value": 109.21,
+    "limit": 50,
+    "unit": "/s",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-idle-syscalls",
+    "value": 505.386,
+    "limit": 200,
+    "unit": "/s",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-idle-csw-app-hidden",
+    "value": null,
+    "limit": 50,
+    "unit": "/s",
+    "verdict": "missing",
+    "mode": "advisory",
+    "n": null
+   },
+   {
+    "row": "budget-processes",
+    "value": 53.0,
+    "limit": 15,
+    "unit": "n",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-threads",
+    "value": 712.0,
+    "limit": 150,
+    "unit": "n",
+    "verdict": "OVER",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-spinners-1-main-cpu",
+    "value": 0.116,
+    "limit": 0.5,
+    "unit": "%",
+    "verdict": "ok",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-spinners-20-main-cpu",
+    "value": 0.1,
+    "limit": 1.0,
+    "unit": "%",
+    "verdict": "ok",
+    "mode": "advisory",
+    "n": 1
+   },
+   {
+    "row": "budget-spinners-20-wakeups",
+    "value": 33.566,
+    "limit": 60,
+    "unit": "/s",
+    "verdict": "ok",
+    "mode": "advisory",
+    "n": 1
+   }
+  ]
+ },
+ "method": "scripts/perf-bench/README.md",
+ "samples": [
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-disk-writes-home",
+   "value": 2224.251,
+   "time": 1794757889
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-cpu-home",
+   "value": 9.18,
+   "time": 1794757889,
+   "kinds": {
+    "renderer": {
+     "n": 3,
+     "threads": 59,
+     "mw": 101.99,
+     "cpu_pct": 2.226,
+     "wakeups_per_s": 2.681,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 18.467,
+     "syscalls_per_s": 129.47,
+     "csw_per_s": 35.952
+    },
+    "main": {
+     "n": 1,
+     "threads": 52,
+     "mw": 17.155,
+     "cpu_pct": 6.283,
+     "wakeups_per_s": 2.831,
+     "disk_kb_per_s": 2224.118,
+     "mach_msgs_per_s": 179.892,
+     "syscalls_per_s": 1096.106,
+     "csw_per_s": 161.225
+    },
+    "cmux-agent-screen-detection": {
+     "n": 2,
+     "threads": 6,
+     "mw": 0.816,
+     "cpu_pct": 0.112,
+     "wakeups_per_s": 0.033,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.15,
+     "syscalls_per_s": 6.195,
+     "csw_per_s": 0.649
+    },
+    "utility:NetworkService": {
+     "n": 1,
+     "threads": 15,
+     "mw": 0.462,
+     "cpu_pct": 0.332,
+     "wakeups_per_s": 0.699,
+     "disk_kb_per_s": 0.133,
+     "mach_msgs_per_s": 45.227,
+     "syscalls_per_s": 201.523,
+     "csw_per_s": 29.591
+    },
+    "cmux-tui": {
+     "n": 3,
+     "threads": 126,
+     "mw": 0.268,
+     "cpu_pct": 0.205,
+     "wakeups_per_s": 8.11,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 103.792,
+     "csw_per_s": 20.216
+    },
+    "gpu": {
+     "n": 1,
+     "threads": 21,
+     "mw": 0.012,
+     "cpu_pct": 0.015,
+     "wakeups_per_s": 0.916,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.3,
+     "syscalls_per_s": 4.629,
+     "csw_per_s": 1.365
+    },
+    "utility:StorageService": {
+     "n": 1,
+     "threads": 12,
+     "mw": 0.003,
+     "cpu_pct": 0.004,
+     "wakeups_per_s": 0.416,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.167,
+     "syscalls_per_s": 0.866,
+     "csw_per_s": 0.516
+    },
+    "webkit-gpu": {
+     "n": 1,
+     "threads": 6,
+     "mw": 0.001,
+     "cpu_pct": 0.002,
+     "wakeups_per_s": 0.333,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.083,
+     "syscalls_per_s": 1.282,
+     "csw_per_s": 0.683
+    },
+    "acpmux": {
+     "n": 2,
+     "threads": 47,
+     "mw": 0.0,
+     "cpu_pct": 0.001,
+     "wakeups_per_s": 0.1,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.3,
+     "csw_per_s": 0.167
+    },
+    "webkit-networking": {
+     "n": 1,
+     "threads": 3,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.017,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.083,
+     "syscalls_per_s": 0.416,
+     "csw_per_s": 0.05
+    },
+    "com.apple.audio.SandboxHelper": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "zsh": {
+     "n": 1,
+     "threads": 1,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "SetStoreUpdateService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "VTDecoderXPCService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux-browser-host serve": {
+     "n": 1,
+     "threads": 5,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux cloud hands": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "webkit-webcontent": {
+     "n": 1,
+     "threads": 14,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    }
+   }
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-wakeups-home",
+   "value": 16.136,
+   "time": 1794757889,
+   "kinds": {
+    "renderer": {
+     "n": 3,
+     "threads": 59,
+     "mw": 101.99,
+     "cpu_pct": 2.226,
+     "wakeups_per_s": 2.681,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 18.467,
+     "syscalls_per_s": 129.47,
+     "csw_per_s": 35.952
+    },
+    "main": {
+     "n": 1,
+     "threads": 52,
+     "mw": 17.155,
+     "cpu_pct": 6.283,
+     "wakeups_per_s": 2.831,
+     "disk_kb_per_s": 2224.118,
+     "mach_msgs_per_s": 179.892,
+     "syscalls_per_s": 1096.106,
+     "csw_per_s": 161.225
+    },
+    "cmux-agent-screen-detection": {
+     "n": 2,
+     "threads": 6,
+     "mw": 0.816,
+     "cpu_pct": 0.112,
+     "wakeups_per_s": 0.033,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.15,
+     "syscalls_per_s": 6.195,
+     "csw_per_s": 0.649
+    },
+    "utility:NetworkService": {
+     "n": 1,
+     "threads": 15,
+     "mw": 0.462,
+     "cpu_pct": 0.332,
+     "wakeups_per_s": 0.699,
+     "disk_kb_per_s": 0.133,
+     "mach_msgs_per_s": 45.227,
+     "syscalls_per_s": 201.523,
+     "csw_per_s": 29.591
+    },
+    "cmux-tui": {
+     "n": 3,
+     "threads": 126,
+     "mw": 0.268,
+     "cpu_pct": 0.205,
+     "wakeups_per_s": 8.11,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 103.792,
+     "csw_per_s": 20.216
+    },
+    "gpu": {
+     "n": 1,
+     "threads": 21,
+     "mw": 0.012,
+     "cpu_pct": 0.015,
+     "wakeups_per_s": 0.916,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.3,
+     "syscalls_per_s": 4.629,
+     "csw_per_s": 1.365
+    },
+    "utility:StorageService": {
+     "n": 1,
+     "threads": 12,
+     "mw": 0.003,
+     "cpu_pct": 0.004,
+     "wakeups_per_s": 0.416,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.167,
+     "syscalls_per_s": 0.866,
+     "csw_per_s": 0.516
+    },
+    "webkit-gpu": {
+     "n": 1,
+     "threads": 6,
+     "mw": 0.001,
+     "cpu_pct": 0.002,
+     "wakeups_per_s": 0.333,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.083,
+     "syscalls_per_s": 1.282,
+     "csw_per_s": 0.683
+    },
+    "acpmux": {
+     "n": 2,
+     "threads": 47,
+     "mw": 0.0,
+     "cpu_pct": 0.001,
+     "wakeups_per_s": 0.1,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.3,
+     "csw_per_s": 0.167
+    },
+    "webkit-networking": {
+     "n": 1,
+     "threads": 3,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.017,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.083,
+     "syscalls_per_s": 0.416,
+     "csw_per_s": 0.05
+    },
+    "com.apple.audio.SandboxHelper": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "zsh": {
+     "n": 1,
+     "threads": 1,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "SetStoreUpdateService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "VTDecoderXPCService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux-browser-host serve": {
+     "n": 1,
+     "threads": 5,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux cloud hands": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "webkit-webcontent": {
+     "n": 1,
+     "threads": 14,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    }
+   }
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-memory-home",
+   "value": 809.8,
+   "time": 1794757889,
+   "kinds": {
+    "renderer": 250.5,
+    "main": 218.0,
+    "cmux-tui": 109.5,
+    "gpu": 51.3,
+    "webkit-webcontent": 47.5,
+    "acpmux": 29.7,
+    "utility:NetworkService": 28.0,
+    "utility:StorageService": 20.2,
+    "webkit-gpu": 12.6,
+    "cmux-agent-screen-detection": 12.4,
+    "cmux-browser-host serve": 7.5,
+    "cmux cloud hands": 5.5,
+    "com.apple.audio.SandboxHelper": 5.3,
+    "webkit-networking": 4.3,
+    "VTDecoderXPCService": 3.5,
+    "SetStoreUpdateService": 2.3,
+    "zsh": 1.6
+   },
+   "processes": 23
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-memory-per-terminal",
+   "value": 7.8,
+   "time": 1794757972,
+   "before_mb": 949.9,
+   "after_mb": 988.9,
+   "count": 5
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-memory-first-chromium-tab",
+   "value": 127.6,
+   "time": 1794758012,
+   "before_mb": 988.9,
+   "after_mb": 1116.5,
+   "count": 1
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-memory-per-chromium-tab",
+   "value": 49.86,
+   "time": 1794758053,
+   "before_mb": 1116.5,
+   "after_mb": 1365.8,
+   "count": 5
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-memory-first-webkit-tab",
+   "value": 46.1,
+   "time": 1794758093,
+   "before_mb": 1365.8,
+   "after_mb": 1411.9,
+   "count": 1
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-memory-per-webkit-tab",
+   "value": 21.44,
+   "time": 1794758134,
+   "before_mb": 1411.9,
+   "after_mb": 1519.1,
+   "count": 5
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-cpu",
+   "value": 1.184,
+   "time": 1794758234,
+   "kinds": {
+    "cmux-agent-screen-detection": {
+     "n": 2,
+     "threads": 6,
+     "mw": 0.272,
+     "cpu_pct": 0.101,
+     "wakeups_per_s": 0.033,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 9.077,
+     "csw_per_s": 0.981
+    },
+    "main": {
+     "n": 1,
+     "threads": 78,
+     "mw": 0.217,
+     "cpu_pct": 0.329,
+     "wakeups_per_s": 20.715,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 48.778,
+     "syscalls_per_s": 212.768,
+     "csw_per_s": 38.221
+    },
+    "cmux-tui": {
+     "n": 3,
+     "threads": 171,
+     "mw": 0.178,
+     "cpu_pct": 0.198,
+     "wakeups_per_s": 8.063,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 99.967,
+     "csw_per_s": 20.0
+    },
+    "webkit-gpu": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.164,
+     "cpu_pct": 0.263,
+     "wakeups_per_s": 5.187,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 31.987,
+     "syscalls_per_s": 77.373,
+     "csw_per_s": 19.135
+    },
+    "webkit-webcontent": {
+     "n": 7,
+     "threads": 29,
+     "mw": 0.106,
+     "cpu_pct": 0.168,
+     "wakeups_per_s": 6.5,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 22.411,
+     "syscalls_per_s": 85.253,
+     "csw_per_s": 17.922
+    },
+    "renderer": {
+     "n": 11,
+     "threads": 226,
+     "mw": 0.093,
+     "cpu_pct": 0.107,
+     "wakeups_per_s": 1.879,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 5.486,
+     "syscalls_per_s": 15.528,
+     "csw_per_s": 5.786
+    },
+    "gpu": {
+     "n": 1,
+     "threads": 22,
+     "mw": 0.006,
+     "cpu_pct": 0.011,
+     "wakeups_per_s": 0.732,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.249,
+     "syscalls_per_s": 3.99,
+     "csw_per_s": 1.147
+    },
+    "utility:NetworkService": {
+     "n": 1,
+     "threads": 16,
+     "mw": 0.002,
+     "cpu_pct": 0.005,
+     "wakeups_per_s": 0.399,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 0.599,
+     "csw_per_s": 0.482
+    },
+    "utility:StorageService": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.002,
+     "cpu_pct": 0.003,
+     "wakeups_per_s": 0.366,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 0.532,
+     "csw_per_s": 0.432
+    },
+    "acpmux": {
+     "n": 2,
+     "threads": 47,
+     "mw": 0.0,
+     "cpu_pct": 0.001,
+     "wakeups_per_s": 0.1,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.299,
+     "csw_per_s": 0.166
+    },
+    "MTLCompilerService": {
+     "n": 3,
+     "threads": 6,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "com.apple.audio.SandboxHelper": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "zsh": {
+     "n": 7,
+     "threads": 7,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "terminal-host": {
+     "n": 7,
+     "threads": 62,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "SetStoreUpdateService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "VTDecoderXPCService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux-browser-host serve": {
+     "n": 1,
+     "threads": 5,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux cloud hands": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "webkit-networking": {
+     "n": 1,
+     "threads": 3,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    }
+   }
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-wakeups",
+   "value": 43.973,
+   "time": 1794758234,
+   "kinds": {
+    "cmux-agent-screen-detection": {
+     "n": 2,
+     "threads": 6,
+     "mw": 0.272,
+     "cpu_pct": 0.101,
+     "wakeups_per_s": 0.033,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 9.077,
+     "csw_per_s": 0.981
+    },
+    "main": {
+     "n": 1,
+     "threads": 78,
+     "mw": 0.217,
+     "cpu_pct": 0.329,
+     "wakeups_per_s": 20.715,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 48.778,
+     "syscalls_per_s": 212.768,
+     "csw_per_s": 38.221
+    },
+    "cmux-tui": {
+     "n": 3,
+     "threads": 171,
+     "mw": 0.178,
+     "cpu_pct": 0.198,
+     "wakeups_per_s": 8.063,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 99.967,
+     "csw_per_s": 20.0
+    },
+    "webkit-gpu": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.164,
+     "cpu_pct": 0.263,
+     "wakeups_per_s": 5.187,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 31.987,
+     "syscalls_per_s": 77.373,
+     "csw_per_s": 19.135
+    },
+    "webkit-webcontent": {
+     "n": 7,
+     "threads": 29,
+     "mw": 0.106,
+     "cpu_pct": 0.168,
+     "wakeups_per_s": 6.5,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 22.411,
+     "syscalls_per_s": 85.253,
+     "csw_per_s": 17.922
+    },
+    "renderer": {
+     "n": 11,
+     "threads": 226,
+     "mw": 0.093,
+     "cpu_pct": 0.107,
+     "wakeups_per_s": 1.879,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 5.486,
+     "syscalls_per_s": 15.528,
+     "csw_per_s": 5.786
+    },
+    "gpu": {
+     "n": 1,
+     "threads": 22,
+     "mw": 0.006,
+     "cpu_pct": 0.011,
+     "wakeups_per_s": 0.732,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.249,
+     "syscalls_per_s": 3.99,
+     "csw_per_s": 1.147
+    },
+    "utility:NetworkService": {
+     "n": 1,
+     "threads": 16,
+     "mw": 0.002,
+     "cpu_pct": 0.005,
+     "wakeups_per_s": 0.399,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 0.599,
+     "csw_per_s": 0.482
+    },
+    "utility:StorageService": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.002,
+     "cpu_pct": 0.003,
+     "wakeups_per_s": 0.366,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 0.532,
+     "csw_per_s": 0.432
+    },
+    "acpmux": {
+     "n": 2,
+     "threads": 47,
+     "mw": 0.0,
+     "cpu_pct": 0.001,
+     "wakeups_per_s": 0.1,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.299,
+     "csw_per_s": 0.166
+    },
+    "MTLCompilerService": {
+     "n": 3,
+     "threads": 6,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "com.apple.audio.SandboxHelper": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "zsh": {
+     "n": 7,
+     "threads": 7,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "terminal-host": {
+     "n": 7,
+     "threads": 62,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "SetStoreUpdateService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "VTDecoderXPCService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux-browser-host serve": {
+     "n": 1,
+     "threads": 5,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux cloud hands": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "webkit-networking": {
+     "n": 1,
+     "threads": 3,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    }
+   }
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-memory-total",
+   "value": 1525.2,
+   "time": 1794758234,
+   "kinds": {
+    "renderer": 563.3,
+    "main": 322.0,
+    "webkit-webcontent": 153.4,
+    "gpu": 115.4,
+    "cmux-tui": 112.6,
+    "MTLCompilerService": 78.5,
+    "webkit-gpu": 31.0,
+    "acpmux": 29.5,
+    "utility:NetworkService": 27.7,
+    "utility:StorageService": 21.6,
+    "zsh": 15.7,
+    "cmux-agent-screen-detection": 12.9,
+    "terminal-host": 11.9,
+    "cmux-browser-host serve": 7.7,
+    "cmux cloud hands": 5.5,
+    "webkit-networking": 5.4,
+    "com.apple.audio.SandboxHelper": 5.3,
+    "VTDecoderXPCService": 3.5,
+    "SetStoreUpdateService": 2.3
+   },
+   "processes": 53
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-disk-writes",
+   "value": 0.0,
+   "time": 1794758234,
+   "kinds": {
+    "cmux-agent-screen-detection": {
+     "n": 2,
+     "threads": 6,
+     "mw": 0.272,
+     "cpu_pct": 0.101,
+     "wakeups_per_s": 0.033,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 9.077,
+     "csw_per_s": 0.981
+    },
+    "main": {
+     "n": 1,
+     "threads": 78,
+     "mw": 0.217,
+     "cpu_pct": 0.329,
+     "wakeups_per_s": 20.715,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 48.778,
+     "syscalls_per_s": 212.768,
+     "csw_per_s": 38.221
+    },
+    "cmux-tui": {
+     "n": 3,
+     "threads": 171,
+     "mw": 0.178,
+     "cpu_pct": 0.198,
+     "wakeups_per_s": 8.063,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 99.967,
+     "csw_per_s": 20.0
+    },
+    "webkit-gpu": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.164,
+     "cpu_pct": 0.263,
+     "wakeups_per_s": 5.187,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 31.987,
+     "syscalls_per_s": 77.373,
+     "csw_per_s": 19.135
+    },
+    "webkit-webcontent": {
+     "n": 7,
+     "threads": 29,
+     "mw": 0.106,
+     "cpu_pct": 0.168,
+     "wakeups_per_s": 6.5,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 22.411,
+     "syscalls_per_s": 85.253,
+     "csw_per_s": 17.922
+    },
+    "renderer": {
+     "n": 11,
+     "threads": 226,
+     "mw": 0.093,
+     "cpu_pct": 0.107,
+     "wakeups_per_s": 1.879,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 5.486,
+     "syscalls_per_s": 15.528,
+     "csw_per_s": 5.786
+    },
+    "gpu": {
+     "n": 1,
+     "threads": 22,
+     "mw": 0.006,
+     "cpu_pct": 0.011,
+     "wakeups_per_s": 0.732,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.249,
+     "syscalls_per_s": 3.99,
+     "csw_per_s": 1.147
+    },
+    "utility:NetworkService": {
+     "n": 1,
+     "threads": 16,
+     "mw": 0.002,
+     "cpu_pct": 0.005,
+     "wakeups_per_s": 0.399,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 0.599,
+     "csw_per_s": 0.482
+    },
+    "utility:StorageService": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.002,
+     "cpu_pct": 0.003,
+     "wakeups_per_s": 0.366,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 0.532,
+     "csw_per_s": 0.432
+    },
+    "acpmux": {
+     "n": 2,
+     "threads": 47,
+     "mw": 0.0,
+     "cpu_pct": 0.001,
+     "wakeups_per_s": 0.1,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.299,
+     "csw_per_s": 0.166
+    },
+    "MTLCompilerService": {
+     "n": 3,
+     "threads": 6,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "com.apple.audio.SandboxHelper": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "zsh": {
+     "n": 7,
+     "threads": 7,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "terminal-host": {
+     "n": 7,
+     "threads": 62,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "SetStoreUpdateService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "VTDecoderXPCService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux-browser-host serve": {
+     "n": 1,
+     "threads": 5,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux cloud hands": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "webkit-networking": {
+     "n": 1,
+     "threads": 3,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    }
+   }
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-mach-msgs",
+   "value": 109.21,
+   "time": 1794758234
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-syscalls",
+   "value": 505.386,
+   "time": 1794758234
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-processes",
+   "value": 53.0,
+   "time": 1794758234
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-threads",
+   "value": 712.0,
+   "time": 1794758234
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-samples",
+   "value": null,
+   "time": 1794758271,
+   "note": "call trees"
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-cpu-app-hidden",
+   "value": null,
+   "time": 1794758271,
+   "note": "the app did not hide"
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-wakeups-app-hidden",
+   "value": null,
+   "time": 1794758271,
+   "note": "the app did not hide"
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-disk-writes-app-hidden",
+   "value": null,
+   "time": 1794758271,
+   "note": "the app did not hide"
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-idle-csw-app-hidden",
+   "value": null,
+   "time": 1794758271,
+   "note": "the app did not hide"
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-spinners-0-cpu",
+   "value": 0.958,
+   "time": 1794758371,
+   "kinds": {
+    "cmux-agent-screen-detection": {
+     "n": 2,
+     "threads": 6,
+     "mw": 0.275,
+     "cpu_pct": 0.099,
+     "wakeups_per_s": 0.033,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 9.111,
+     "csw_per_s": 0.831
+    },
+    "cmux-tui": {
+     "n": 3,
+     "threads": 171,
+     "mw": 0.182,
+     "cpu_pct": 0.2,
+     "wakeups_per_s": 8.113,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 99.8,
+     "csw_per_s": 19.817
+    },
+    "main": {
+     "n": 1,
+     "threads": 77,
+     "mw": 0.163,
+     "cpu_pct": 0.265,
+     "wakeups_per_s": 7.481,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 25.935,
+     "syscalls_per_s": 124.223,
+     "csw_per_s": 20.416
+    },
+    "webkit-webcontent": {
+     "n": 7,
+     "threads": 64,
+     "mw": 0.133,
+     "cpu_pct": 0.213,
+     "wakeups_per_s": 5.569,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 17.273,
+     "syscalls_per_s": 86.434,
+     "csw_per_s": 19.967
+    },
+    "webkit-gpu": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.063,
+     "cpu_pct": 0.116,
+     "wakeups_per_s": 2.76,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 17.406,
+     "syscalls_per_s": 41.197,
+     "csw_per_s": 11.189
+    },
+    "renderer": {
+     "n": 11,
+     "threads": 226,
+     "mw": 0.025,
+     "cpu_pct": 0.041,
+     "wakeups_per_s": 1.38,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 10.341,
+     "syscalls_per_s": 7.415,
+     "csw_per_s": 2.411
+    },
+    "gpu": {
+     "n": 1,
+     "threads": 22,
+     "mw": 0.005,
+     "cpu_pct": 0.01,
+     "wakeups_per_s": 0.748,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 3.741,
+     "csw_per_s": 1.114
+    },
+    "utility:NetworkService": {
+     "n": 1,
+     "threads": 16,
+     "mw": 0.003,
+     "cpu_pct": 0.007,
+     "wakeups_per_s": 0.449,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 1.147,
+     "csw_per_s": 0.532
+    },
+    "webkit-networking": {
+     "n": 1,
+     "threads": 3,
+     "mw": 0.002,
+     "cpu_pct": 0.004,
+     "wakeups_per_s": 0.399,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 1.031,
+     "syscalls_per_s": 4.406,
+     "csw_per_s": 1.047
+    },
+    "utility:StorageService": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.002,
+     "cpu_pct": 0.004,
+     "wakeups_per_s": 0.366,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 0.499,
+     "csw_per_s": 0.399
+    },
+    "acpmux": {
+     "n": 2,
+     "threads": 47,
+     "mw": 0.0,
+     "cpu_pct": 0.001,
+     "wakeups_per_s": 0.116,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.316,
+     "csw_per_s": 0.183
+    },
+    "MTLCompilerService": {
+     "n": 3,
+     "threads": 6,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "com.apple.audio.SandboxHelper": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "zsh": {
+     "n": 7,
+     "threads": 7,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "terminal-host": {
+     "n": 7,
+     "threads": 62,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "SetStoreUpdateService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "VTDecoderXPCService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux-browser-host serve": {
+     "n": 1,
+     "threads": 5,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux cloud hands": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    }
+   }
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-spinners-0-main-cpu",
+   "value": 0.133,
+   "time": 1794758371
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-spinners-0-wakeups",
+   "value": 27.415,
+   "time": 1794758371,
+   "kinds": {
+    "cmux-agent-screen-detection": {
+     "n": 2,
+     "threads": 6,
+     "mw": 0.275,
+     "cpu_pct": 0.099,
+     "wakeups_per_s": 0.033,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 9.111,
+     "csw_per_s": 0.831
+    },
+    "cmux-tui": {
+     "n": 3,
+     "threads": 171,
+     "mw": 0.182,
+     "cpu_pct": 0.2,
+     "wakeups_per_s": 8.113,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 99.8,
+     "csw_per_s": 19.817
+    },
+    "main": {
+     "n": 1,
+     "threads": 77,
+     "mw": 0.163,
+     "cpu_pct": 0.265,
+     "wakeups_per_s": 7.481,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 25.935,
+     "syscalls_per_s": 124.223,
+     "csw_per_s": 20.416
+    },
+    "webkit-webcontent": {
+     "n": 7,
+     "threads": 64,
+     "mw": 0.133,
+     "cpu_pct": 0.213,
+     "wakeups_per_s": 5.569,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 17.273,
+     "syscalls_per_s": 86.434,
+     "csw_per_s": 19.967
+    },
+    "webkit-gpu": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.063,
+     "cpu_pct": 0.116,
+     "wakeups_per_s": 2.76,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 17.406,
+     "syscalls_per_s": 41.197,
+     "csw_per_s": 11.189
+    },
+    "renderer": {
+     "n": 11,
+     "threads": 226,
+     "mw": 0.025,
+     "cpu_pct": 0.041,
+     "wakeups_per_s": 1.38,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 10.341,
+     "syscalls_per_s": 7.415,
+     "csw_per_s": 2.411
+    },
+    "gpu": {
+     "n": 1,
+     "threads": 22,
+     "mw": 0.005,
+     "cpu_pct": 0.01,
+     "wakeups_per_s": 0.748,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 3.741,
+     "csw_per_s": 1.114
+    },
+    "utility:NetworkService": {
+     "n": 1,
+     "threads": 16,
+     "mw": 0.003,
+     "cpu_pct": 0.007,
+     "wakeups_per_s": 0.449,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 1.147,
+     "csw_per_s": 0.532
+    },
+    "webkit-networking": {
+     "n": 1,
+     "threads": 3,
+     "mw": 0.002,
+     "cpu_pct": 0.004,
+     "wakeups_per_s": 0.399,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 1.031,
+     "syscalls_per_s": 4.406,
+     "csw_per_s": 1.047
+    },
+    "utility:StorageService": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.002,
+     "cpu_pct": 0.004,
+     "wakeups_per_s": 0.366,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 0.499,
+     "csw_per_s": 0.399
+    },
+    "acpmux": {
+     "n": 2,
+     "threads": 47,
+     "mw": 0.0,
+     "cpu_pct": 0.001,
+     "wakeups_per_s": 0.116,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.316,
+     "csw_per_s": 0.183
+    },
+    "MTLCompilerService": {
+     "n": 3,
+     "threads": 6,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "com.apple.audio.SandboxHelper": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "zsh": {
+     "n": 7,
+     "threads": 7,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "terminal-host": {
+     "n": 7,
+     "threads": 62,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "SetStoreUpdateService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "VTDecoderXPCService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux-browser-host serve": {
+     "n": 1,
+     "threads": 5,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux cloud hands": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    }
+   }
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-spinners-1-cpu",
+   "value": 1.338,
+   "time": 1794758442,
+   "kinds": {
+    "renderer": {
+     "n": 11,
+     "threads": 226,
+     "mw": 0.567,
+     "cpu_pct": 0.66,
+     "wakeups_per_s": 1.546,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 8.845,
+     "syscalls_per_s": 31.122,
+     "csw_per_s": 9.925
+    },
+    "cmux-agent-screen-detection": {
+     "n": 2,
+     "threads": 6,
+     "mw": 0.293,
+     "cpu_pct": 0.099,
+     "wakeups_per_s": 0.033,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 9.809,
+     "csw_per_s": 0.931
+    },
+    "cmux-tui": {
+     "n": 3,
+     "threads": 178,
+     "mw": 0.24,
+     "cpu_pct": 0.215,
+     "wakeups_per_s": 8.096,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 104.755,
+     "csw_per_s": 19.751
+    },
+    "main": {
+     "n": 1,
+     "threads": 82,
+     "mw": 0.15,
+     "cpu_pct": 0.257,
+     "wakeups_per_s": 9.842,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 22.959,
+     "syscalls_per_s": 140.532,
+     "csw_per_s": 24.223
+    },
+    "webkit-webcontent": {
+     "n": 7,
+     "threads": 60,
+     "mw": 0.027,
+     "cpu_pct": 0.032,
+     "wakeups_per_s": 0.648,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 2.976,
+     "syscalls_per_s": 14.414,
+     "csw_per_s": 2.743
+    },
+    "webkit-networking": {
+     "n": 1,
+     "threads": 3,
+     "mw": 0.019,
+     "cpu_pct": 0.019,
+     "wakeups_per_s": 0.532,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 1.347,
+     "syscalls_per_s": 6.534,
+     "csw_per_s": 1.347
+    },
+    "webkit-gpu": {
+     "n": 1,
+     "threads": 12,
+     "mw": 0.017,
+     "cpu_pct": 0.025,
+     "wakeups_per_s": 0.948,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 2.743,
+     "syscalls_per_s": 7.515,
+     "csw_per_s": 2.394
+    },
+    "utility:NetworkService": {
+     "n": 1,
+     "threads": 16,
+     "mw": 0.006,
+     "cpu_pct": 0.01,
+     "wakeups_per_s": 0.466,
+     "disk_kb_per_s": 0.067,
+     "mach_msgs_per_s": 0.416,
+     "syscalls_per_s": 1.596,
+     "csw_per_s": 0.815
+    },
+    "gpu": {
+     "n": 1,
+     "threads": 22,
+     "mw": 0.005,
+     "cpu_pct": 0.011,
+     "wakeups_per_s": 0.748,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.399,
+     "syscalls_per_s": 4.555,
+     "csw_per_s": 1.23
+    },
+    "acpmux": {
+     "n": 2,
+     "threads": 47,
+     "mw": 0.005,
+     "cpu_pct": 0.007,
+     "wakeups_per_s": 0.133,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.05,
+     "syscalls_per_s": 4.173,
+     "csw_per_s": 0.648
+    },
+    "utility:StorageService": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.002,
+     "cpu_pct": 0.004,
+     "wakeups_per_s": 0.366,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.399,
+     "syscalls_per_s": 0.914,
+     "csw_per_s": 0.615
+    },
+    "MTLCompilerService": {
+     "n": 3,
+     "threads": 6,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "com.apple.audio.SandboxHelper": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "sleep 86400": {
+     "n": 1,
+     "threads": 1,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "terminal-host": {
+     "n": 8,
+     "threads": 72,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "zsh": {
+     "n": 7,
+     "threads": 7,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "SetStoreUpdateService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "VTDecoderXPCService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux-browser-host serve": {
+     "n": 1,
+     "threads": 5,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux cloud hands": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    }
+   }
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-spinners-1-main-cpu",
+   "value": 0.116,
+   "time": 1794758442
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-spinners-1-wakeups",
+   "value": 23.358,
+   "time": 1794758442,
+   "kinds": {
+    "renderer": {
+     "n": 11,
+     "threads": 226,
+     "mw": 0.567,
+     "cpu_pct": 0.66,
+     "wakeups_per_s": 1.546,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 8.845,
+     "syscalls_per_s": 31.122,
+     "csw_per_s": 9.925
+    },
+    "cmux-agent-screen-detection": {
+     "n": 2,
+     "threads": 6,
+     "mw": 0.293,
+     "cpu_pct": 0.099,
+     "wakeups_per_s": 0.033,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 9.809,
+     "csw_per_s": 0.931
+    },
+    "cmux-tui": {
+     "n": 3,
+     "threads": 178,
+     "mw": 0.24,
+     "cpu_pct": 0.215,
+     "wakeups_per_s": 8.096,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 104.755,
+     "csw_per_s": 19.751
+    },
+    "main": {
+     "n": 1,
+     "threads": 82,
+     "mw": 0.15,
+     "cpu_pct": 0.257,
+     "wakeups_per_s": 9.842,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 22.959,
+     "syscalls_per_s": 140.532,
+     "csw_per_s": 24.223
+    },
+    "webkit-webcontent": {
+     "n": 7,
+     "threads": 60,
+     "mw": 0.027,
+     "cpu_pct": 0.032,
+     "wakeups_per_s": 0.648,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 2.976,
+     "syscalls_per_s": 14.414,
+     "csw_per_s": 2.743
+    },
+    "webkit-networking": {
+     "n": 1,
+     "threads": 3,
+     "mw": 0.019,
+     "cpu_pct": 0.019,
+     "wakeups_per_s": 0.532,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 1.347,
+     "syscalls_per_s": 6.534,
+     "csw_per_s": 1.347
+    },
+    "webkit-gpu": {
+     "n": 1,
+     "threads": 12,
+     "mw": 0.017,
+     "cpu_pct": 0.025,
+     "wakeups_per_s": 0.948,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 2.743,
+     "syscalls_per_s": 7.515,
+     "csw_per_s": 2.394
+    },
+    "utility:NetworkService": {
+     "n": 1,
+     "threads": 16,
+     "mw": 0.006,
+     "cpu_pct": 0.01,
+     "wakeups_per_s": 0.466,
+     "disk_kb_per_s": 0.067,
+     "mach_msgs_per_s": 0.416,
+     "syscalls_per_s": 1.596,
+     "csw_per_s": 0.815
+    },
+    "gpu": {
+     "n": 1,
+     "threads": 22,
+     "mw": 0.005,
+     "cpu_pct": 0.011,
+     "wakeups_per_s": 0.748,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.399,
+     "syscalls_per_s": 4.555,
+     "csw_per_s": 1.23
+    },
+    "acpmux": {
+     "n": 2,
+     "threads": 47,
+     "mw": 0.005,
+     "cpu_pct": 0.007,
+     "wakeups_per_s": 0.133,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.05,
+     "syscalls_per_s": 4.173,
+     "csw_per_s": 0.648
+    },
+    "utility:StorageService": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.002,
+     "cpu_pct": 0.004,
+     "wakeups_per_s": 0.366,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.399,
+     "syscalls_per_s": 0.914,
+     "csw_per_s": 0.615
+    },
+    "MTLCompilerService": {
+     "n": 3,
+     "threads": 6,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "com.apple.audio.SandboxHelper": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "sleep 86400": {
+     "n": 1,
+     "threads": 1,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "terminal-host": {
+     "n": 8,
+     "threads": 72,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "zsh": {
+     "n": 7,
+     "threads": 7,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "SetStoreUpdateService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "VTDecoderXPCService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux-browser-host serve": {
+     "n": 1,
+     "threads": 5,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux cloud hands": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    }
+   }
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-spinners-20-cpu",
+   "value": 0.549,
+   "time": 1794758513,
+   "kinds": {
+    "cmux-agent-screen-detection": {
+     "n": 2,
+     "threads": 6,
+     "mw": 0.397,
+     "cpu_pct": 0.108,
+     "wakeups_per_s": 0.05,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 24.622,
+     "csw_per_s": 2.444
+    },
+    "cmux-tui": {
+     "n": 3,
+     "threads": 216,
+     "mw": 0.383,
+     "cpu_pct": 0.185,
+     "wakeups_per_s": 11.521,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 120.066,
+     "csw_per_s": 22.527
+    },
+    "main": {
+     "n": 1,
+     "threads": 83,
+     "mw": 0.119,
+     "cpu_pct": 0.215,
+     "wakeups_per_s": 17.406,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 15.229,
+     "syscalls_per_s": 138.736,
+     "csw_per_s": 23.907
+    },
+    "renderer": {
+     "n": 11,
+     "threads": 226,
+     "mw": 0.011,
+     "cpu_pct": 0.02,
+     "wakeups_per_s": 1.895,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 3.89,
+     "syscalls_per_s": 4.04,
+     "csw_per_s": 2.012
+    },
+    "gpu": {
+     "n": 1,
+     "threads": 22,
+     "mw": 0.005,
+     "cpu_pct": 0.009,
+     "wakeups_per_s": 0.981,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 3.724,
+     "csw_per_s": 1.097
+    },
+    "utility:NetworkService": {
+     "n": 1,
+     "threads": 16,
+     "mw": 0.004,
+     "cpu_pct": 0.008,
+     "wakeups_per_s": 0.615,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 1.081,
+     "csw_per_s": 0.515
+    },
+    "utility:StorageService": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.002,
+     "cpu_pct": 0.003,
+     "wakeups_per_s": 0.499,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 0.499,
+     "csw_per_s": 0.399
+    },
+    "webkit-gpu": {
+     "n": 1,
+     "threads": 12,
+     "mw": 0.001,
+     "cpu_pct": 0.002,
+     "wakeups_per_s": 0.449,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.998,
+     "csw_per_s": 0.665
+    },
+    "acpmux": {
+     "n": 2,
+     "threads": 47,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.15,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.299,
+     "csw_per_s": 0.166
+    },
+    "webkit-webcontent": {
+     "n": 7,
+     "threads": 60,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "MTLCompilerService": {
+     "n": 3,
+     "threads": 6,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "sleep 86400": {
+     "n": 20,
+     "threads": 20,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "terminal-host": {
+     "n": 27,
+     "threads": 262,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "zsh": {
+     "n": 7,
+     "threads": 7,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "SetStoreUpdateService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "VTDecoderXPCService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux-browser-host serve": {
+     "n": 1,
+     "threads": 5,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux cloud hands": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "webkit-networking": {
+     "n": 1,
+     "threads": 3,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "com.apple.audio.SandboxHelper": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    }
+   }
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-spinners-20-main-cpu",
+   "value": 0.1,
+   "time": 1794758513
+  },
+  {
+   "browser": "cmux-budget",
+   "round": 1,
+   "row": "budget-spinners-20-wakeups",
+   "value": 33.566,
+   "time": 1794758513,
+   "kinds": {
+    "cmux-agent-screen-detection": {
+     "n": 2,
+     "threads": 6,
+     "mw": 0.397,
+     "cpu_pct": 0.108,
+     "wakeups_per_s": 0.05,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 24.622,
+     "csw_per_s": 2.444
+    },
+    "cmux-tui": {
+     "n": 3,
+     "threads": 216,
+     "mw": 0.383,
+     "cpu_pct": 0.185,
+     "wakeups_per_s": 11.521,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 120.066,
+     "csw_per_s": 22.527
+    },
+    "main": {
+     "n": 1,
+     "threads": 83,
+     "mw": 0.119,
+     "cpu_pct": 0.215,
+     "wakeups_per_s": 17.406,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 15.229,
+     "syscalls_per_s": 138.736,
+     "csw_per_s": 23.907
+    },
+    "renderer": {
+     "n": 11,
+     "threads": 226,
+     "mw": 0.011,
+     "cpu_pct": 0.02,
+     "wakeups_per_s": 1.895,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 3.89,
+     "syscalls_per_s": 4.04,
+     "csw_per_s": 2.012
+    },
+    "gpu": {
+     "n": 1,
+     "threads": 22,
+     "mw": 0.005,
+     "cpu_pct": 0.009,
+     "wakeups_per_s": 0.981,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 3.724,
+     "csw_per_s": 1.097
+    },
+    "utility:NetworkService": {
+     "n": 1,
+     "threads": 16,
+     "mw": 0.004,
+     "cpu_pct": 0.008,
+     "wakeups_per_s": 0.615,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 1.081,
+     "csw_per_s": 0.515
+    },
+    "utility:StorageService": {
+     "n": 1,
+     "threads": 13,
+     "mw": 0.002,
+     "cpu_pct": 0.003,
+     "wakeups_per_s": 0.499,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.1,
+     "syscalls_per_s": 0.499,
+     "csw_per_s": 0.399
+    },
+    "webkit-gpu": {
+     "n": 1,
+     "threads": 12,
+     "mw": 0.001,
+     "cpu_pct": 0.002,
+     "wakeups_per_s": 0.449,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.998,
+     "csw_per_s": 0.665
+    },
+    "acpmux": {
+     "n": 2,
+     "threads": 47,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.15,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.299,
+     "csw_per_s": 0.166
+    },
+    "webkit-webcontent": {
+     "n": 7,
+     "threads": 60,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "MTLCompilerService": {
+     "n": 3,
+     "threads": 6,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "sleep 86400": {
+     "n": 20,
+     "threads": 20,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "terminal-host": {
+     "n": 27,
+     "threads": 262,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "zsh": {
+     "n": 7,
+     "threads": 7,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "SetStoreUpdateService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "VTDecoderXPCService": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux-browser-host serve": {
+     "n": 1,
+     "threads": 5,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "cmux cloud hands": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "webkit-networking": {
+     "n": 1,
+     "threads": 3,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    },
+    "com.apple.audio.SandboxHelper": {
+     "n": 1,
+     "threads": 2,
+     "mw": 0.0,
+     "cpu_pct": 0.0,
+     "wakeups_per_s": 0.0,
+     "disk_kb_per_s": 0.0,
+     "mach_msgs_per_s": 0.0,
+     "syscalls_per_s": 0.0,
+     "csw_per_s": 0.0
+    }
+   }
+  }
+ ]
+}

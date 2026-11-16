@@ -1,0 +1,89 @@
+{
+ "date": "2026-11-15",
+ "machine": {
+  "host": "fleet-mini",
+  "chip": "Apple M4"
+ },
+ "cmux_ref": "0000000000000000000000000000000000000000",
+ "browsers": {
+  "cmux-chromium": {
+   "name": "cmux NEXT",
+   "version": "x"
+  },
+  "cmux-webkit": {
+   "name": "cmux NEXT",
+   "version": "x"
+  }
+ },
+ "rows": {
+  "newtab-paint": {
+   "cmux-chromium": {
+    "median": 54.9,
+    "min": 50.0,
+    "max": 60.0,
+    "n": 3
+   },
+   "cmux-webkit": {
+    "median": 71.5,
+    "min": 70.0,
+    "max": 75.0,
+    "n": 3
+   }
+  },
+  "tab-switch": {
+   "cmux-chromium": {
+    "median": 20.0,
+    "min": 19.0,
+    "max": 21.0,
+    "n": 3
+   }
+  }
+ },
+ "errors": [],
+ "budgets": {},
+ "method": "scripts/perf-bench/README.md",
+ "samples": [
+  {
+   "browser": "cmux-chromium",
+   "round": 0,
+   "row": "newtab-paint",
+   "value": 50.0
+  },
+  {
+   "browser": "cmux-chromium",
+   "round": 1,
+   "row": "newtab-paint",
+   "value": 54.9
+  },
+  {
+   "browser": "cmux-chromium",
+   "round": 2,
+   "row": "newtab-paint",
+   "value": 60.0
+  },
+  {
+   "browser": "cmux-webkit",
+   "round": 0,
+   "row": "newtab-paint",
+   "value": 70.0
+  },
+  {
+   "browser": "cmux-webkit",
+   "round": 1,
+   "row": "newtab-paint",
+   "value": 71.5
+  },
+  {
+   "browser": "cmux-webkit",
+   "round": 2,
+   "row": "newtab-paint",
+   "value": 75.0
+  },
+  {
+   "browser": "cmux-chromium",
+   "round": 0,
+   "row": "tab-switch",
+   "value": 20.0
+  }
+ ]
+}
