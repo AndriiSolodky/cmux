@@ -132,6 +132,38 @@ async function run(name: string, engine: BrowserType) {
       } catch {
         observer = undefined;
       }
+      // Each older page the pane asks for (`_acpmux/events` with `beforeSeq`): when it was asked and when its answer was
+      // handled (a listener added after the pane's own runs after it), so ask-to-drawn is the first paint after that.
+      const asks: { at: number; answered?: number }[] = [];
+      const pending = new Map<number, (typeof asks)[number]>();
+      const watched = new WeakSet<WebSocket>();
+      const send = WebSocket.prototype.send;
+      WebSocket.prototype.send = function (this: WebSocket, data: Parameters<WebSocket["send"]>[0]) {
+        if (!watched.has(this)) {
+          watched.add(this);
+          this.addEventListener("message", (event) => {
+            if (typeof event.data !== "string" || pending.size === 0) return;
+            const id = /^\{"jsonrpc":"2\.0","id":(\d+)/.exec(event.data)?.[1] ?? /"id":(\d+)/.exec(event.data)?.[1];
+            const ask = id === undefined ? undefined : pending.get(Number(id));
+            if (!ask) return;
+            pending.delete(Number(id));
+            ask.answered = performance.now();
+          });
+        }
+        if (typeof data === "string" && data.includes('"_acpmux/events"') && data.includes('"beforeSeq"'))
+          try {
+            const message = JSON.parse(data) as { id?: number; params?: { promptIndex?: boolean } };
+            if (message.id !== undefined && message.params?.promptIndex !== true) {
+              const ask = { at: performance.now() };
+              asks.push(ask);
+              pending.set(message.id, ask);
+            }
+          } catch {
+            // Not JSON: not a page ask.
+          }
+        return send.call(this, data);
+      };
+      (holder as unknown as { __upAsks: typeof asks }).__upAsks = asks;
       const stop = window.cmuxAfterPaint((paint) => {
         frames.push({
           paint,
