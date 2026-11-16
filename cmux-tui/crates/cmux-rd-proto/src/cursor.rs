@@ -39,11 +39,12 @@ pub struct CursorPos {
 
 impl CursorPos {
     pub fn encode(&self) -> [u8; CURSOR_POS_LEN] {
+        let flags = if self.visible { cursor_flags::VISIBLE } else { 0 };
+        let bytes = self.shape.to_le_bytes().into_iter().chain(self.x.to_le_bytes()).chain(self.y.to_le_bytes()).chain([flags]);
         let mut out = [0u8; CURSOR_POS_LEN];
-        out[0..4].copy_from_slice(&self.shape.to_le_bytes());
-        out[4..8].copy_from_slice(&self.x.to_le_bytes());
-        out[8..12].copy_from_slice(&self.y.to_le_bytes());
-        out[12] = if self.visible { cursor_flags::VISIBLE } else { 0 };
+        for (slot, byte) in out.iter_mut().zip(bytes) {
+            *slot = byte;
+        }
         out
     }
 
@@ -118,13 +119,13 @@ const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 pub fn base64_encode(bytes: &[u8]) -> String {
     let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
     for chunk in bytes.chunks(3) {
-        let b = [chunk[0], *chunk.get(1).unwrap_or(&0), *chunk.get(2).unwrap_or(&0)];
-        let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
+        let byte = |i: usize| u32::from(chunk.get(i).copied().unwrap_or(0));
+        let n = (byte(0) << 16) | (byte(1) << 8) | byte(2);
         for i in 0..4 {
-            if i <= chunk.len() {
-                out.push(char::from(BASE64[((n >> (18 - 6 * i)) & 63) as usize]));
-            } else {
-                out.push('=');
+            let digit = BASE64.get(((n >> (18 - 6 * i)) & 63) as usize).copied();
+            match digit {
+                Some(digit) if i <= chunk.len() => out.push(char::from(digit)),
+                _ => out.push('='),
             }
         }
     }
@@ -139,19 +140,20 @@ pub fn base64_decode(text: &str) -> Option<Vec<u8>> {
     }
     let value = |c: u8| BASE64.iter().position(|&b| b == c).map(|v| v as u32);
     let mut out = Vec::with_capacity(bytes.len() / 4 * 3);
+    let quads = bytes.len() / 4;
     for (i, quad) in bytes.chunks(4).enumerate() {
-        let last = i == bytes.len() / 4 - 1;
+        let last = i + 1 == quads;
         let pad = quad.iter().rev().take_while(|&&c| c == b'=').count();
         if pad > 2 || (pad > 0 && !last) {
             return None;
         }
         let mut n = 0u32;
-        for &c in &quad[..4 - pad] {
+        for &c in quad.iter().take(4 - pad) {
             n = (n << 6) | value(c)?;
         }
         n <<= 6 * pad as u32;
         let decoded = [(n >> 16) as u8, (n >> 8) as u8, n as u8];
-        out.extend_from_slice(&decoded[..3 - pad]);
+        out.extend(decoded.iter().take(3 - pad));
     }
     Some(out)
 }
