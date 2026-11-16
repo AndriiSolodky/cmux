@@ -1,5 +1,4 @@
 import { composerPickerEntries } from "./composerPickerEntries";
-import { useLiveSummary } from "./liveSummary";
 import { acpmuxPerf } from "./perf";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { SignIn } from "./signIn";
@@ -221,8 +220,7 @@ export function ComposerPickers({
   // non-toggleable Fast remains in the model menu.
   const { showContextUsage, harnessSwitch, reasoningSlider, reasoningSliderStyle } = useComposerSettings();
   const chatAccounts = useChatAccounts();
-  // A usage update reaches the context ring without the pane (liveSummary.ts).
-  const summary = useLiveSummary(snapshot.summary);
+  const summary = snapshot.summary;
   // The rail lists the harnesses set up here (Leo 2026-10-11): one whose launcher check failed (not
   // installed, not signed in) stays behind the rail's +, unless this chat runs it. A failed model
   // probe alone (a timeout) keeps it.
