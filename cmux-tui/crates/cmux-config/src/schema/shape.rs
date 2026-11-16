@@ -155,7 +155,7 @@ fn matches_at(shape: &Value, value: &Value, at: &mut String) -> Result<(), Strin
         if members.get("uniqueItems").and_then(Value::as_bool) == Some(true) {
             let mut seen = HashSet::with_capacity(items.len());
             for (index, item) in items.iter().enumerate() {
-                if !seen.insert(crate::render::compact(&crate::value::canonical(item.clone()))) {
+                if !seen.insert(crate::render::compact(&crate::value::canonical(by_value(item)))) {
                     let len = at.len();
                     at.push_str(&format!("[{index}]"));
                     let result = fail(at, "repeated");
@@ -245,6 +245,20 @@ fn article(name: &str) -> String {
         "array" | "object" | "integer" => format!("an {name}"),
         "null" => "null".to_owned(),
         _ => format!("a {name}"),
+    }
+}
+
+/// `item` with every number as its `f64`, so `uniqueItems` keys `1` and `1.0` alike, as `same` compares them.
+fn by_value(item: &Value) -> Value {
+    match item {
+        Value::Number(number) => {
+            number.as_f64().and_then(serde_json::Number::from_f64).map_or_else(|| item.clone(), Value::Number)
+        }
+        Value::Array(items) => Value::Array(items.iter().map(by_value).collect()),
+        Value::Object(members) => {
+            Value::Object(members.iter().map(|(key, value)| (key.clone(), by_value(value))).collect())
+        }
+        _ => item.clone(),
     }
 }
 
