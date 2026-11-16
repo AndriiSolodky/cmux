@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 import "@xterm/xterm/css/xterm.css";
 import { ConnectScreen } from "./components/ConnectScreen";
 import { ClientsIndicator } from "./components/ClientsIndicator";
@@ -11,6 +11,7 @@ import { useCmuxClient } from "./hooks/useCmuxClient";
 import { useVisualViewport } from "./hooks/useVisualViewport";
 import { t } from "./i18n";
 import { drawerReducer } from "./lib/mobile";
+import { reconnectNoticeVisible, RECONNECT_NOTICE_DELAY_MS } from "./lib/reconnectNotice";
 
 export default function App() {
   return (
@@ -24,8 +25,22 @@ function AppContent() {
   useVisualViewport();
   const connection = useCmuxClient();
   const [drawer, dispatchDrawer] = useReducer(drawerReducer, "closed");
+  const [showReconnectNotice, setShowReconnectNotice] = useState(false);
   const hasSession = connection.info !== null || connection.tree !== null;
   const activeWorkspace = connection.view.find((workspace) => workspace.active) ?? null;
+
+  useEffect(() => {
+    if (connection.status !== "reconnecting") {
+      setShowReconnectNotice(false);
+      return;
+    }
+    const reconnectStartedAt = Date.now();
+    const timer = setTimeout(() => {
+      setShowReconnectNotice(reconnectNoticeVisible(true, Date.now() - reconnectStartedAt));
+    }, RECONNECT_NOTICE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [connection.status]);
+
   if (!hasSession) {
     return (
       <ConnectScreen
@@ -39,12 +54,12 @@ function AppContent() {
 
   return (
     <main className={`app-shell drawer-${drawer}`}>
-      {connection.status === "reconnecting" && connection.reconnect && (
+      {showReconnectNotice && (
         <div className="reconnect-banner" role="status">
-          {t("reconnecting", {
-            seconds: Math.max(1, Math.ceil(connection.reconnect.delayMs / 1000)),
-            attempt: connection.reconnect.attempt,
-          })}
+          <span>{t("reconnectFailed")}</span>
+          <button type="button" onClick={connection.retryConnection}>
+            {t("retryConnection")}
+          </button>
         </div>
       )}
       <header className="mobile-toolbar">
