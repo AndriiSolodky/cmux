@@ -8,8 +8,13 @@
 // - `page`: the page itself lost the keyboard (the app moved it to another view or window).
 // - `moved`: focus went to another element of the page with none of the above.
 //
+// Each record names the focus route the move came through (`route`: its origin and reason, or
+// `unrouted` for a direct `focus()` / `blur()`).
+//
 // No text goes out: element kinds and short words only. The watch is one capture listener on
 // the document and a wrapper on `focus` and `blur` that stores the last call's target and time.
+
+import { lastFocusRoute } from "../../ui/focusRoute";
 
 export type FocusLossRecord = (fields: Record<string, string | number | boolean>) => void;
 
@@ -92,6 +97,9 @@ export function watchFocusLoss(
         fields.op = script.op;
         fields.on = script.on;
       }
+      // The focus route's name for the move (ui/focusRoute.ts), or `unrouted` for a direct call.
+      const route = lastFocusRoute(50, at);
+      fields.route = route ? `${route.origin} ${route.reason}`.slice(0, 80) : "unrouted";
       record(fields);
     });
   };
