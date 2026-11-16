@@ -3,6 +3,7 @@ import CmuxNextActions
 public import CmuxNextAgentPane
 import CmuxNextCompat
 import CmuxNextDaemon
+import CmuxNextPages
 public import CmuxNextServer
 
 extension AcpmuxPersonLine: JoinedDialLine {}
@@ -13,7 +14,10 @@ extension AcpmuxPersonLine: JoinedDialLine {}
 /// section's layout tunable and the person's machines joined through the hub (`cmux machine list`),
 /// read each time the page enters a window. New Workspace and Add Machine… run
 /// `workspace.newOnMachine` and `device.add`; a row's menus are the registry's native ones.
-final class MachineSectionHostView: NSView, RightSidebarRefreshing {
+final class MachineSectionHostView: NSView, RightSidebarRefreshing, PageWebViewContainer {
+    /// Its section's page, so opening Machines focuses the web content, not this wrapper (InternalPageView.focusTarget).
+    var shownPageView: PageWebView? { (section as? PageSectionHost)?.page }
+
     let section: NSView  // a PageSectionHost; its page routes hold the provider
     private let joined: JoinedMachineStore
     /// The joined list's read in flight (a newer show replaces it).
