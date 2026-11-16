@@ -66,7 +66,7 @@ const MAX_INPUT_YIELDS = 3;
 
 /// Whether a key or pointer event waits for the main thread (Chromium's `isInputPending`). The
 /// reveal yields its frame to it; the next frame catches up to the same target.
-const inputPending = (): boolean => {
+export const inputPending = (): boolean => {
   const scheduling = (globalThis.navigator as { scheduling?: { isInputPending?: () => boolean } } | undefined)
     ?.scheduling;
   try {
