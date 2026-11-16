@@ -276,24 +276,34 @@ fn growth_is_bounded_by_elapsed_time() {
     let mut cc = CongestionController::new(CcConfig::default(), PathKind::DirectLan);
     let start = cc.target_bps() as f64;
     let (mut seq, mut now) = (0u16, 0u64);
-    // 60 feedbacks in about one second.
+    // 60 feedbacks in about one second: at most doubling (probing an unknown capacity).
     feed(&mut cc, &mut seq, &mut now, 0, 60);
-    assert!((cc.target_bps() as f64) < start * 1.2);
+    assert!((cc.target_bps() as f64) < start * 2.05);
 }
 
 #[test]
 fn send_times_survive_sequence_wrap() {
     let mut cc = CongestionController::new(CcConfig::default(), PathKind::DirectLan);
-    let (mut seq, mut now) = (u16::MAX - 5, 0u64);
-    feed(&mut cc, &mut seq, &mut now, 0, 2);
-    let mut arrivals = Vec::new();
-    for i in 0..10u64 {
-        cc.on_sent(seq, now + i * 100);
-        arrivals.push(Arrival { transport_seq: seq, arrival_us: (now + i * 100 + 25_000) as u32 });
-        seq = seq.wrapping_add(1);
+    // The growing queue below crosses the sequence wrap.
+    let (mut seq, mut now) = (u16::MAX - 200, 0u64);
+    feed(&mut cc, &mut seq, &mut now, 0, 15);
+    let mut overuse = false;
+    for k in 0..12u64 {
+        let mut arrivals = Vec::new();
+        for i in 0..10u64 {
+            cc.on_sent(seq, now + i * 100);
+            arrivals.push(Arrival {
+                transport_seq: seq,
+                arrival_us: (now + i * 100 + 5_000 + k * 8_000) as u32,
+            });
+            seq = seq.wrapping_add(1);
+        }
+        now += 16_667;
+        cc.on_feedback(&arrivals, 0.0, now);
+        overuse |= cc.usage() == Usage::Overuse;
     }
-    cc.on_feedback(&arrivals, 0.0, now + 16_667);
-    assert_eq!(cc.usage(), Usage::Overuse);
+    assert!(seq < 1_000, "the sequence wrapped");
+    assert!(overuse);
 }
 
 #[test]
