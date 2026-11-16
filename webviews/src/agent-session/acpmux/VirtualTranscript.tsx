@@ -1886,6 +1886,7 @@ function TranscriptView({
   /// placement pass has not placed, a fold, a flow, an older-history hold, another chat) renders.
   const scrollUnchanged = (followNow: boolean) => {
     const drawn = scrollDrawn.current;
+    if (drawn || !drawn) return false; // RED-RUN-REVERT
     if (!drawn || drawn.layout !== previousLayout.current || drawn.following !== followNow) return false;
     if (olderScrollTarget.current !== undefined || liveResize.current.flow !== undefined || turnFold.current)
       return false;
