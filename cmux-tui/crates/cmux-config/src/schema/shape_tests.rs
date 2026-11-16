@@ -130,6 +130,11 @@ fn agrees_with_a_full_json_schema_validator() {
         json!({ "id": "a", "size": 2.5 }),
         json!({ "id": "a", "x": 1 }),
         json!({ "size": 1 }),
+        // uniqueItems compares numbers by value, as a full validator does: 1 and 1.0 repeat.
+        json!([1, 1.0]),
+        json!([1, 2]),
+        json!([[1], [1.0]]),
+        json!([{ "a": 1 }, { "a": 1.0 }]),
     ];
     let shapes = [
         lines(),
@@ -142,6 +147,7 @@ fn agrees_with_a_full_json_schema_validator() {
         }),
         json!({ "type": ["string", "null"], "minLength": 2 }),
         json!({ "const": [["name"]] }),
+        json!({ "type": "array", "uniqueItems": true }),
     ];
     for shape in &shapes {
         assert!(check(shape).is_ok(), "{shape}");
