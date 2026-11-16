@@ -189,6 +189,7 @@ fi
 # submitted signature, so the DMG ticket covers its slices; that is checked
 # below before anything is stapled, here or in a continuing run.
 COMPUTER_USE_HELPER="$APP_PATH/Contents/Library/cmux Computer Use.app"
+SCREEN_SHARE_HELPER="$APP_PATH/Contents/Library/cmux Screen Share.app"
 helper_exit=0
 if [ -n "$CONTINUE_STATE" ]; then
   echo "Continuing Apple submission $CONTINUE_SUBMISSION_ID for $DMG_RELEASE"
@@ -613,14 +614,18 @@ fi
 # An unstapled helper (still in Apple's queue above, here or in the run that
 # submitted this DMG) is notarized only through the DMG ticket: every slice
 # must be in it.
-if [ -d "$COMPUTER_USE_HELPER" ] && ! "$XCRUN_TOOL" stapler validate "$COMPUTER_USE_HELPER" >/dev/null 2>&1; then
-  helper_ticket_log="$NOTARY_DIR/dmg-ticket.json"
-  "$XCRUN_TOOL" notarytool log "$DMG_SUBMIT_ID" "${NOTARY_AUTH_ARGS[@]}" > "$helper_ticket_log"
-  if ! verify_ticket_contents_cover_slices "$helper_ticket_log" "$COMPUTER_USE_HELPER"; then
-    echo "The DMG ticket does not cover the unstapled Computer Use helper; refusing to staple" >&2
-    exit 1
+# The Screen Share helper (design D9) shares the Computer Use helper's
+# submission, so it is checked the same way.
+for unstapled_helper in "$COMPUTER_USE_HELPER" "$SCREEN_SHARE_HELPER"; do
+  if [ -d "$unstapled_helper" ] && ! "$XCRUN_TOOL" stapler validate "$unstapled_helper" >/dev/null 2>&1; then
+    helper_ticket_log="$NOTARY_DIR/dmg-ticket.json"
+    [ -s "$helper_ticket_log" ] || "$XCRUN_TOOL" notarytool log "$DMG_SUBMIT_ID" "${NOTARY_AUTH_ARGS[@]}" > "$helper_ticket_log"
+    if ! verify_ticket_contents_cover_slices "$helper_ticket_log" "$unstapled_helper"; then
+      echo "The DMG ticket does not cover the unstapled $(basename "$unstapled_helper" .app) helper; refusing to staple" >&2
+      exit 1
+    fi
   fi
-fi
+done
 # A DMG submission scans nested code and issues a ticket for the exact signed
 # app. Require that independently usable ticket before accepting the artifact.
 "$XCRUN_TOOL" stapler staple "$APP_PATH"

@@ -2793,6 +2793,13 @@ jobs:
           HELPER_ARCHS: ${{ contains(needs.decide.outputs.variants, 'x86_64') && 'arm64 x86_64' || 'arm64' }}
         run: bash scripts/ci/nightly-steps/app-assemble-computer-use-helper.sh
 
+      - &x43s
+        name: Assemble the Screen Share helper
+        if: (inputs.nightly_next_unsigned_run == '') && steps.nightly-product.outputs.hit != 'true' && !env.LEFT_SLOT
+        env:
+          HELPER_ARCHS: ${{ contains(needs.decide.outputs.variants, 'x86_64') && 'arm64 x86_64' || 'arm64' }}
+        run: bash scripts/ci/nightly-steps/app-assemble-screen-share-helper.sh
+
       - &x44
         name: Resolve immutable SSH daemon metadata
         if: inputs.nightly_next_unsigned_run == '' && (needs.decide.outputs.build_only != 'true') && !env.LEFT_SLOT
@@ -7256,6 +7263,7 @@ jobs:
       - *x39
       - *x40
       - *x43
+      - *x43s
       - *x44
       - *x45
       - *x46

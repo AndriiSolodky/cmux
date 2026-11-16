@@ -63,6 +63,11 @@
       "notices": ["section:manual-cmux-cua-engine", "section:rust-cmux-cua", "rust-std", "section:manual-rust-and-zig-standard-libraries"]
     },
     {
+      "path": "Contents/Library/cmux Screen Share.app/Contents/MacOS/cmux-screen-share",
+      "what": "the screen share helper that Screen Recording and Accessibility are granted to (design D9): the cmux-rd binary of cmux-tui/crates/cmux-rd-host, its own Cargo workspace, built with --no-default-features --features link (scripts/build-cmux-screen-share-helper.sh)",
+      "notices": ["first-party", "section:rust-cmux-rd-host", "rust-std", "section:manual-rust-and-zig-standard-libraries"]
+    },
+    {
       "path": "Contents/Resources/bin/cmux",
       "what": "the cmux CLI and daemon (cmux-tui crates; acpmux, libghostty-vt, the browser host and the app host are linked in, the hosts run by argv[0] as bin/cmux-browser-host and bin/cmux-app-host links; check_ghostty_vt_notices.py checks libghostty-vt's Zig packages)",
       "notices": ["first-party", "section:rust-cmux-cli", "section:manual-ghostty", "rust-std", "zig-std", "section:manual-rust-and-zig-standard-libraries", "section:manual-ghostty-shell-integration", "section:rust-cmux-browser-host", "section:manual-cmux-browser-host-runtime-javascript", "section:rust-cmux-app-host"]

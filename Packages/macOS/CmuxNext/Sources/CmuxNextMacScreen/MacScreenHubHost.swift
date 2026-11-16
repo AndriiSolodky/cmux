@@ -38,6 +38,7 @@ public final class MacScreenHubHost {
     @ObservationIgnored private let indicator = MacScreenShareIndicator()
     @ObservationIgnored private let logger = Logger(subsystem: "com.cmuxterm.app.next", category: "mac-screen-hub-host")
     /// Makes the host for one session; tests replace it.
+    /// Its default (set in `init`) runs the rd host as cmux Screen Share when that helper has Screen Recording.
     @ObservationIgnored var makeHost: (MacScreenRdHost.Session) -> MacScreenRdHost = { MacScreenRdHost(session: $0) }
     /// The hub calls the host's controls make; tests replace them.
     @ObservationIgnored var endSession: @MainActor (DeviceHub, String, String) async -> Void = { hub, id, reason in
@@ -61,6 +62,8 @@ public final class MacScreenHubHost {
 
     init(share: MacScreenShareHost) {
         self.share = share
+        let helper = share.helper
+        makeHost = { MacScreenRdHost(session: $0, launch: { helper.launch }) }
     }
 
     /// Whether this Mac allows Mac Screen (the hub's record of this device).

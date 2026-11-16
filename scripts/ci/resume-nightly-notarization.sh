@@ -211,6 +211,18 @@ verify_computer_use_helper() {
   "$XCRUN_TOOL" stapler validate "$standalone_helper"
   "$CODESIGN_TOOL" --verify --strict --verbose=2 "$standalone_helper"
   assess_with_gatekeeper "$standalone_helper"
+  # The Screen Share helper (design D9), when the app carries it, shares that
+  # submission and is checked the same way.
+  local share_path="$APP_PATH/Contents/Library/cmux Screen Share.app"
+  local standalone_share="$TMP_DIR/cmux Screen Share.app"
+  if [ -d "$share_path/Contents" ]; then
+    "$XCRUN_TOOL" stapler validate "$share_path"
+    "$CODESIGN_TOOL" --verify --strict --verbose=2 "$share_path"
+    "$DITTO_TOOL" "$share_path" "$standalone_share"
+    "$XCRUN_TOOL" stapler validate "$standalone_share"
+    "$CODESIGN_TOOL" --verify --strict --verbose=2 "$standalone_share"
+    assess_with_gatekeeper "$standalone_share"
+  fi
 }
 
 # shellcheck source=lib/notary-auth.sh

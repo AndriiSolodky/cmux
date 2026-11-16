@@ -40,6 +40,9 @@
 #                           cmux-tui/crates/cmux-remote-browser-host/Cargo.lock at the
 #                           pinned binary's source_commit (remote-browser-host.pin.json)
 #   rust-cmux-cua           cmux Computer Use.app            manaflow-ai/cmux-cua at the scripts/build-cmux-cua.sh pin
+#   rust-cmux-rd-host       cmux Screen Share.app            cmux-tui/crates/cmux-rd-host/Cargo.lock (its own
+#                           workspace; built --no-default-features --features link,
+#                           scripts/build-cmux-screen-share-helper.sh)
 #
 # In pin mode first-party crates point at the permanent tag
 # cmux-tui-src-<pin, 11 characters>, which must exist.
@@ -130,6 +133,9 @@ if [[ ! -d "$cua_src" ]]; then
   mv "$cua_src.partial" "$cua_src"
 fi
 cua_rust="$cua_src/libs/cmux-cua/rust"
+# The screen share helper's cmux-rd is its own Cargo workspace inside cmux-tui.
+rd_rel=cmux-tui/crates/cmux-rd-host
+rd_src="$tui_src/$rd_rel"
 # The agent screen-detection plugin is its own Cargo workspace inside cmux-tui.
 asd_rel=cmux-tui/bindings/examples/rust-agent-screen-detection
 asd_src="$tui_src/$asd_rel"
@@ -167,11 +173,13 @@ fi
 
 if [[ "$WRITE_TREES" == 1 ]]; then
   mkdir -p "$TREES"
-  cargo_tree() { # <section> <dir> <package>...
+  cargo_tree() { # <section> <dir> <package or --cargo-flag>...
     local id="$1" dir="$2"
     shift 2
     local packages=()
-    for p in "$@"; do packages+=(-p "$p"); done
+    for p in "$@"; do
+      if [[ "$p" == --* ]]; then packages+=("$p"); else packages+=(-p "$p"); fi
+    done
     (cd "$dir" && cargo tree --locked -e normal,no-proc-macro \
       --target aarch64-apple-darwin --target x86_64-apple-darwin \
       --prefix none -f '{p}' "${packages[@]}") > "$TREES/$id.txt"
@@ -187,6 +195,7 @@ if [[ "$WRITE_TREES" == 1 ]]; then
   cargo_tree rust-mobile-host "$ROOT/cmux-next-ios/rust" cmux-mobile-host
   cargo_tree rust-cmux-remote-browser-host "$rbh_src/$rbh_crate" cmux-remote-browser-host
   cargo_tree rust-cmux-cua "$cua_rust" cmux-cua
+  cargo_tree rust-cmux-rd-host "$rd_src" cmux-rd-host --no-default-features --features=link
 fi
 
 python3 "$NOTICES/fetch_crates.py" --cache "$CACHE" \
@@ -197,7 +206,8 @@ python3 "$NOTICES/fetch_crates.py" --cache "$CACHE" \
   --lock "$ROOT/Native/OptChat/optchat-chief/Cargo.lock" \
   --lock "$ROOT/cmux-next-ios/rust/Cargo.lock" \
   --lock "$rbh_src/$rbh_crate/Cargo.lock" \
-  --lock "$cua_rust/Cargo.lock"
+  --lock "$cua_rust/Cargo.lock" \
+  --lock "$rd_src/Cargo.lock"
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
@@ -259,6 +269,10 @@ section rust-cmux-cua "Rust crates: Computer Use helper (cmux Computer Use.app, 
   --lock "$cua_rust/Cargo.lock" --lock-label "manaflow-ai/cmux-cua Cargo.lock at ${cua_rev:0:11}" \
   --root cmux-cua --workspace "$cua_rust" \
   --path-download "git+https://github.com/manaflow-ai/cmux-cua.git@$cua_rev"
+section rust-cmux-rd-host "Rust crates: screen share helper (cmux Screen Share.app, cmux-rd)" \
+  --lock "$rd_src/Cargo.lock" --lock-label "$rd_rel/Cargo.lock $tui_label" \
+  --root cmux-rd-host --workspace "$rd_src" --workspace "$tui_src/cmux-tui" --repo-root "$tui_src" \
+  --first-party 'cmux-tui/crates/*' --first-party 'cmux-tui/bindings/*'
 
 python3 "$ROOT/scripts/cmux-next/notices/ghostty_themes_notice.py" --root "$ROOT" --out "$work/ghostty-themes.md"
 # CMUX_NOTICES_OUT (tree mode only): write the notices there instead of the checkout's file. nightly-next-one generates
@@ -276,12 +290,13 @@ compose=(python3 "$ROOT/scripts/cmux-next/notices/compose_notices.py"
   --section "$work/rust-mobile-host.md"
   --section "$work/rust-cmux-remote-browser-host.md"
   --section "$work/rust-cmux-cua.md"
+  --section "$work/rust-cmux-rd-host.md"
   --out "$OUT_FILE")
 review=(python3 "$NOTICES/review_list.py" --cache "$CACHE"
   --lock "$tui_src/cmux-tui/Cargo.lock" --lock "$tui_src/first-party-apps/cloud/server/Cargo.lock" --lock "$asd_src/Cargo.lock"
   --lock "$ROOT/Native/DiffSidecar/Cargo.lock" --lock "$ROOT/Native/OptChat/optchat-chief/Cargo.lock"
   --lock "$ROOT/cmux-next-ios/rust/Cargo.lock" --lock "$rbh_src/$rbh_crate/Cargo.lock"
-  --lock "$cua_rust/Cargo.lock")
+  --lock "$cua_rust/Cargo.lock" --lock "$rd_src/Cargo.lock")
 if [[ "$TUI_SOURCE" == tree ]]; then
   "${compose[@]}"
   echo "wrote $OUT_FILE for this tree (${ref:0:11}; $(wc -c < "$OUT_FILE" | tr -d ' ') bytes)"

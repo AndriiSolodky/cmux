@@ -80,6 +80,11 @@ done
 # 2. Computer Use helper app.
 computer_use="$APP/Contents/Library/cmux Computer Use.app"
 [[ -d "$computer_use" ]] && sign --entitlements-xml-file "$HELPER_ENTITLEMENTS" "$computer_use"
+# The Screen Share helper app (design D9): its own entitlements, no exceptions.
+screen_share="$APP/Contents/Library/cmux Screen Share.app"
+if [[ -d "$screen_share" ]]; then
+  sign --entitlements-xml-file "${CMUX_SCREEN_SHARE_ENTITLEMENTS:-$ROOT/cmux-screen-share-helper.entitlements}" "$screen_share"
+fi
 
 # 3. Plugins.
 if [[ -d "$APP/Contents/PlugIns" ]]; then
