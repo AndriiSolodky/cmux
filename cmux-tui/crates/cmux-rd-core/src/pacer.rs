@@ -150,7 +150,8 @@ mod tests {
         assert_eq!(sent.len(), 300);
         let last = sent.last().unwrap().0;
         assert!(last - 1_000 <= 8_400, "keyframe took {} us", last - 1_000);
-        assert!(last - 1_000 >= 7_000, "keyframe was not spread: {} us", last - 1_000);
+        // Less the first burst allowance, which goes at once.
+        assert!(last - 1_000 >= 5_500, "keyframe was not spread: {} us", last - 1_000);
         for (i, (_, d)) in sent.iter().enumerate() {
             assert_eq!(d[0], i as u8, "order");
         }
@@ -171,11 +172,12 @@ mod tests {
         assert_eq!(p.due(0).len(), 3);
         assert!(p.is_empty());
         assert_eq!(p.next_deadline_us(), None);
-        // 54 datagrams (62 KB, one 30 Mbps frame at 60 fps) at 75 Mbps: about 6.6 ms.
+        // 54 datagrams (62 KB, one 30 Mbps frame at 60 fps) at 75 Mbps: about 6.6 ms, less
+        // the first burst allowance.
         p.push_frame(frame(54), 30_000_000, 16_667, 100_000);
         let sent = drain(&mut p, 100_000);
         let span = sent.last().unwrap().0 - 100_000;
-        assert!((6_000..=7_000).contains(&span), "span {span}");
+        assert!((4_200..=7_000).contains(&span), "span {span}");
     }
 
     #[test]
