@@ -11,7 +11,8 @@
 //
 // Cost: the snapshot's render moves from the task after the frame into the frame itself, the same
 // work, once per frame at most (the batch). Stop condition: none of its own; `nextFrame`'s.
+import { flushSync } from "react-dom";
 import { nextFrame } from "./direct";
 
 /// `AcpmuxDirectClient.scheduleFrame` for a page that draws the transcript with React.
-export const drawInFrame = (run: () => void): (() => void) => nextFrame(run);
+export const drawInFrame = (run: () => void): (() => void) => nextFrame(() => flushSync(run));
