@@ -21,7 +21,8 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { chromium } from "./browsers";
+import { chromium, webkit } from "./browsers";
+import { runComposerLoad } from "./composer-load";
 import type { Page } from "playwright";
 import { warmViteServer } from "../test/support/warmDevServer";
 
@@ -33,9 +34,28 @@ const flag = (name: string) => {
 const LENGTHS = (flag("--lengths") ?? "60,1500,6000").split(",").map(Number);
 const KEYS = Number(flag("--keys") ?? 60);
 const GAP_MS = Number(flag("--gap") ?? 80);
-const MODES = (flag("--modes") ?? "idle").split(",") as ("idle" | "stream")[];
+const MODES = (flag("--mode") ?? flag("--modes") ?? "idle").split(",");
+const ENGINES = (flag("--engines") ?? "chromium").split(",");
+const STREAM = Number(flag("--stream") ?? 60);
+const TOOL_LINES = Number(flag("--tool-lines") ?? 2000);
+if (
+  MODES.some((m) => !["idle", "stream", "L0", "L1", "L2", "L3"].includes(m)) ||
+  ENGINES.some((e) => !["chromium", "webkit"].includes(e)) ||
+  !Number.isInteger(KEYS) ||
+  KEYS < 1 ||
+  KEYS > 4096 ||
+  !Number.isFinite(GAP_MS) ||
+  GAP_MS < 1 ||
+  KEYS * GAP_MS > 90000 ||
+  LENGTHS.some((n) => !Number.isInteger(n) || n < 1)
+)
+  throw new Error("Invalid benchmark modes, engines, keys, gap or lengths (typing window must be <=90s)");
 /// With --profile: a CPU profile over the typed keys, and the functions with the most time per key (inclusive and self).
 const PROFILE = argv.includes("--profile");
+if (PROFILE && (ENGINES.includes("webkit") || MODES.some((mode) => mode.startsWith("L"))))
+  throw new Error(
+    "--profile currently supports legacy Chromium idle/stream only; L modes report observer capability explicitly",
+  );
 const DEV = argv.includes("--dev");
 const webviews = path.resolve(import.meta.dir, "..");
 const PROMPT = ".acpmux-composer-prompt[contenteditable='true'], .acpmux-composer-prompt [contenteditable='true']";
@@ -138,131 +158,162 @@ if (DEV) {
   releases.push(() => statics.stop(true));
   port = statics.port!;
 }
-const browser = await chromium.launch({ headless: true });
-releases.push(() => browser.close());
 try {
   const table: Record<string, unknown>[] = [];
-  for (const { length, mode } of LENGTHS.flatMap((length) => MODES.map((mode) => ({ length, mode })))) {
-    const page = await browser.newPage({ viewport: { width: 1100, height: 820 } });
-    const rows = await openChat(page, port, Math.max(1, Math.round(length / 3)));
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send("Performance.enable");
-    const metrics = async () => {
-      const { metrics: list } = (await cdp.send("Performance.getMetrics")) as {
-        metrics: { name: string; value: number }[];
+  for (const engine of ENGINES) {
+    const browser = await (engine === "webkit" ? webkit : chromium).launch({ headless: true });
+    releases.push(() => browser.close());
+    for (const { length, mode } of LENGTHS.flatMap((length) => MODES.map((mode) => ({ length, mode })))) {
+      if (mode === "L3" && length !== LENGTHS[0]) continue;
+      const page = await browser.newPage({ viewport: { width: 1100, height: 820 } });
+      if (mode.startsWith("L") || engine === "webkit") {
+        const canonical = mode === "idle" ? "L0" : mode === "stream" ? "L1" : mode;
+        try {
+          table.push({
+            engine,
+            ...(await runComposerLoad(page, {
+              port,
+              mode: canonical,
+              length,
+              keys: KEYS,
+              gap: GAP_MS,
+              stream: STREAM,
+              toolLines: TOOL_LINES,
+            })),
+          });
+        } finally {
+          await page.close();
+        }
+        continue;
+      }
+      const rows = await openChat(page, port, Math.max(1, Math.round(length / 3)));
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Performance.enable");
+      const metrics = async () => {
+        const { metrics: list } = (await cdp.send("Performance.getMetrics")) as {
+          metrics: { name: string; value: number }[];
+        };
+        return Object.fromEntries(
+          list.filter((m) => (METRICS as readonly string[]).includes(m.name)).map((m) => [m.name, m.value]),
+        );
       };
-      return Object.fromEntries(
-        list.filter((m) => (METRICS as readonly string[]).includes(m.name)).map((m) => [m.name, m.value]),
-      );
-    };
-    await page.locator(PROMPT).first().click();
-    // Warm-up: the first keys load the composer's lazy parts (emoji data, the mention index).
-    for (const key of "warm") await page.keyboard.press(key);
-    await page.waitForTimeout(500);
-    for (let i = 0; i < 4; i += 1) await page.keyboard.press("Backspace");
-    await page.waitForTimeout(500);
-    await page.evaluate(() => {
-      const debug = (window as any).cmuxAcpmuxDebug;
-      debug.resetTyping();
-      debug.renders();
-    });
-    if (PROFILE) {
-      await cdp.send("Profiler.enable");
-      await cdp.send("Profiler.setSamplingInterval", { interval: 100 });
-      await cdp.send("Profiler.start");
-    }
-    // Stream mode: a reply streams in for the whole typing run (no scrolling), a tool call every 30 deltas.
-    const streaming =
-      mode === "stream"
-        ? page.evaluate(
-            (seconds) =>
-              (window as any).cmuxAcpmuxDebug.loadRun({ seconds, chunk_ms: 16, tool_every: 30, scroll_speed: 0 }),
-            (KEYS * (GAP_MS + 20)) / 1000 + 1,
-          )
-        : Promise.resolve(undefined);
-    if (mode === "stream") {
-      await page.waitForTimeout(300);
+      await page.locator(PROMPT).first().click();
+      // Warm-up: the first keys load the composer's lazy parts (emoji data, the mention index).
+      for (const key of "warm") await page.keyboard.press(key);
+      await page.waitForTimeout(500);
+      for (let i = 0; i < 4; i += 1) await page.keyboard.press("Backspace");
+      await page.waitForTimeout(500);
       await page.evaluate(() => {
         const debug = (window as any).cmuxAcpmuxDebug;
         debug.resetTyping();
         debug.renders();
       });
+      if (PROFILE) {
+        await cdp.send("Profiler.enable");
+        await cdp.send("Profiler.setSamplingInterval", { interval: 100 });
+        await cdp.send("Profiler.start");
+      }
+      // Stream mode: a reply streams in for the whole typing run (no scrolling), a tool call every 30 deltas.
+      const streaming =
+        mode === "stream"
+          ? page.evaluate(
+              (seconds) =>
+                (window as any).cmuxAcpmuxDebug.loadRun({ seconds, chunk_ms: 16, tool_every: 30, scroll_speed: 0 }),
+              (KEYS * (GAP_MS + 20)) / 1000 + 1,
+            )
+          : Promise.resolve(undefined);
+      if (mode === "stream") {
+        await page.waitForTimeout(300);
+        await page.evaluate(() => {
+          const debug = (window as any).cmuxAcpmuxDebug;
+          debug.resetTyping();
+          debug.renders();
+        });
+      }
+      const before = await metrics();
+      const letters = "abcdefghijklmnopqrstuvwxyz";
+      for (let i = 0; i < KEYS; i += 1) {
+        await page.keyboard.press(letters[i % letters.length]!);
+        await page.waitForTimeout(GAP_MS);
+      }
+      await page.waitForTimeout(500);
+      const after = await metrics();
+      if (PROFILE) {
+        const { profile } = (await cdp.send("Profiler.stop")) as { profile: CpuProfile };
+        printProfile(length, profile);
+      }
+      const { renders, typing } = (await page.evaluate(() => {
+        const debug = (window as any).cmuxAcpmuxDebug;
+        return { renders: debug.renders(), typing: debug.typingStats() };
+      })) as { renders: Record<string, number>; typing: Record<string, any> };
+      await streaming;
+      // Per stream event, nobody typing: the composer's renders while a reply and tool calls stream
+      // (loadRun), then while a tool's output ticks and another chat changes (loadTick).
+      let composerPerEvent: number | undefined;
+      let composerPerTick: number | undefined;
+      if (mode === "stream") {
+        const run = (await page.evaluate(() =>
+          (window as any).cmuxAcpmuxDebug.loadRun({ seconds: 3, chunk_ms: 16, tool_every: 10, scroll_speed: 0 }),
+        )) as { renders: Record<string, number>; deltas: number; tools: number };
+        composerPerEvent =
+          Math.round(((run.renders.composer ?? 0) / Math.max(1, run.deltas + run.tools)) * 1000) / 1000;
+        const tick = (await page.evaluate(() =>
+          (window as any).cmuxAcpmuxDebug.loadTick({ seconds: 3, tick_ms: 50, sidebar_ms: 100, scroll_speed: 0 }),
+        )) as { renders: Record<string, number>; ticks?: number; sidebar?: number };
+        composerPerTick =
+          Math.round(((tick.renders.composer ?? 0) / Math.max(1, (tick.ticks ?? 0) + (tick.sidebar ?? 0))) * 1000) /
+          1000;
+      }
+      await page.close();
+      const per = (value: number) => Math.round((value / KEYS) * 100) / 100;
+      const sum = (prefix: string) =>
+        Object.entries(renders)
+          .filter(([name]) => name.startsWith(prefix))
+          .reduce((total, [, value]) => total + value, 0);
+      const delta = (name: string) => (after[name] ?? 0) - (before[name] ?? 0);
+      table.push({
+        engine,
+        mode,
+        rows,
+        keys: typing.keys,
+        pane: per(renders.pane ?? 0),
+        transcript: per(renders.transcript ?? 0),
+        composer: per(renders.composer ?? 0),
+        rowRenders: per(sum("row:") + sum("content:")),
+        rowFrames: per(sum("frame:")),
+        layouts: per(delta("LayoutCount")),
+        styles: per(delta("RecalcStyleCount")),
+        script_ms: per(delta("ScriptDuration") * 1000),
+        layout_ms: per(delta("LayoutDuration") * 1000),
+        style_ms: per(delta("RecalcStyleDuration") * 1000),
+        task_ms: per(delta("TaskDuration") * 1000),
+        to_listener_p95: typing.to_listener?.p95_ms,
+        to_work_p95: typing.to_work?.p95_ms,
+        to_frame_p50: typing.to_frame?.p50_ms,
+        to_frame_p95: typing.to_frame?.p95_ms,
+        to_frame_max: typing.to_frame?.max_ms,
+        composer_per_stream_event: composerPerEvent,
+        composer_per_tick_event: composerPerTick,
+        nativePosts: JSON.stringify(typing.native_posts ?? {}),
+        busiest: Object.entries(renders)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([name, value]) => `${name}=${value}`)
+          .join(" "),
+      });
     }
-    const before = await metrics();
-    const letters = "abcdefghijklmnopqrstuvwxyz";
-    for (let i = 0; i < KEYS; i += 1) {
-      await page.keyboard.press(letters[i % letters.length]!);
-      await page.waitForTimeout(GAP_MS);
-    }
-    await page.waitForTimeout(500);
-    const after = await metrics();
-    if (PROFILE) {
-      const { profile } = (await cdp.send("Profiler.stop")) as { profile: CpuProfile };
-      printProfile(length, profile);
-    }
-    const { renders, typing } = (await page.evaluate(() => {
-      const debug = (window as any).cmuxAcpmuxDebug;
-      return { renders: debug.renders(), typing: debug.typingStats() };
-    })) as { renders: Record<string, number>; typing: Record<string, any> };
-    await streaming;
-    // Per stream event, nobody typing: the composer's renders while a reply and tool calls stream
-    // (loadRun), then while a tool's output ticks and another chat changes (loadTick).
-    let composerPerEvent: number | undefined;
-    let composerPerTick: number | undefined;
-    if (mode === "stream") {
-      const run = (await page.evaluate(() =>
-        (window as any).cmuxAcpmuxDebug.loadRun({ seconds: 3, chunk_ms: 16, tool_every: 10, scroll_speed: 0 }),
-      )) as { renders: Record<string, number>; deltas: number; tools: number };
-      composerPerEvent = Math.round(((run.renders.composer ?? 0) / Math.max(1, run.deltas + run.tools)) * 1000) / 1000;
-      const tick = (await page.evaluate(() =>
-        (window as any).cmuxAcpmuxDebug.loadTick({ seconds: 3, tick_ms: 50, sidebar_ms: 100, scroll_speed: 0 }),
-      )) as { renders: Record<string, number>; ticks?: number; sidebar?: number };
-      composerPerTick =
-        Math.round(((tick.renders.composer ?? 0) / Math.max(1, (tick.ticks ?? 0) + (tick.sidebar ?? 0))) * 1000) / 1000;
-    }
-    await page.close();
-    const per = (value: number) => Math.round((value / KEYS) * 100) / 100;
-    const sum = (prefix: string) =>
-      Object.entries(renders)
-        .filter(([name]) => name.startsWith(prefix))
-        .reduce((total, [, value]) => total + value, 0);
-    const delta = (name: string) => (after[name] ?? 0) - (before[name] ?? 0);
-    table.push({
-      mode,
-      rows,
-      keys: typing.keys,
-      pane: per(renders.pane ?? 0),
-      transcript: per(renders.transcript ?? 0),
-      composer: per(renders.composer ?? 0),
-      rowRenders: per(sum("row:") + sum("content:")),
-      rowFrames: per(sum("frame:")),
-      layouts: per(delta("LayoutCount")),
-      styles: per(delta("RecalcStyleCount")),
-      script_ms: per(delta("ScriptDuration") * 1000),
-      layout_ms: per(delta("LayoutDuration") * 1000),
-      style_ms: per(delta("RecalcStyleDuration") * 1000),
-      task_ms: per(delta("TaskDuration") * 1000),
-      to_listener_p95: typing.to_listener?.p95_ms,
-      to_work_p95: typing.to_work?.p95_ms,
-      to_frame_p50: typing.to_frame?.p50_ms,
-      to_frame_p95: typing.to_frame?.p95_ms,
-      to_frame_max: typing.to_frame?.max_ms,
-      composer_per_stream_event: composerPerEvent,
-      composer_per_tick_event: composerPerTick,
-      nativePosts: JSON.stringify(typing.native_posts ?? {}),
-      busiest: Object.entries(renders)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 8)
-        .map(([name, value]) => `${name}=${value}`)
-        .join(" "),
-    });
+    await browser.close();
   }
-  console.table(table.map(({ busiest: _, nativePosts: __, ...row }) => row));
+  console.table(
+    table.map(({ busiest: _, nativePosts: __, samples: ___, renders: ____, load_rates: _____, ...row }) => row),
+  );
   for (const row of table)
     console.log(
       `${String(row.mode)} ${String(row.rows)} rows: ${String(row.busiest)}; native posts ${String(row.nativePosts)}`,
     );
   console.log(`COMPOSER-TYPING ${JSON.stringify(table)}`);
+  // Missing keys or insufficient load invalidate the experiment; a valid over-budget result is report-only.
+  if (table.some((row) => row.valid === false)) process.exitCode = 1;
 } finally {
   for (const release of releases.reverse()) await release();
 }
