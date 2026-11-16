@@ -9,11 +9,11 @@
 // Rows (Chromium only for long tasks and task time):
 //   tool_call_burst.<pace>.frame_gap_ms     rAF interval p50 / p95 while the burst plays (16.7 ms is every frame)
 //   tool_call_burst.<pace>.long_tasks       long tasks (> 50 ms) while the burst plays
-//   tool_call_burst.<pace>.event_to_paint_ms  a record's arrival on the socket to the first frame after the DOM
-//                                           changed for it, p50 / p95
+//   tool_call_burst.<pace>.event_to_paint_ms  a record's arrival on the socket to the paint of the frame that drew
+//                                           its DOM change, p50 / p95
 //   tool_call_burst.<pace>.task_ms_per_call main-thread task ms per tool call (start, updates and end)
 //   tool_call_burst.<pace>.cls              layout-shift sum while the burst plays
-//   bun bench/tool-call-burst.bench.ts [--turns 200] [--calls 50] [--paces fast:15,agent:60] [--rounds 3]
+//   [CPU=4] bun bench/tool-call-burst.bench.ts [--turns 200] [--calls 50] [--paces fast:15,agent:60] [--rounds 3]
 /// <reference types="bun" />
 import fs from "node:fs";
 import os from "node:os";
@@ -38,6 +38,8 @@ const PACES = (flag("--paces") ?? "fast:15,agent:60").split(",").map((pair) => {
   return { name: name!, gap: Number(gap) };
 });
 const PROFILE = process.env.PROFILE === "1";
+/// CPU=N slows the page's CPU N times, as a loaded machine does (default 1: as measured).
+const CPU = Number(process.env.CPU ?? 1);
 const webviews = path.resolve(import.meta.dir, "..");
 const sessionId = "tool-burst";
 
@@ -210,6 +212,9 @@ function instrument() {
     __shifts: { at: number; value: number }[];
     __arrivals: number[];
     __mutations: number[];
+    __mutationFrames: number[];
+    __painted: number[];
+    __current: number;
     __watch: () => void;
   };
   if (w.__frames) return;
@@ -218,8 +223,20 @@ function instrument() {
   w.__shifts = [];
   w.__arrivals = [];
   w.__mutations = [];
+  // Each frame's paint: a message posted from its frame callback runs as a task once the frame has rendered
+  // (test/support/paintedFrames.ts). A DOM change made while a frame's callbacks run (`__current`) is in that
+  // frame's paint; one made in a task between frames waits for the next frame.
+  w.__mutationFrames = [];
+  w.__painted = [];
+  w.__current = -1;
+  const after = new MessageChannel();
+  after.port1.onmessage = () => {
+    w.__painted.push(performance.now());
+    w.__current = -1;
+  };
   const frame = (at: number) => {
-    w.__frames.push(at);
+    w.__current = w.__frames.push(at) - 1;
+    after.port2.postMessage(0);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
@@ -252,7 +269,10 @@ function instrument() {
   (window as unknown as { WebSocket: typeof WebSocket }).WebSocket = Watched;
   w.__watch = () => {
     const root = document.querySelector(".acpmux-scroll") ?? document.body;
-    new MutationObserver(() => w.__mutations.push(performance.now())).observe(root, {
+    new MutationObserver(() => {
+      w.__mutations.push(performance.now());
+      w.__mutationFrames.push(w.__current);
+    }).observe(root, {
       childList: true,
       subtree: true,
       characterData: true,
@@ -331,6 +351,8 @@ async function round(browser: Browser, url: string, gap: number): Promise<Round>
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Performance.enable");
     if (PROFILE) await cdp.send("Profiler.enable");
+    // A loaded machine: the page's CPU slowed CPU times (send-motion-frames.bench.ts does the same).
+    if (CPU > 1) await cdp.send("Emulation.setCPUThrottlingRate", { rate: CPU });
     await page.goto(url);
     await page.locator("[data-row-id]").first().waitFor({ timeout: 60_000 });
     for (let tries = 0; !play.socket && tries < 600; tries++) await page.waitForTimeout(20);
@@ -365,6 +387,8 @@ async function round(browser: Browser, url: string, gap: number): Promise<Round>
         __shifts: { at: number; value: number }[];
         __arrivals: number[];
         __mutations: number[];
+        __mutationFrames: number[];
+        __painted: number[];
       };
       return {
         frames: w.__frames,
@@ -372,22 +396,29 @@ async function round(browser: Browser, url: string, gap: number): Promise<Round>
         shifts: w.__shifts,
         arrivals: w.__arrivals,
         mutations: w.__mutations,
+        mutationFrames: w.__mutationFrames,
+        painted: w.__painted,
       };
     });
     const arrivals = data.arrivals.filter((at) => at >= since);
     const lastArrival = arrivals.at(-1) ?? until;
     const frames = data.frames.filter((at) => at >= since && at <= lastArrival + 200);
     const gaps = frames.slice(1).map((at, index) => at - frames[index]!);
-    // A record's arrival to the first frame that begins after the first DOM change at or after the arrival.
+    // A record's arrival to the paint of the frame that drew the first DOM change at or after the arrival: the
+    // frame whose callbacks made the change, or else the first frame that begins after it. (It read the frame's
+    // start before, and a change made in a frame's callbacks counted as the next frame's.)
     const paints: number[] = [];
     let m = 0;
-    let f = 0;
     for (const arrival of arrivals) {
       while (m < data.mutations.length && data.mutations[m]! < arrival) m++;
       const changed = data.mutations[m];
       if (changed === undefined) continue;
-      while (f < data.frames.length && data.frames[f]! <= changed) f++;
-      const painted = data.frames[f];
+      let drew = data.mutationFrames[m] ?? -1;
+      if (drew < 0) {
+        drew = data.frames.findIndex((at) => at > changed);
+        if (drew < 0) continue;
+      }
+      const painted = data.painted[drew];
       if (painted !== undefined) paints.push(painted - arrival);
     }
     const long = data.long.filter((task) => task.at >= since && task.at <= lastArrival + 200);
