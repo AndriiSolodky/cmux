@@ -13,6 +13,7 @@ mod auto_background;
 pub use auto_background::AUTO_BACKGROUND_ENV;
 pub(crate) mod additional_dirs;
 pub(crate) mod admission;
+pub(crate) mod agent_vm;
 mod adopted_fences;
 mod adoption;
 pub(crate) mod agent_hold;
