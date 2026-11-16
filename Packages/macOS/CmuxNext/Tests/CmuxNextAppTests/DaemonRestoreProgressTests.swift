@@ -148,27 +148,24 @@ struct DaemonRestoreProgressTests {
         #expect(snapshot?.tree.workspaces.map(\.name) == ["alpha", "beta"], "the read gave another snapshot")
     }
 
-    @Test func theRestoreShowsWhileTheEnsureWaitsAndGoesWhenItAnswers() async throws {
+    @Test func aShortRestoreStaysQuietWhileTheEnsureWaits() async throws {
         let started = ContinuousClock.now
         let launched = try await Self.launch()
         defer { launched.stop() }
         let recovery = launched.services.daemon.recovery
         var waited: [UInt64] = []
-        var shownAt: ContinuousClock.Instant?
         var clearedAt: ContinuousClock.Instant?
         // Samples the published report until it came and went; only the suite's time limit ends a run that never
         // gets there (as DaemonRestartTests' wait).
         while clearedAt == nil, !Task.isCancelled {
             if let report = recovery.restoring {
                 if waited.last != report.waitedMs { waited.append(report.waitedMs) }
-                let title = RefusalStrings.restoringSessions(waitedMs: report.waitedMs)
-                if shownAt == nil, launched.view?.titleText == title { shownAt = .now }
+                #expect(launched.view?.titleText.isEmpty != false, "automatic restore has no actionable notice")
             } else if !waited.isEmpty {
                 clearedAt = .now
             }
             try? await Task.sleep(for: .milliseconds(50))  // test harness sampling of the app's own steps
         }
-        let shown = try #require(shownAt, "the launch window never said the sessions are restoring")
         let cleared = try #require(clearedAt)
         #expect(waited.count >= 2, "progress lines did not reach the app as they came: \(waited)")
         #expect(waited == waited.sorted() && Set(waited).count == waited.count, "the time shown stepped back: \(waited)")
@@ -181,7 +178,7 @@ struct DaemonRestoreProgressTests {
             let elapsed = instant - started
             return elapsed.components.seconds * 1000 + elapsed.components.attoseconds / 1_000_000_000_000_000
         }
-        print("SELF_HEAL_PROBE app restore_status_shown_after_ms=\(ms(shown)) connected_after_ms=\(ms(cleared))")
+        print("SELF_HEAL_PROBE app restore_status_quiet=true connected_after_ms=\(ms(cleared))")
     }
 
     /// Stands in for "connected" in the usable-during-restore probe: the stand-in's socket never answers, so the

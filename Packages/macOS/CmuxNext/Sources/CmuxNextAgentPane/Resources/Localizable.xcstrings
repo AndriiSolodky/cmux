@@ -10236,6 +10236,16 @@
         }
       }
     },
+    "agentPane.personUnproven.waitBeforeSending": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your identity is not verified. Wait before sending a message."
+          }
+        }
+      }
+    },
     "agentPane.otherInstall.message": {
       "extractionState": "manual",
       "localizations": {

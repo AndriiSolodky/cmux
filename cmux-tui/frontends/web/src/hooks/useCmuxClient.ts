@@ -62,9 +62,12 @@ export function useCmuxClient() {
   const clientsRefreshRef = useRef<(() => void) | null>(null);
   const localToastId = useRef(-1n);
   const pairingCredential = useRef<string | undefined>(undefined);
+  const retryRequested = useRef(false);
 
   useEffect(() => {
     if (!config) return;
+    const isManualRetry = retryRequested.current;
+    retryRequested.current = false;
     let cancelled = false;
     let activeClient: CmuxClient | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -184,7 +187,7 @@ export function useCmuxClient() {
         setState((current) => ({
           ...current,
           status: "reconnecting",
-          client: null,
+          // Retain the last renderer; terminal input and mutations are disabled.
           error: null,
           reconnect: step,
           pairing: null,
@@ -325,7 +328,7 @@ export function useCmuxClient() {
       reconnect: null,
       pairing: null,
     }));
-    void start(false);
+    void start(isManualRetry);
     return () => {
       cancelled = true;
       if (retryTimer !== undefined) clearTimeout(retryTimer);
@@ -345,9 +348,14 @@ export function useCmuxClient() {
     setConfig({ ...next, token: next.token || undefined });
   }, []);
 
+  const retryConnection = useCallback(() => {
+    retryRequested.current = true;
+    setConfig((current) => (current ? { ...current } : current));
+  }, []);
+
   const runMutation = useCallback(
     async (mutation: (client: CmuxClient) => Promise<unknown>) => {
-      if (!state.client) return false;
+      if (!state.client || state.status !== "connected") return false;
       try {
         await mutation(state.client);
         return true;
@@ -364,7 +372,7 @@ export function useCmuxClient() {
         return false;
       }
     },
-    [state.client],
+    [state.client, state.status],
   );
 
   const selectScreen = useCallback((workspaceId: Id, screenId: Id, surface: Id | null) => {
@@ -474,6 +482,7 @@ export function useCmuxClient() {
     active: activeScreen(view),
     toasts,
     connect,
+    retryConnection,
     selectScreen,
     selectPane,
     selectTab,
