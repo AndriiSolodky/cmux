@@ -1,0 +1,140 @@
+diff --git b/webviews/src/agent-session/acpmux/VirtualTranscript.tsx a/webviews/src/agent-session/acpmux/VirtualTranscript.tsx
+index d200caafcc44..8dc9956c2571 100644
+--- b/webviews/src/agent-session/acpmux/VirtualTranscript.tsx
++++ a/webviews/src/agent-session/acpmux/VirtualTranscript.tsx
+@@ -1060,9 +1060,6 @@ const FIRST_SEND_FRESH_MS = 2000;
+ /// reader reached rows that were not loaded yet, so the page fades in. Pages ask well ahead
+ /// (OLDER_AHEAD_VIEWPORTS), so a page normally lands farther away and draws in place.
+ const OLDER_LATE_VIEWPORTS = 1;
+-/// Loaded rows at least this many views tall keep the older-history room while the reader waits at
+-/// their top (`giveRoomNearTop`); a shorter tail gives it up, so a scroll up is never pushed back down.
+-const OLDER_KEEP_ROOM_VIEWPORTS = 3;
+ 
+ /// Whether the reader's view is at the top of the loaded rows, read before a page lands above them.
+ /// A hidden or unplaced scroller draws in place (WebKit would play a hidden page's fade on return).
+@@ -5526,23 +5523,14 @@ function TranscriptView({
+   const anchorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+   const latestLayout = useRef({ layout, rows });
+   latestLayout.current = { layout, rows };
+-  /// Lets the room above the loaded rows go when they are a tail shorter than the view and the view is
+-  /// within a viewport of their top with no page there yet (`roomGone` above). Runs after each
+-  /// placement and on every scroll event.
+-  ///
+-  /// Rows that fill the view keep the room: the reader stops at the loaded rows' top (`handleScroll`)
+-  /// until the page lands into it. Given up there, the room went at every page the reader caught up
+-  /// with and came back whole, the chat's estimated height, when the next page landed: the thumb leapt
+-  /// from the top to the bottom and back once a page, and the row on screen jumped by up to a viewport
+-  /// as the room came back (Leo, 2026-11-15: "this is super wack the way we're scrolling up
+-  /// infinitely :("; test/transcript-older-pages-anchor.test.ts).
++  /// Lets the room above the loaded rows go when the view is within a viewport of their top with no
++  /// page there yet (`roomGone` above). Runs after each placement and on every scroll event.
+   const giveRoomNearTop = () => {
+     const node = ref.current;
+     const room = layout.origin ?? 0;
+     const first = rows[0];
+     if (!node || !first || !canLoadOlder || room <= 0.5 || !didOpenAtLatest.current || node.clientHeight === 0) return;
+     if (userScrollIntent(node).isScrollbarDragging()) return;
+-    if (node.scrollHeight - room >= node.clientHeight * OLDER_KEEP_ROOM_VIEWPORTS) return;
+     if (layoutScrollTop(node) - room >= node.clientHeight * OLDER_LATE_VIEWPORTS) return;
+     // A tail shorter than the view keeps its place at the view's foot: the room left is what lies
+     // between the view's top and the rows, so nothing scrolls (read from the scroller itself, whose
+@@ -5811,15 +5799,11 @@ function TranscriptView({
+     const gone = roomGone !== undefined && roomGone.sessionId === sessionId && rows[0]?.id === roomGone.firstId;
+     const room = gone ? 0 : (latestLayout.current.layout.origin ?? 0);
+     if (room > 0 && layoutScrollTop(node) < room && !userScrollIntent(node).isScrollbarDragging()) {
+-      // Only a pointer held on the scroller (a thumb drag the scrollbar check missed) keeps its target
+-      // for the page to bring into reach. A wheel's step into the room is given back here and stays
+-      // given back: kept, it was replayed in one frame when the page landed, and the row being read
+-      // leapt by that step on top of the wheel's own (test/transcript-older-pages-anchor.test.ts).
+       olderScrollTarget.current = noteOlderScrollTarget(
+         olderScrollTarget.current,
+         layoutScrollTop(node),
+         room,
+-        userScrollIntent(node).isPressed(),
++        userScrollIntent(node).isHeld(),
+       );
+       wheelGlide.current?.stop();
+       node.scrollTop = physicalScrollTop(node, room);
+@@ -6659,8 +6643,6 @@ function TranscriptView({
+   // A wheel up with the view already at the loaded rows' top moves nothing, so no scroll event says the reader
+   // wants more: it asks itself, unless an ask is still out.
+   const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+-    // Held at the loaded rows' top, a wheel up moves nothing: the reader is still scrolling up (`rising`).
+-    if (event.deltaY < 0) olderAhead.wheeledUp(performance.now());
+     const loadedTop = layout.origin ?? 0;
+     if (event.deltaY >= 0 || layoutScrollTop(event.currentTarget) > loadedTop + 0.5 || olderAsking.current) return;
+     olderLoadRequested.current = undefined;
+diff --git b/webviews/src/agent-session/acpmux/conversation/olderAhead.test.ts a/webviews/src/agent-session/acpmux/conversation/olderAhead.test.ts
+index 15e589b7883c..f7bfff36fc1f 100644
+--- b/webviews/src/agent-session/acpmux/conversation/olderAhead.test.ts
++++ a/webviews/src/agent-session/acpmux/conversation/olderAhead.test.ts
+@@ -14,16 +14,3 @@ test("rising: only while the reader scrolls up, not at rest, going down, or afte
+   ahead.reset();
+   expect(ahead.rising(1032)).toBe(false);
+ });
+-
+-test("rising: a wheel up held at the loaded rows' top counts, though the view did not move", () => {
+-  const ahead = new OlderAhead();
+-  ahead.scrolled(0, 1000);
+-  ahead.scrolled(0, 1016);
+-  expect(ahead.rising(1016)).toBe(false);
+-  ahead.wheeledUp(1020);
+-  expect(ahead.rising(1030)).toBe(true);
+-  expect(ahead.rising(1020 + 151)).toBe(false);
+-  ahead.wheeledUp(1200);
+-  ahead.reset();
+-  expect(ahead.rising(1200)).toBe(false);
+-});
+diff --git b/webviews/src/agent-session/acpmux/conversation/olderAhead.ts a/webviews/src/agent-session/acpmux/conversation/olderAhead.ts
+index cb4d738b6b35..4a953fc51d03 100644
+--- b/webviews/src/agent-session/acpmux/conversation/olderAhead.ts
++++ a/webviews/src/agent-session/acpmux/conversation/olderAhead.ts
+@@ -26,8 +26,6 @@ export class OlderAhead {
+   private speed = 0;
+   private lastTop: number | undefined;
+   private lastAt = 0;
+-  /// The last upward wheel (ms), whether it moved the view or not (`wheeledUp`).
+-  private wheelUpAt = Number.NEGATIVE_INFINITY;
+   /// How long a page has taken to read, smoothed (ms); undefined before the first.
+   private readMs: number | undefined;
+ 
+@@ -58,18 +56,10 @@ export class OlderAhead {
+     return Math.max(floor, Math.min(lead, viewport * OLDER_AHEAD_MAX_VIEWPORTS));
+   }
+ 
+-  /// An upward wheel at `now` (ms), whether or not it moved the view.
+-  wheeledUp(now: number): void {
+-    this.wheelUpAt = now;
+-  }
+-
+   /// Whether the reader is scrolling up now. An ask made while they are reads the big older page and
+   /// pages ahead (direct.ts `loadOlder`); one made at rest (an open filling the view) reads a short one.
+-  /// A reader wheeling up against the loaded rows' top, held there until the page lands, is rising
+-  /// too: read as at rest, each page after the hold was a short one with none read ahead, so the
+-  /// reader caught up with the loaded top again at once.
+   rising(now: number): boolean {
+-    return (now - this.lastAt <= SCROLL_GAP_MS && this.speed > 0) || now - this.wheelUpAt <= SCROLL_GAP_MS;
++    return now - this.lastAt <= SCROLL_GAP_MS && this.speed > 0;
+   }
+ 
+   /// A new chat: nothing read in another applies.
+@@ -78,6 +68,5 @@ export class OlderAhead {
+     this.lastTop = undefined;
+     this.lastAt = 0;
+     this.readMs = undefined;
+-    this.wheelUpAt = Number.NEGATIVE_INFINITY;
+   }
+ }
+diff --git b/webviews/src/agent-session/acpmux/conversation/userScroll.ts a/webviews/src/agent-session/acpmux/conversation/userScroll.ts
+index 98a2d5eb7c34..5eb6ceea23a8 100644
+--- b/webviews/src/agent-session/acpmux/conversation/userScroll.ts
++++ a/webviews/src/agent-session/acpmux/conversation/userScroll.ts
+@@ -63,8 +63,6 @@ function createIntent() {
+       return scrolling && this.isHeld();
+     },
+     isScrollbarDragging: () => pressed && scrollbar,
+-    /// A pointer is held down on the scroller (a drag, on the rows or the scrollbar).
+-    isPressed: () => pressed,
+     // An explicit request may start during the hold, but its continuations expire on later input.
+     request: () => {
+       const started = generation;
