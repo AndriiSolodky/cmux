@@ -164,7 +164,7 @@ pub(crate) fn bridge_settle_modes(
         return vec![READ_ONLY.to_owned()];
     }
     let asking = crate::web_modes::BRIDGE_ASKING_MODES.iter().map(|m| (*m).to_owned());
-    if peer && vm_boundary && policy.is_none() && offered.iter().any(|m| m == FULL_ACCESS) {
+    if false && peer && vm_boundary && policy.is_none() && offered.iter().any(|m| m == FULL_ACCESS) {
         return std::iter::once(FULL_ACCESS.to_owned()).chain(asking).collect();
     }
     asking.collect()
