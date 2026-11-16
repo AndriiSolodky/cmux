@@ -1031,6 +1031,40 @@ class SwiftTestingSuiteTimeoutTests(unittest.TestCase):
         self.assertEqual(ran, ["Alpha", "Charlie"], completed.stdout)
         self.assertIn("Swift test suites: 2 passed, 0 failed", completed.stdout)
 
+    def test_a_pattern_runs_every_matching_suite_in_its_own_process(self) -> None:
+        """A name with `*` selects every suite it matches (`*Sidebar*`), each still in its own process: the
+        whole-Sidebar run as one `swift test --filter Sidebar` process started about 250 GUI tests at once
+        and stalled (2026-11-15)."""
+        suites = ["SidebarAlphaTests", "BravoSidebarTests", "Charlie", "TitleSidebarless"]
+        completed, calls = self._suites_run("*Sidebar*Tests", suites)
+        self.assertEqual(completed.returncode, 0, completed.stdout)
+        self.assertIn("test list", calls[0])
+        ran = sorted(next(s for s in suites if f".{s}/" in call) for call in calls[1:])
+        self.assertEqual(ran, ["BravoSidebarTests", "SidebarAlphaTests"], completed.stdout)
+        self.assertEqual(len(calls), 3, calls)
+        self.assertIn("Swift test suites: 2 passed, 0 failed", completed.stdout)
+
+    def test_a_pattern_and_a_name_together_run_each_suite_once(self) -> None:
+        completed, calls = self._suites_run("Sidebar*,SidebarAlpha,ExampleTests.Charlie", ["SidebarAlpha", "SidebarBeta", "Charlie", "Delta"])
+        self.assertEqual(completed.returncode, 0, completed.stdout)
+        ran = sorted(next(s for s in ["SidebarAlpha", "SidebarBeta", "Charlie", "Delta"] if f".{s}/" in call) for call in calls[1:])
+        self.assertEqual(ran, ["Charlie", "SidebarAlpha", "SidebarBeta"], completed.stdout)
+
+    def test_a_bare_pattern_matches_suite_names_not_the_target(self) -> None:
+        # The fake package's target is ExampleTests: `*Example*` names no suite.
+        completed, calls = self._suites_run("*Example*", ["Alpha", "Bravo"])
+        self.assertEqual(completed.returncode, 2, completed.stdout)
+        self.assertIn("CMUX_SWIFT_TEST_SUITES pattern *Example* matches no suite", completed.stdout)
+        completed, calls = self._suites_run("ExampleTests.B*", ["Alpha", "Bravo"])
+        self.assertEqual(completed.returncode, 0, completed.stdout)
+        self.assertEqual(len(calls), 2, calls)
+
+    def test_a_pattern_that_matches_no_suite_is_refused(self) -> None:
+        completed, calls = self._suites_run("*Zulu*", ["Alpha", "Bravo"])
+        self.assertEqual(completed.returncode, 2, completed.stdout)
+        self.assertIn("CMUX_SWIFT_TEST_SUITES pattern *Zulu* matches no suite", completed.stdout)
+        self.assertEqual(len(calls), 1, calls)
+
     def test_a_named_suite_the_package_lacks_is_refused(self) -> None:
         completed, calls = self._suites_run("Alpha,Zulu", ["Alpha", "Bravo"])
         self.assertEqual(completed.returncode, 2, completed.stdout)
@@ -1038,7 +1072,7 @@ class SwiftTestingSuiteTimeoutTests(unittest.TestCase):
         self.assertEqual(len(calls), 1, calls)
 
     def test_an_invalid_suite_list_is_refused_before_the_build(self) -> None:
-        for only in ("Alpha;rm", ",Alpha", "Alpha,", "Al pha", "^Alpha/"):
+        for only in ("Alpha;rm", ",Alpha", "Alpha,", "Al pha", "^Alpha/", "Alpha?", "[A]lpha", "*/"):
             with self.subTest(only=only):
                 completed, calls = self._suites_run(only, ["Alpha"])
                 self.assertEqual(completed.returncode, 2, completed.stdout)
