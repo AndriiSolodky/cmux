@@ -27,6 +27,30 @@ marker app (`scripts/mac-marker`, build with `swiftc -O`) on a test Mac; `cmux-r
 from another Mac then measures latency (`--snapshot FILE.ppm` keeps the newest decoded frame).
 Build on a fleet Mac: `cargo build --release --no-default-features --features bench`.
 
+### Before and after numbers: the budget table
+
+Every screen-share change quotes its before and after from one command, which runs cmux and
+macOS Screen Sharing on the same motion scene between two Macs and prints the stage budget table
+(Input, Screen, Capture, Encode, Send, Network, Reassembly, Decode, Present, Total, each p50/p95),
+received Mbps and motion quality (a frame score and the text error against the source):
+
+```
+# tools/ built at your head (no compiling on the Macs); repeat at the merge base for "before"
+cmux-ci run --class exclusive --measurement --label measure \
+  --script scripts/measure/screen-stream-eval.sh --ref "$(git rev-parse HEAD)" \
+  --arg=tools-only=1 --artifact artifacts/screen-stream-eval/tools.tar.gz
+tar -xzf tools.tar.gz
+scripts/screen-share-vs.py run --host SHARED_MAC --viewer VIEWING_MAC --host-ip SHARED_MAC_LAN_IP \
+  --tools ./tools --label after --cua-vnc PATH/cua-vnc \
+  --vnc-user USER --vnc-password-file PATH_ON_VIEWING_MAC --out after.jsonl
+scripts/screen-share-vs.py compare before.jsonl after.jsonl
+```
+
+The shared Mac runs the rig (`screen-share-vs.py rig`) inside an app that holds Screen Recording
+and Accessibility. The Apple leg is a headless RFB client: it never opens Screen Sharing.app or
+any window. A row that cannot be measured yet prints null with its reason under the table; the
+script's docstring maps each row to today's timing log and to the per-frame stage ledger.
+
 ## Linux desktop host (shared with cmux on a Mac)
 
 A Linux desktop joins the person's devices and shows up on the Mac's Screen Sharing page
