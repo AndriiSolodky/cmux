@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="mock.css"><style>
+.grp td { background: color-mix(in srgb, var(--page-hover) 70%, transparent); font-size: 11px; font-weight: 600; color: var(--page-text-3); padding: 5px 10px; }
+.port { font-family: var(--font-mono); font-weight: 600; }
+.peek { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid var(--page-separator); }
+.peek > div { padding: 10px 14px; font-size: 12px; display: flex; flex-direction: column; gap: 5px; }
+.peek > div + div { border-left: 1px solid var(--page-separator); }
+.peek .kv { display: flex; gap: 8px; } .peek .kv .k { color: var(--page-text-3); min-width: 70px; }
+.req { font: 11px/1.6 var(--font-mono); color: var(--page-text-2); white-space: pre; }
+</style></head><body><div class="page">
+<div class="toolbar"><div class="tabs"><span class="tab sel">Discover</span><span class="tab">Installed</span><span class="tab">Updates</span></div><div class="search">Search apps</div></div>
+<div class="body">
+<div class="back">‹ Discover</div>
+<div class="header">
+  <div class="icon" style="--icon: var(--cmux-accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10v4M10.5 10v4M14 10v4M17 10v4"/></svg></div>
+  <div class="title"><h1 class="name">Ports</h1><div class="meta"><span class="verified">✓</span> cmux · Developer Tools · Free · reads listening sockets</div></div>
+  <div style="display:flex;gap:8px"><span class="btn">Preview</span><span class="btn primary">Get</span></div>
+</div>
+<p class="desc">Every dev server listening in your workspaces, on this Mac and on your remote machines and Cloud VMs, with the session that started it. Open one in a browser tab, forward it, or stop one you started.</p>
+<p class="why"><b>Why:</b> “what is on :5173, and which session started it” comes up constantly once several agents run servers at once.</p>
+<div class="columns"><div>
+<h2>Preview</h2>
+<div class="preview">
+  <div class="pane-bar"><span class="pt">Ports</span><span class="t3">9 listening · 3 machines</span>
+    <div class="right"><div class="seg"><span class="sel">By machine</span><span>By workspace</span></div><span class="search" style="width:160px;padding:2px 8px;font-size:11.5px">Filter :port or name</span></div></div>
+  <table>
+    <tr><th>Port</th><th>Process</th><th>Folder</th><th>Workspace · session</th><th>Up</th><th style="text-align:right"></th></tr>
+    <tr class="grp"><td colspan="6">This Mac</td></tr>
+    <tr class="sel"><td class="port">:5173</td><td>vite <span class="t3">pid 48211</span></td><td class="mono t2">webviews</td><td>gallery · <span class="mono">cx-next-ui-scale</span></td><td class="t3 num">2h 05m</td><td style="text-align:right"><span class="btn sm">Open</span> <span class="btn sm">Stop</span></td></tr>
+    <tr><td class="port">:8787</td><td>wrangler <span class="t3">pid 48340</span></td><td class="mono t2">workers/api</td><td>cloud · <span class="mono">sr-gateway</span></td><td class="t3 num">47m</td><td style="text-align:right"><span class="btn sm">Open</span> <span class="btn sm">Stop</span></td></tr>
+    <tr><td class="port">:6006</td><td>storybook <span class="t3">pid 51002</span></td><td class="mono t2">web</td><td>docs · <span class="t2">terminal</span></td><td class="t3 num">3d</td><td style="text-align:right"><span class="btn sm">Open</span></td></tr>
+    <tr><td class="port">:5432</td><td>postgres <span class="t3">Docker</span></td><td class="mono t2">—</td><td class="t3">not from cmux</td><td class="t3 num">6d</td><td style="text-align:right"><span class="tag">Service</span></td></tr>
+    <tr class="grp"><td colspan="6">big-red · SSH</td></tr>
+    <tr><td class="port">:3000</td><td>next dev <span class="t3">pid 902114</span></td><td class="mono t2">web</td><td>landing · <span class="mono">newtab-extension-slot</span></td><td class="t3 num">18m</td><td style="text-align:right"><span class="btn sm">Forward</span> <span class="btn sm">Stop</span></td></tr>
+    <tr><td class="port">:18795</td><td>beads board <span class="t3">pid 4410</span></td><td class="mono t2">tools/beads</td><td class="t3">not from cmux</td><td class="t3 num">9d</td><td style="text-align:right"><span class="btn sm">Forward</span></td></tr>
+    <tr class="grp"><td colspan="6">vm-7f3a · Cloud VM</td></tr>
+    <tr><td class="port">:4173</td><td>vite preview <span class="t3">pid 1288</span></td><td class="mono t2">webviews</td><td>store · <span class="mono">appstore-curation</span></td><td class="t3 num">6m</td><td style="text-align:right"><span class="tag ok">Forwarded :14173</span> <span class="btn sm">Open</span></td></tr>
+    <tr><td class="port">:9229</td><td>node --inspect <span class="t3">pid 1301</span></td><td class="mono t2">webviews</td><td>store · <span class="mono">appstore-curation</span></td><td class="t3 num">6m</td><td style="text-align:right"><span class="btn sm">Debug</span></td></tr>
+    <tr><td class="port t3">:3001</td><td class="t3">next dev</td><td class="mono t3">web</td><td class="t3">landing · exited 1 · EADDRINUSE</td><td class="t3 num">2m ago</td><td style="text-align:right"><span class="tag bad">Crashed</span> <span class="btn sm">Log</span></td></tr>
+  </table>
+  <div class="peek">
+    <div><div class="kv"><span class="k">:5173</span><span>vite 7.2 · HMR on · 3 browser tabs open it</span></div><div class="kv"><span class="k">Command</span><span class="mono">bun run dev --port 5173</span></div><div class="kv"><span class="k">Started by</span><span><span class="mono">cx-next-ui-scale</span>, turn 14, 2h 05m ago</span></div></div>
+    <div><div class="t3" style="font-size:11px;font-weight:600">Last requests</div><div class="req">07:41:02  GET /src/pages/apps/styles.css   200  4ms
+07:41:02  GET /@vite/client                 304  1ms
+07:40:58  GET /gallery?entry=apps.detail    200 38ms</div></div>
+  </div>
+</div></div>
+<div class="side">
+  <div><h2>Reads</h2><ul><li><span class="k">Sockets</span><span>Listening TCP ports on this Mac and connected machines</span></li><li><span class="k">Sessions</span><span>Which terminal or agent started each process</span></li></ul></div>
+  <div><h2>Can do</h2><ul><li><span class="k">Open</span><span>In a cmux browser tab next to the session</span></li><li><span class="k">Forward</span><span>Remote ports over the existing SSH or VM link</span></li><li><span class="k">Stop</span><span>Only processes a cmux session started</span></li></ul></div>
+  <div><h2>Shows up in</h2><ul><li><span class="k">Sidebar</span><span>Port numbers on each workspace row</span></li><li><span class="k">Palette</span><span><span class="kbd">⌘⇧P</span> Open :5173</span></li></ul></div>
+  <div><h2>Version</h2><ul><li><span class="k">Proposed</span><span class="t2">Not built yet</span></li></ul></div>
+</div></div>
+</div></div></body></html>
