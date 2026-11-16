@@ -70,6 +70,10 @@ pub const FAMILIES: &[&str] = &[
     "credential",
     // `toast.show` (`cmux.toast`), shown by the Mac app's toast presenter.
     "toast",
+    // The browser page the person looks at (`page.read` with the daemon's
+    // script, `page.javascript.*`); the daemon answers `page.style.*` itself
+    // and pushes `apps-page-styles` to this family's connection (page_ops.rs).
+    "page",
 ];
 
 /// Ops that wait for the user (a file panel) get the long deadline.
