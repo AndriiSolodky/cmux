@@ -1,6 +1,7 @@
 // Strings come from pages/diff/Localizable.xcstrings through scripts/pages/gen-strings.mjs.
 import english from "./pages/diff/generated/locales/en.json";
 import { diffLocaleLoaders } from "./pages/diff/generated/localeLoaders";
+import { appLanguages } from "./pages/shared/appLanguage";
 import { resolveLanguage } from "./pages/shared/i18n";
 import { DiffLabelCatalog } from "./diff/labelCatalog";
 
@@ -16,7 +17,7 @@ export type DiffViewerLanguage = string;
 
 /** The first supported app locale, using the same resolution as every page. */
 export function diffViewerLanguage(
-  languages: readonly string[] = globalThis.navigator?.languages ?? [],
+  languages: readonly string[] = appLanguages(),
 ): DiffViewerLanguage {
   return resolveLanguage(languages, availableLanguages);
 }
@@ -49,7 +50,7 @@ export function loadDiffViewerLabels(language: DiffViewerLanguage = diffViewerLa
 
 type LabelResolverOptions = {
   assertMissing?: boolean;
-  /** Overrides the language read from navigator.languages (tests). */
+  /** Overrides the language read from appLanguages() (tests). */
   language?: DiffViewerLanguage;
 };
 
