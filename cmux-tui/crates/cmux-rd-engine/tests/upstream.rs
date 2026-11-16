@@ -86,7 +86,9 @@ fn upstream_missing_shards_wake_after_the_reorder_grace() {
     assert_eq!(feedback.nacks.len(), 1);
     assert_eq!(feedback.nacks[0].indexes, vec![0]);
     assert!(host.upstream_feedback(30_000).is_none());
-    assert_eq!(host.next_deadline_us(), Some(80_000));
+    // Each shard is NACKed once (design D6): no retry, only the give-up, at
+    // the 200 ms ceiling while no round trip is known.
+    assert_eq!(host.next_deadline_us(), Some(225_000));
     let repaired = host.on_datagram(&second[0], false, 80_000).upstream;
     assert_eq!(repaired.len(), 1);
     assert_eq!(repaired[0].1.frame, 2);
