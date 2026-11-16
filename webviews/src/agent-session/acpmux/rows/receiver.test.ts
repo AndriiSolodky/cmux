@@ -60,6 +60,10 @@ function fakeEngine() {
         await settle();
       }
     },
+    /** A task from outside the page (the host's reply), run with the others after a frame. */
+    hostTask(cb: () => void) {
+      tasks.push(cb);
+    },
     key() {
       fire("keydown");
     },
@@ -143,7 +147,7 @@ test("one taken per frame against a host that sends the next batch after taken",
     receiveChatRows({ batch: sent, changes: [rowChange(sent * 2 - 1), rowChange(sent * 2)] }, lanes);
   };
   // The host reads `taken` in a later task, then sends.
-  onTaken(() => void Promise.resolve().then(() => setTimeout(send, 0)));
+  onTaken(() => engine.hostTask(send));
   send();
   const perFrame: number[] = [];
   for (let frame = 0; frame < 6; frame += 1) {
