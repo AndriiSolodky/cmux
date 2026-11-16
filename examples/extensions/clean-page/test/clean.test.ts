@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { buildPrompt, elements, hostOf, keepListed, parseReply, type Candidate } from "../src/clean.ts"
+import { buildPrompt, elements, hostOf, keepListed, originOf, parseReply, type Candidate } from "../src/clean.ts"
 
 const c = (selector: string, extra: Partial<Candidate> = {}): Candidate => ({ selector, tag: "div", width: 300, height: 90, fixed: false, ...extra })
 const candidates = [
@@ -61,7 +61,7 @@ describe("parseReply", () => {
 })
 
 describe("keepListed", () => {
-  test("keeps only selectors page.read listed, each once", () => {
+  test("keeps only listed selectors, each once", () => {
     const kept = keepListed({ hide: ["#ad-top", "#made-up", "#ad-top", "body"], unstick: ["header.site", "nav"] }, candidates)
     expect(kept).toEqual({ hide: ["#ad-top"], unstick: ["header.site"] })
   })
@@ -85,7 +85,11 @@ describe("keepListed", () => {
   })
 })
 
-test("hostOf and elements", () => {
+test("originOf, hostOf and elements", () => {
+  expect(originOf("https://News.Test:8443/a?b#c")).toBe("https://news.test:8443")
+  expect(originOf("http://user:pw@a.test/")).toBe("http://a.test")
+  expect(originOf("about:blank")).toBeNull()
+  expect(originOf("file:///tmp/x.html")).toBeNull()
   expect(hostOf("https://www.news.test:8443")).toBe("www.news.test:8443")
   expect(hostOf("http://a.test/")).toBe("a.test")
   expect(elements(1)).toBe("1 element")
