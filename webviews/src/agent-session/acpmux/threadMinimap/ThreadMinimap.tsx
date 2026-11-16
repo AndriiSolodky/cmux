@@ -143,27 +143,88 @@ const within = (element: Element | null, to: EventTarget | null) =>
 
 const bubbleOf = (row: HTMLElement | undefined) => row?.querySelector<HTMLElement>(".cv-user__bubble");
 
-export function ThreadMinimap({
-  rows,
+/// What the transcript hands the rail on each of its renders: every one of these changes with a
+/// streamed token (VirtualTranscript).
+export type MinimapSourceValues = {
+  rows: readonly AcpmuxRow[];
+  layout: TranscriptLayout;
+  /// The transcript's offset as it renders (layout coordinates).
+  scrollTop: number;
+  /// Whether the transcript scrolls at all (its layout, dock space included, is taller than it).
+  scrolls: boolean;
+  /// Where `rows` first differs from the last snapshot (model.ts minimapTurns).
+  change?: RowsChange;
+};
+
+/// The rail's stable handle on the transcript's rows, layout and offset (ThreadMinimap `source`). The
+/// transcript writes each render's values into it and passes `update`'s version beside it: the version
+/// moves only when the rail would draw something else (a prompt, a tick, the band of prompts on screen,
+/// the full-height map's proportions), so a token that only grows the live reply renders no rail. The
+/// rail reads the latest values from it when it draws, and its handlers when they run.
+export class MinimapSource {
+  current: MinimapSourceValues | undefined;
+  private version = 0;
+  /// The mounted rail's check: whether `next` changes what it drew last commit. Absent while no rail is
+  /// mounted, when every render is a new version.
+  probe: ((next: MinimapSourceValues) => boolean) | undefined;
+  /// Takes this render's values; the version the rail renders at.
+  update(next: MinimapSourceValues): number {
+    const was = this.current;
+    this.current = next;
+    if (
+      !was ||
+      was.rows !== next.rows ||
+      was.layout !== next.layout ||
+      was.scrollTop !== next.scrollTop ||
+      was.scrolls !== next.scrolls ||
+      was.change !== next.change
+    )
+      if (!this.probe || this.probe(next)) this.version += 1;
+    return this.version;
+  }
+}
+
+/// One MinimapSource for the transcript's life.
+export function useMinimapSource(): MinimapSource {
+  const [source] = useState(() => new MinimapSource());
+  return source;
+}
+
+type ThreadMinimapProps = Parameters<typeof ThreadMinimapView>[0];
+/// The rail's props compare by value, its box by its numbers (the transcript builds a new one per render).
+function sameMinimapProps(prev: ThreadMinimapProps, next: ThreadMinimapProps): boolean {
+  for (const key of Object.keys(next) as (keyof ThreadMinimapProps)[])
+    if (key !== "railBox" && !Object.is(prev[key], next[key])) return false;
+  if (Object.keys(prev).length !== Object.keys(next).length) return false;
+  const a = prev.railBox;
+  const b = next.railBox;
+  return a === b || (!!a && !!b && a.height === b.height && a.foot === b.foot && a.live === b.live);
+}
+
+/// The rail renders when its version or another prop changes, never for a streamed token alone.
+export const ThreadMinimap = memo(ThreadMinimapView, sameMinimapProps);
+
+function ThreadMinimapView({
+  source,
+  version: _version,
   earlier = EMPTY_EARLIER,
   promptCount,
   loadThrough,
   loadPromptIndex,
   sessionId,
-  layout,
   scroller,
-  scrollTop,
   viewportHeight,
   foot,
   railBox,
-  scrolls,
   width,
   columnWidth = width,
   placed,
-  change,
   topInset = 0,
 }: {
-  rows: readonly AcpmuxRow[];
+  /// The transcript's rows, layout and offset (MinimapSource): read when the rail draws.
+  source: MinimapSource;
+  /// MinimapSource.update's version: a new one renders the rail.
+  version: number;
   /// The chat's prompts older than `rows` (VirtualTranscript `earlier`): ticks from the first frame.
   earlier?: readonly AcpmuxRow[];
   /// The chat's prompt count while `rows` and `earlier` do not hold every prompt yet (the snapshot's
@@ -177,9 +238,7 @@ export function ThreadMinimap({
   /// `loadPromptIndex`): a hover or a click on a pending tick. True once it named them.
   loadPromptIndex?: () => Promise<boolean>;
   sessionId?: string;
-  layout: TranscriptLayout;
   scroller: React.RefObject<HTMLElement | null>;
-  scrollTop: number;
   viewportHeight: number;
   /// Where the transcript's mask ends its view (the bottom stack's top), when it is above
   /// `viewportHeight`: the rail keeps its rows above the mask's bottom band (model.ts railRoom).
@@ -192,16 +251,12 @@ export function ThreadMinimap({
   /// shortens the rail from its foot (model.ts railClearHeight), and the card stays above it too.
   /// Without one, `viewportHeight` and `foot`.
   railBox?: { height: number; foot: number; live?: number };
-  /// Whether the transcript scrolls at all (its layout, dock space included, is taller than it).
-  scrolls: boolean;
   width: number;
   columnWidth?: number;
   /// The transcript calls what the rail puts here once each commit's placement pass has set its
-  /// offset (VirtualTranscript), so the band reads where the transcript put the reader.
-  placed?: React.MutableRefObject<(() => void) | undefined>;
-  /// Where `rows` first differs from the last snapshot, as the transcript found it, so the rail
-  /// reads only the rows from there (model.ts minimapTurns).
-  change?: RowsChange;
+  /// offset (VirtualTranscript), so the band reads where the transcript put the reader. It passes
+  /// that offset (layout coordinates) when it knows it, so the rail reads no layout for it.
+  placed?: React.MutableRefObject<((top?: number) => void) | undefined>;
   /// CSS pixels of the scroller's top a floating tab row covers (VirtualTranscript `topInset`): a jump lands
   /// its prompt LANDING_OFFSET below the row, not under it.
   topInset?: number;
@@ -228,11 +283,58 @@ export function ThreadMinimap({
   /// The turns of the last commit: the next render reads from them and leaves them as they are, so
   /// a render React drops before it commits changes nothing (#24058 review round 6).
   const lastTurns = useRef<MinimapTurns | undefined>(undefined);
+  /// The transcript's values this render draws (MinimapSource): the latest it rendered.
+  const values = source.current!;
+  const { rows, layout, change, scrollTop, scrolls } = values;
+  /// The last turns read, by the probe or a render, and what they were read from. The next read
+  /// goes on from them while their turns are the committed ones (a token that changes no turn), so a
+  /// token the rail does not render for still reads only the live turn; one whose turns changed and
+  /// were not committed yet is not built on, since its spare list is the committed turns.
+  const probed = useRef<
+    | {
+        rows: readonly AcpmuxRow[];
+        change?: RowsChange;
+        sessionId?: string;
+        earlier: readonly AcpmuxRow[];
+        promptCount?: number;
+        read: MinimapTurns;
+      }
+    | undefined
+  >(undefined);
+  const readTurns = useRef(
+    (
+      rows: readonly AcpmuxRow[],
+      change: RowsChange | undefined,
+      session: string | undefined,
+      earlier: readonly AcpmuxRow[],
+      count: number | undefined,
+    ): MinimapTurns => {
+      const cached = probed.current;
+      if (
+        cached &&
+        cached.rows === rows &&
+        cached.change === change &&
+        cached.sessionId === session &&
+        cached.earlier === earlier &&
+        cached.promptCount === count
+      )
+        return cached.read;
+      const committed = lastTurns.current;
+      const chain = cached?.read;
+      const previous =
+        chain && committed && chain.turns === committed.turns && chain.loadedTurns === committed.loadedTurns
+          ? chain
+          : committed;
+      const read = minimapTurns(rows, session, previous, change, earlier, count);
+      probed.current = { rows, change, sessionId: session, earlier, promptCount: count, read };
+      return read;
+    },
+  ).current;
   // Every streamed token is a new `rows`: `turns` then changes with the live reply (the card reads
   // it), while `ticks` stays as long as the prompts do, so the tick list below renders nothing.
   const read = useMemo(
-    () => minimapTurns(rows, sessionId, lastTurns.current, change, earlierRows, promptCount),
-    [rows, sessionId, change, earlierRows, promptCount],
+    () => readTurns(rows, change, sessionId, earlierRows, promptCount),
+    [readTurns, rows, sessionId, change, earlierRows, promptCount],
   );
   useLayoutEffect(() => {
     lastTurns.current = read;
