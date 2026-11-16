@@ -3,7 +3,7 @@
 // its `transition`. Each is one Web Animation started in a layout effect after the commit that
 // changed the prop, so the browser (Core Animation in WebKit) runs every frame and React renders
 // once per change, never per frame.
-import { useLayoutEffect, useRef, type RefObject } from "react";
+import { useLayoutEffect, useState, type RefObject } from "react";
 import {
   sceneMotionEnv,
   sceneTiming,
@@ -153,31 +153,32 @@ export const resetMotionEnvCache = () => {
 /** A node's part that moves on its own element: a trimmed shape's outline, an animated progress fill. */
 export type MotionPart = { ref: RefObject<Element | null>; properties: readonly string[] };
 
+type MotionState = {
+  track: MotionTrack;
+  partTrack: MotionTrack;
+  entered: boolean;
+  exiting: boolean;
+  transition: Animation | null;
+  props: SceneProps | null;
+};
+
 export function useSceneMotion(
   ref: RefObject<HTMLElement | null>,
   node: SceneNode | undefined,
   store: SceneStore,
   part?: MotionPart,
 ): void {
-  const state = useRef<{
-    track: MotionTrack;
-    partTrack: MotionTrack;
-    entered: boolean;
-    exiting: boolean;
-    transition: Animation | null;
-    props: SceneProps | null;
-  } | null>(null);
-  state.current ??= {
+  // One mutable record per mounted node, made once by the lazy initializer (no ref write in render).
+  const [s] = useState<MotionState>(() => ({
     track: new MotionTrack(),
     partTrack: new MotionTrack(),
     entered: false,
     exiting: false,
     transition: null,
     props: null,
-  };
+  }));
 
   useLayoutEffect(() => {
-    const s = state.current!;
     const element = ref.current;
     if (!node || !element) return;
     const doc = element.ownerDocument;
@@ -237,15 +238,15 @@ export function useSceneMotion(
         }
       }
     }
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- a node snapshot is immutable: a new one is the only change; the refs and store are fixed
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- a node snapshot is immutable: a new one is the only change; the refs, the store and `s` are fixed
   }, [node]);
 
   useLayoutEffect(
     () => () => {
-      const s = state.current;
-      s?.track.cancel();
-      s?.partTrack.cancel();
+      s.track.cancel();
+      s.partTrack.cancel();
     },
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- `s` is made once per mount and never replaced
     [],
   );
 }
