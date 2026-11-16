@@ -29,6 +29,11 @@ export class ChatRows {
     return this.#keys.size;
   }
 
+  /// How many rows it keeps (`add` lets the oldest go past it).
+  get kept(): number {
+    return this.#kept;
+  }
+
   has(key: string): boolean {
     return this.#keys.has(key);
   }
