@@ -107,9 +107,15 @@ function firstPrompt(rows: readonly AcpmuxRow[]): number {
   return 0;
 }
 
+/// Each row list's prompt count, counted once: every pass reads it (a scroll's too), and a long chat's
+/// held rows made each read a walk over every row.
+const promptCounts = new WeakMap<readonly AcpmuxRow[], number>();
 function loadedPrompts(rows: readonly AcpmuxRow[]): number {
+  const kept = promptCounts.get(rows);
+  if (kept !== undefined) return kept;
   let loaded = 0;
   for (const row of rows) if (row.kind === "user") loaded += 1;
+  promptCounts.set(rows, loaded);
   return loaded;
 }
 
