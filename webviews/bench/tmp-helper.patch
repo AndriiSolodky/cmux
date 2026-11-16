@@ -1,0 +1,144 @@
+diff --git a/webviews/src/agent-session/acpmux/VirtualTranscript.tsx b/webviews/src/agent-session/acpmux/VirtualTranscript.tsx
+index de72d1bbc60..4460299d65f 100644
+--- a/webviews/src/agent-session/acpmux/VirtualTranscript.tsx
++++ b/webviews/src/agent-session/acpmux/VirtualTranscript.tsx
+@@ -684,6 +684,16 @@ function rememberSentPromptId(ids: Set<string>, id: string): void {
+ }
+ /// How long after a row arrived its room still counts as the arrival: the passes that measure it.
+ const ARRIVAL_PASS_MS = 100;
++/// How many rows at the end of `after` are the very objects at the end of `before`, at most `limit`
++/// (the rows a front scan already matched are not counted twice). An older page lands above the rows
++/// held: they keep their objects, so the walks below that read only new rows skip them with a pointer
++/// compare each instead of a key per row (a 100k-row chat paid three such walks per page).
++function sameTail(before: readonly AcpmuxRow[], after: readonly AcpmuxRow[], limit: number): number {
++  let same = 0;
++  while (same < limit && after[after.length - 1 - same] === before[before.length - 1 - same]) same += 1;
++  return same;
++}
++
+ function arrivedAtTail(before: readonly AcpmuxRow[], after: readonly AcpmuxRow[]): boolean {
+   if (before.length !== after.length) return true;
+   for (let index = after.length - 1; index >= Math.max(0, after.length - ARRIVAL_TAIL); index -= 1) {
+@@ -2699,7 +2709,10 @@ function TranscriptView({
+     // the last rows did not end with came now, with the prompt that opened it, so it enters on the
+     // send's clock with the prompt (conversation.css SEND-ENTRANCE). O(1): the last rows' tail only.
+     const liveBefore = previous.at(-1)?.below ? rowFrameKey(previous.at(-1)!) : undefined;
+-    for (let index = from; index < rows.length; index += 1) {
++    // The rows after the last one that changed were there last time too, as the same objects (an older
++    // page lands above them): all known, the live line among them (its key is `liveBefore`).
++    const end = rows.length - sameTail(previous, rows, Math.min(rows.length, previous.length) - from);
++    for (let index = from; index < end; index += 1) {
+       const row = rows[index]!;
+       const key = rowFrameKey(row);
+       // A row that takes over a frame on screen (OrderedRows `adoptFrames`) is drawn all the same.
+@@ -2746,7 +2759,11 @@ function TranscriptView({
+     const last = committedRows.current?.drawn === chatRowsDrawn ? committedRows.current.rows : NO_ROWS;
+     let from = 0;
+     while (from < rows.length && from < last.length && rows[from] === last[from]) from += 1;
+-    for (let index = from; index < rows.length; index += 1) chatRowsDrawn.add(drawnKey(rows[index]!));
++    // The record keeps only its newest `kept` rows, in row order: rows before the last `kept` would go
++    // again within this same walk, so they are not walked (an older page lands at index 0, and walking
++    // the whole held chat for it was O(rows) per page).
++    for (let index = Math.max(from, rows.length - chatRowsDrawn.kept); index < rows.length; index += 1)
++      chatRowsDrawn.add(drawnKey(rows[index]!));
+     committedRows.current = { drawn: chatRowsDrawn, rows };
+   }, [rows, chatRowsDrawn]);
+   const onEntered = useCallback((id: string) => void enteringRows.current.delete(id), []);
+@@ -3172,6 +3189,10 @@ function TranscriptView({
+       // every streamed snapshot. Only the changed suffix can have lost a row id.
+       const change = rowsChange.current;
+       const start = change?.base === previous && change.rows === rows ? change.from : 0;
++      // An older page landed above every row held: the rows held before are the same objects at the
++      // end, so none left. One pointer compare each, where the id walk below stops at the first row
++      // and forgot nothing for a whole-chat id set (O(rows) per page).
++      if (sameTail(previous, rows, Math.min(rows.length, previous.length) - start) === previous.length - start) return;
+       let sameIds = true;
+       for (let index = Math.min(start, previous.length - line); index < previous.length - line; index += 1) {
+         if (previous[index]!.id !== rows[index]?.id) {
+diff --git a/webviews/src/agent-session/acpmux/conversation/conversation.css b/webviews/src/agent-session/acpmux/conversation/conversation.css
+index f910e3ad91c..70a4f422f62 100644
+--- a/webviews/src/agent-session/acpmux/conversation/conversation.css
++++ b/webviews/src/agent-session/acpmux/conversation/conversation.css
+@@ -2128,6 +2128,20 @@ pre.cv-math-source {
+ .acpmux-thread {
+   transition: none;
+ }
++/* The sub-pixel origin an anchored scroll write leaves (conversation/scrollCoordinates.ts), set on the
++   scroller and read only by the thread's `top`. Unregistered it inherited, so each new origin (an older
++   page landing above the reader writes one) restyled every node in the scroller: every mounted row and
++   the prompt rail, 100+ ms a page on a long chat. It does not inherit; the spacer and the thread take it
++   explicitly, so a new origin restyles those two and nothing they hold. */
++@property --acpmux-scroll-origin {
++  syntax: "<length>";
++  inherits: false;
++  initial-value: 0px;
++}
++.acpmux-spacer,
++.acpmux-thread {
++  --acpmux-scroll-origin: inherit;
++}
+ /* --cv-inset-end: the column's end, moved in while the computer use live preview shows beside it
+    (computerUse/computerUsePreview.css). */
+ .acpmux-row {
+diff --git a/webviews/src/agent-session/acpmux/conversation/olderReserve.ts b/webviews/src/agent-session/acpmux/conversation/olderReserve.ts
+index 4ab91759955..83c6e8afc96 100644
+--- a/webviews/src/agent-session/acpmux/conversation/olderReserve.ts
++++ b/webviews/src/agent-session/acpmux/conversation/olderReserve.ts
+@@ -107,9 +107,15 @@ function firstPrompt(rows: readonly AcpmuxRow[]): number {
+   return 0;
+ }
+ 
++/// Each row list's prompt count, counted once: every pass reads it (a scroll's too), and a long chat's
++/// held rows made each read a walk over every row.
++const promptCounts = new WeakMap<readonly AcpmuxRow[], number>();
+ function loadedPrompts(rows: readonly AcpmuxRow[]): number {
++  const kept = promptCounts.get(rows);
++  if (kept !== undefined) return kept;
+   let loaded = 0;
+   for (const row of rows) if (row.kind === "user") loaded += 1;
++  promptCounts.set(rows, loaded);
+   return loaded;
+ }
+ 
+diff --git a/webviews/src/agent-session/acpmux/conversation/openBreakpoint.ts b/webviews/src/agent-session/acpmux/conversation/openBreakpoint.ts
+index 5cc7f50606d..e56f7e53792 100644
+--- a/webviews/src/agent-session/acpmux/conversation/openBreakpoint.ts
++++ b/webviews/src/agent-session/acpmux/conversation/openBreakpoint.ts
+@@ -29,6 +29,11 @@ export class ChatRows {
+     return this.#keys.size;
+   }
+ 
++  /// How many rows it keeps (`add` lets the oldest go past it).
++  get kept(): number {
++    return this.#kept;
++  }
++
+   has(key: string): boolean {
+     return this.#keys.has(key);
+   }
+diff --git a/webviews/src/agent-session/acpmux/threadMinimap/ThreadMinimap.tsx b/webviews/src/agent-session/acpmux/threadMinimap/ThreadMinimap.tsx
+index 8989cb83b0b..ff14a20b10e 100644
+--- a/webviews/src/agent-session/acpmux/threadMinimap/ThreadMinimap.tsx
++++ b/webviews/src/agent-session/acpmux/threadMinimap/ThreadMinimap.tsx
+@@ -424,7 +424,8 @@ export function ThreadMinimap({
+   const { side, menu: sideMenu } = useRailSide();
+   // Right-click: whose prompts it shows, then which edge it sits on. Only other agents' messages is
+   // offered while the chat has one.
+-  const hasIncoming = read.ticks.some((tick) => tick.from !== undefined);
++  // Once per prompt list, not per render: a scroll's band move renders the rail every frame.
++  const hasIncoming = useMemo(() => read.ticks.some((tick) => tick.from !== undefined), [read.ticks]);
+   const menu: ContextMenuItem[] = [
+     ...(["all", "mine", "agents"] as const).map((each) => ({
+       id: `rail-filter-${each}`,
+@@ -1616,7 +1617,10 @@ const TickList = memo(function TickList({
+   if (!entrance || entrance.sessionId !== sessionId || entrance.ticks !== ticks) {
+     const initial = !entrance || entrance.sessionId !== sessionId;
+     const tail = initial ? undefined : entrance!.ticks.at(-1)?.key;
+-    const after = tail === undefined ? -1 : (ticks.keyIndex(tail) ?? -1);
++    // An older page lands above the old tail, which is still the last tick: read it there, so a
++    // prepend builds no key map over every held prompt (RailRows.keyIndex is O(prompts) once a list).
++    const after =
++      tail === undefined ? -1 : ticks.at(-1)?.key === tail ? ticks.length - 1 : (ticks.keyIndex(tail) ?? -1);
+     const pending = new Set(initial ? [] : entrance!.pending);
+     if (!initial && (after >= 0 || entrance!.ticks.length === 0)) {
+       for (let index = Math.max(ticks.pendingCount, after + 1); index < ticks.length; index++)
