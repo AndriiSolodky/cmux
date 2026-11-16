@@ -157,21 +157,82 @@ export type MinimapSourceValues = {
   change?: RowsChange;
 };
 
+/// The rail's turns read from the transcript's rows (model.ts minimapTurns), by its renders and by
+/// MinimapSource's probe. `committed` is the turns of the last commit: the next read goes on from
+/// them and leaves them as they are, so a render React drops before it commits changes nothing
+/// (#24058 review round 6). The last read, and what it was read from, is kept too: the next read
+/// goes on from it while its turns are the committed ones (a token that changes no turn), so a token
+/// the rail does not render for still reads only the live turn; one whose turns changed and were not
+/// committed yet is not built on, since its spare list is the committed turns.
+class TurnReader {
+  private committed: MinimapTurns | undefined;
+  private last:
+    | {
+        rows: readonly AcpmuxRow[];
+        change?: RowsChange;
+        sessionId?: string;
+        earlier: readonly AcpmuxRow[];
+        promptCount?: number;
+        read: MinimapTurns;
+      }
+    | undefined;
+
+  read(
+    rows: readonly AcpmuxRow[],
+    change: RowsChange | undefined,
+    session: string | undefined,
+    earlier: readonly AcpmuxRow[],
+    count: number | undefined,
+  ): MinimapTurns {
+    const cached = this.last;
+    if (
+      cached &&
+      cached.rows === rows &&
+      cached.change === change &&
+      cached.sessionId === session &&
+      cached.earlier === earlier &&
+      cached.promptCount === count
+    )
+      return cached.read;
+    const committed = this.committed;
+    const chain = cached?.read;
+    const previous =
+      chain && committed && chain.turns === committed.turns && chain.loadedTurns === committed.loadedTurns
+        ? chain
+        : committed;
+    const read = minimapTurns(rows, session, previous, change, earlier, count);
+    this.last = { rows, change, sessionId: session, earlier, promptCount: count, read };
+    return read;
+  }
+
+  /// The turns a commit drew.
+  commit(read: MinimapTurns) {
+    this.committed = read;
+  }
+}
+
 /// The rail's stable handle on the transcript's rows, layout and offset (ThreadMinimap `source`). The
 /// transcript writes each render's values into it and passes `update`'s version beside it: the version
 /// moves only when the rail would draw something else (a prompt, a tick, the band of prompts on screen,
 /// the full-height map's proportions), so a token that only grows the live reply renders no rail. The
 /// rail reads the latest values from it when it draws, and its handlers when they run.
 export class MinimapSource {
-  current: MinimapSourceValues | undefined;
+  values: MinimapSourceValues | undefined;
   private version = 0;
   /// The mounted rail's check: whether `next` changes what it drew last commit. Absent while no rail is
   /// mounted, when every render is a new version.
-  probe: ((next: MinimapSourceValues) => boolean) | undefined;
+  private probe: ((next: MinimapSourceValues) => boolean) | undefined;
+  /// The mounted rail's probe, until the returned cleanup lets it go.
+  watch(probe: (next: MinimapSourceValues) => boolean): () => void {
+    this.probe = probe;
+    return () => {
+      if (this.probe === probe) this.probe = undefined;
+    };
+  }
   /// Takes this render's values; the version the rail renders at.
   update(next: MinimapSourceValues): number {
-    const was = this.current;
-    this.current = next;
+    const was = this.values;
+    this.values = next;
     if (
       !was ||
       was.rows !== next.rows ||
@@ -294,65 +355,20 @@ function ThreadMinimapView({
   const [incomingLook] = useState(() => INCOMING_LOOK[experimentArm(threadMinimapIncoming)]);
   const full = arm === "full";
   const marks = usePromptMarks(sessionId);
-  /// The turns of the last commit: the next render reads from them and leaves them as they are, so
-  /// a render React drops before it commits changes nothing (#24058 review round 6).
-  const lastTurns = useRef<MinimapTurns | undefined>(undefined);
+  /// The turns read for the transcript's rows (TurnReader): the last commit's, and the last read.
+  const [turnReader] = useState(() => new TurnReader());
   /// The transcript's values this render draws (MinimapSource): the latest it rendered.
-  const values = source.current!;
+  const values = source.values!;
   const { rows, layout, change, scrollTop, scrolls } = values;
-  /// The last turns read, by the probe or a render, and what they were read from. The next read
-  /// goes on from them while their turns are the committed ones (a token that changes no turn), so a
-  /// token the rail does not render for still reads only the live turn; one whose turns changed and
-  /// were not committed yet is not built on, since its spare list is the committed turns.
-  const probed = useRef<
-    | {
-        rows: readonly AcpmuxRow[];
-        change?: RowsChange;
-        sessionId?: string;
-        earlier: readonly AcpmuxRow[];
-        promptCount?: number;
-        read: MinimapTurns;
-      }
-    | undefined
-  >(undefined);
-  const readTurns = useRef(
-    (
-      rows: readonly AcpmuxRow[],
-      change: RowsChange | undefined,
-      session: string | undefined,
-      earlier: readonly AcpmuxRow[],
-      count: number | undefined,
-    ): MinimapTurns => {
-      const cached = probed.current;
-      if (
-        cached &&
-        cached.rows === rows &&
-        cached.change === change &&
-        cached.sessionId === session &&
-        cached.earlier === earlier &&
-        cached.promptCount === count
-      )
-        return cached.read;
-      const committed = lastTurns.current;
-      const chain = cached?.read;
-      const previous =
-        chain && committed && chain.turns === committed.turns && chain.loadedTurns === committed.loadedTurns
-          ? chain
-          : committed;
-      const read = minimapTurns(rows, session, previous, change, earlier, count);
-      probed.current = { rows, change, sessionId: session, earlier, promptCount: count, read };
-      return read;
-    },
-  ).current;
   // Every streamed token is a new `rows`: `turns` then changes with the live reply (the card reads
   // it), while `ticks` stays as long as the prompts do, so the tick list below renders nothing.
   const read = useMemo(
-    () => readTurns(rows, change, sessionId, earlierRows, promptCount),
-    [readTurns, rows, sessionId, change, earlierRows, promptCount],
+    () => turnReader.read(rows, change, sessionId, earlierRows, promptCount),
+    [turnReader, rows, sessionId, change, earlierRows, promptCount],
   );
   useLayoutEffect(() => {
-    lastTurns.current = read;
-  }, [read]);
+    turnReader.commit(read);
+  }, [turnReader, read]);
   const loadedTurns = read.loadedTurns ?? read.turns.filter((turn) => turn.index >= 0);
   /// Whose prompts the rail shows (model.ts `RailFilter`), picked from its right-click menu.
   const [filter, setFilter] = useState<RailFilter>("all");
@@ -578,13 +594,11 @@ function ThreadMinimapView({
   /// What the handlers below read: the turns and layout as of the last commit.
   /// The handlers' tops: the transcript's latest layout (MinimapSource), which a streamed token
   /// changes without rendering the rail (its total height is kept by `placed` below).
-  const sourceNow = useRef(source);
-  sourceNow.current = source;
-  const [sourceTops] = useState(() => {
+  const sourceTops = useMemo(() => {
     let from: TranscriptLayout | undefined;
     let read: RowTops = () => undefined;
     return (index: number) => {
-      const now = sourceNow.current.current?.layout;
+      const now = source.values?.layout;
       if (!now) return undefined;
       if (now !== from) {
         from = now;
@@ -592,7 +606,7 @@ function ThreadMinimapView({
       }
       return read(index);
     };
-  });
+  }, [source]);
   const live = useRef({
     turns,
     ticks,
@@ -739,7 +753,7 @@ function ThreadMinimapView({
       if (!node) return;
       const top = settled ?? layoutScrollTop(node);
       // The chat's height as this commit laid it out, which a token the rail did not render for changed.
-      const layoutNow = sourceNow.current.current?.layout;
+      const layoutNow = source.values?.layout;
       if (layoutNow) live.current.total = layoutNow.totalHeight;
       const { turns: all, tops, total, viewportHeight: height, onScreen: drawn, sessionId: session } = live.current;
       domTop.current = { sessionId: session, top };
@@ -756,7 +770,7 @@ function ThreadMinimapView({
     return () => {
       placed.current = undefined;
     };
-  }, [placed, scroller]);
+  }, [placed, scroller, source]);
 
   // What the rail drew at its last commit, for the transcript's next values to be checked against
   // (MinimapSource.probe): the turns read, the arm, and the props the read took.
@@ -778,10 +792,10 @@ function ThreadMinimapView({
   // proportions, so any new layout or offset renders it, as before. A token growing the live reply
   // under a still band changes neither, and the rail does not render for it.
   useLayoutEffect(() => {
-    source.probe = (next) => {
+    return source.watch((next) => {
       const was = committedDraw.current;
       if (!was || was.full) return true;
-      const now = readTurns(next.rows, next.change, was.sessionId, was.earlier, was.promptCount);
+      const now = turnReader.read(next.rows, next.change, was.sessionId, was.earlier, was.promptCount);
       const then = was.read;
       if (
         now.turns !== then.turns ||
@@ -804,11 +818,8 @@ function ThreadMinimapView({
       const tops = rowTopsOf(layoutGeometry(next.layout));
       const at = visibleTurns(all, tops, next.layout.totalHeight, (seen ?? next.scrollTop) + shift, height, start);
       return at.first !== band.first || at.last !== band.last;
-    };
-    return () => {
-      source.probe = undefined;
-    };
-  }, [source, readTurns]);
+    });
+  }, [source, turnReader]);
 
   // A jump still under way belongs to the chat it started in: another chat in the reused scroller,
   // or the rail going away, ends it. In the commit itself, before the jump's next frame can run.
