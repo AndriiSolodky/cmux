@@ -1,0 +1,2390 @@
+{
+  "rings-section": {
+    "initial": [
+      { "op": "create", "id": "n1", "type": "Panel", "props": { "style": "glass" } },
+      { "op": "create", "id": "n2", "type": "Group", "props": {} },
+      { "op": "create", "id": "n3", "type": "VStack", "props": { "spacing": 8 } },
+      { "op": "create", "id": "n4", "type": "HStack", "props": { "spacing": 6 } },
+      {
+        "op": "create",
+        "id": "n5",
+        "type": "Text",
+        "props": { "font": "title3", "monospaced": true, "weight": "semibold", "text": "59.90M" }
+      },
+      {
+        "op": "create",
+        "id": "n6",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "tokens · $84.10 today" }
+      },
+      { "op": "create", "id": "n7", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n4", "children": ["n5", "n6", "n7"] },
+      { "op": "create", "id": "n8", "type": "ForEach", "props": {} },
+      { "op": "create", "id": "n9", "type": "HStack", "props": { "spacing": 8, "transition": "pop" } },
+      { "op": "create", "id": "n10", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n11", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n12",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 30, "height": 30 } }
+      },
+      {
+        "op": "create",
+        "id": "n13",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 30, "height": 30 },
+          "animation": "snappy",
+          "stroke": "warning",
+          "trim": { "to": 0.78 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n11", "children": ["n12", "n13"] },
+      { "op": "create", "id": "n14", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n15",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 18, "height": 18 } }
+      },
+      {
+        "op": "create",
+        "id": "n16",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 18, "height": 18 },
+          "animation": "snappy",
+          "stroke": "success",
+          "trim": { "to": 0.58 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n14", "children": ["n15", "n16"] },
+      {
+        "op": "create",
+        "id": "n17",
+        "type": "Text",
+        "props": { "font": "caption2", "monospaced": true, "text": "78" }
+      },
+      { "op": "children", "id": "n10", "children": ["n11", "n14", "n17"] },
+      { "op": "create", "id": "n18", "type": "VStack", "props": { "spacing": 1 } },
+      { "op": "create", "id": "n19", "type": "Text", "props": { "font": "headline", "text": "Claude" } },
+      {
+        "op": "create",
+        "id": "n20",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "lineLimit": 1, "text": "41.20M tok · $61.30 · 3 working" }
+      },
+      { "op": "children", "id": "n18", "children": ["n19", "n20"] },
+      { "op": "create", "id": "n21", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n22", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n9", "children": ["n10", "n18", "n21", "n22"] },
+      { "op": "create", "id": "n23", "type": "HStack", "props": { "spacing": 8, "transition": "pop" } },
+      { "op": "create", "id": "n24", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n25", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n26",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 30, "height": 30 } }
+      },
+      {
+        "op": "create",
+        "id": "n27",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 30, "height": 30 },
+          "animation": "snappy",
+          "stroke": "success",
+          "trim": { "to": 0.34 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n25", "children": ["n26", "n27"] },
+      { "op": "create", "id": "n28", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n29",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 18, "height": 18 } }
+      },
+      {
+        "op": "create",
+        "id": "n30",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 18, "height": 18 },
+          "animation": "snappy",
+          "stroke": "warning",
+          "trim": { "to": 0.71 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n28", "children": ["n29", "n30"] },
+      {
+        "op": "create",
+        "id": "n31",
+        "type": "Text",
+        "props": { "font": "caption2", "monospaced": true, "text": "34" }
+      },
+      { "op": "children", "id": "n24", "children": ["n25", "n28", "n31"] },
+      { "op": "create", "id": "n32", "type": "VStack", "props": { "spacing": 1 } },
+      { "op": "create", "id": "n33", "type": "Text", "props": { "font": "headline", "text": "Codex" } },
+      {
+        "op": "create",
+        "id": "n34",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "lineLimit": 1, "text": "18.70M tok · $22.80 · 1 working" }
+      },
+      { "op": "children", "id": "n32", "children": ["n33", "n34"] },
+      { "op": "create", "id": "n35", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n36", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n23", "children": ["n24", "n32", "n35", "n36"] },
+      { "op": "create", "id": "n37", "type": "HStack", "props": { "spacing": 8, "transition": "pop" } },
+      { "op": "create", "id": "n38", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n39", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n40",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 30, "height": 30 } }
+      },
+      {
+        "op": "create",
+        "id": "n41",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 30, "height": 30 },
+          "animation": "snappy",
+          "stroke": "separator",
+          "trim": { "to": 0 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n39", "children": ["n40", "n41"] },
+      { "op": "create", "id": "n42", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n43",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 18, "height": 18 } }
+      },
+      {
+        "op": "create",
+        "id": "n44",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 18, "height": 18 },
+          "animation": "snappy",
+          "stroke": "separator",
+          "trim": { "to": 0 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n42", "children": ["n43", "n44"] },
+      { "op": "create", "id": "n45", "type": "Text", "props": { "font": "caption2", "monospaced": true, "text": "–" } },
+      { "op": "children", "id": "n38", "children": ["n39", "n42", "n45"] },
+      { "op": "create", "id": "n46", "type": "VStack", "props": { "spacing": 1 } },
+      { "op": "create", "id": "n47", "type": "Text", "props": { "font": "headline", "text": "Gemini" } },
+      {
+        "op": "create",
+        "id": "n48",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "lineLimit": 1, "text": "– tok · –" }
+      },
+      { "op": "children", "id": "n46", "children": ["n47", "n48"] },
+      { "op": "create", "id": "n49", "type": "Spacer", "props": {} },
+      {
+        "op": "create",
+        "id": "n50",
+        "type": "Badge",
+        "props": { "text": "no limits", "tone": "secondary", "loop": null }
+      },
+      { "op": "children", "id": "n37", "children": ["n38", "n46", "n49", "n50"] },
+      { "op": "children", "id": "n8", "children": ["n9", "n23", "n37"] },
+      { "op": "create", "id": "n51", "type": "Text", "props": { "font": "caption", "color": "secondary", "text": "" } },
+      { "op": "children", "id": "n3", "children": ["n4", "n8", "n51"] },
+      { "op": "children", "id": "n2", "children": ["n3"] },
+      { "op": "children", "id": "n1", "children": ["n2"] },
+      { "op": "root", "id": "n1" }
+    ],
+    "steps": [
+      [
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8019008251056323 } } },
+        { "op": "update", "id": "n17", "props": { "text": "80" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.21M tok · $61.31 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.34911931279124325 } } },
+        { "op": "update", "id": "n31", "props": { "text": "35" } }
+      ],
+      [
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.12 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8232623792124926 } } },
+        { "op": "update", "id": "n17", "props": { "text": "82" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.22M tok · $61.33 · 3 working" } },
+        { "op": "update", "id": "n22", "props": { "text": "over pace ×1.2" } },
+        { "op": "update", "id": "n22", "props": { "tone": "warning" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.35811974139406116 } } },
+        { "op": "update", "id": "n31", "props": { "text": "36" } },
+        { "op": "update", "id": "n34", "props": { "text": "18.71M tok · $22.81 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.91M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.13 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8435586699635366 } } },
+        { "op": "update", "id": "n17", "props": { "text": "84" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.23M tok · $61.34 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.3668839514572344 } } },
+        { "op": "update", "id": "n31", "props": { "text": "37" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.92M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.15 today" } },
+        { "op": "update", "id": "n13", "props": { "stroke": "danger" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8622899353209462 } } },
+        { "op": "update", "id": "n17", "props": { "text": "86" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.24M tok · $61.35 · 3 working" } },
+        { "op": "update", "id": "n22", "props": { "text": "near limit" } },
+        { "op": "update", "id": "n22", "props": { "tone": "danger" } },
+        { "op": "update", "id": "n22", "props": { "loop": { "effect": "pulse" } } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.37529768809945774 } } },
+        { "op": "update", "id": "n31", "props": { "text": "38" } },
+        { "op": "update", "id": "n34", "props": { "text": "18.71M tok · $22.82 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.93M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.17 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8789949493661166 } } },
+        { "op": "update", "id": "n17", "props": { "text": "88" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.25M tok · $61.36 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.38325126539644777 } } },
+        { "op": "update", "id": "n34", "props": { "text": "18.72M tok · $22.82 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.94M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.19 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8932623792124926 } } },
+        { "op": "update", "id": "n17", "props": { "text": "89" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.25M tok · $61.38 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.3906409963047096 } } },
+        { "op": "update", "id": "n31", "props": { "text": "39" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.95M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.20 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9047409133863715 } } },
+        { "op": "update", "id": "n17", "props": { "text": "90" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.26M tok · $61.39 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.3973705443807171 } } },
+        { "op": "update", "id": "n31", "props": { "text": "40" } },
+        { "op": "update", "id": "n34", "props": { "text": "18.72M tok · $22.83 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.96M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.22 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9131479122813215 } } },
+        { "op": "update", "id": "n17", "props": { "text": "91" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.27M tok · $61.40 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.403352179673782 } } },
+        { "op": "update", "id": "n34", "props": { "text": "18.73M tok · $22.83 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.98M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.24 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9182763676833193 } } },
+        { "op": "update", "id": "n17", "props": { "text": "92" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.28M tok · $61.42 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.40850792242012707 } } },
+        { "op": "update", "id": "n31", "props": { "text": "41" } },
+        { "op": "update", "id": "n34", "props": { "text": "18.73M tok · $22.84 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.99M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.25 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.92 } } },
+        { "op": "update", "id": "n20", "props": { "text": "41.29M tok · $61.43 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.41277055962836146 } } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.00M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.27 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9182763676833193 } } },
+        { "op": "update", "id": "n20", "props": { "text": "41.30M tok · $61.44 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.4160845213036123 } } },
+        { "op": "update", "id": "n31", "props": { "text": "42" } },
+        { "op": "update", "id": "n34", "props": { "text": "18.74M tok · $22.84 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.01M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.29 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9131479122813215 } } },
+        { "op": "update", "id": "n17", "props": { "text": "91" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.31M tok · $61.46 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.41840660488739145 } } },
+        { "op": "update", "id": "n34", "props": { "text": "18.74M tok · $22.85 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.02M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.30 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9047409133863715 } } },
+        { "op": "update", "id": "n17", "props": { "text": "90" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.32M tok · $61.47 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.4197065384690153 } } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.04M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.32 today" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8932623792124926 } } },
+        { "op": "update", "id": "n17", "props": { "text": "89" } },
+        { "op": "update", "id": "n20", "props": { "text": "41.33M tok · $61.48 · 3 working" } },
+        { "op": "update", "id": "n27", "props": { "trim": { "to": 0.4199673754262551 } } },
+        { "op": "update", "id": "n34", "props": { "text": "18.75M tok · $22.86 · 1 working" } }
+      ]
+    ]
+  },
+  "rings-pane": {
+    "initial": [
+      { "op": "create", "id": "n1", "type": "VStack", "props": { "spacing": 12, "padding": 16 } },
+      { "op": "create", "id": "n2", "type": "Group", "props": {} },
+      { "op": "create", "id": "n3", "type": "VStack", "props": { "spacing": 8 } },
+      { "op": "create", "id": "n4", "type": "HStack", "props": { "spacing": 6 } },
+      {
+        "op": "create",
+        "id": "n5",
+        "type": "Text",
+        "props": { "font": "largeTitle", "monospaced": true, "weight": "semibold", "text": "59.90M" }
+      },
+      {
+        "op": "create",
+        "id": "n6",
+        "type": "Text",
+        "props": { "font": "title3", "color": "secondary", "text": "tokens · $84.10 today" }
+      },
+      { "op": "create", "id": "n7", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n4", "children": ["n5", "n6", "n7"] },
+      { "op": "create", "id": "n8", "type": "ForEach", "props": {} },
+      { "op": "create", "id": "n9", "type": "HStack", "props": { "spacing": 16, "padding": 12, "transition": "pop" } },
+      { "op": "create", "id": "n10", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n11", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n12",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 96, "height": 96 } }
+      },
+      {
+        "op": "create",
+        "id": "n13",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 96, "height": 96 },
+          "animation": "snappy",
+          "stroke": "warning",
+          "trim": { "to": 0.78 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n11", "children": ["n12", "n13"] },
+      { "op": "create", "id": "n14", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n15",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 70, "height": 70 } }
+      },
+      {
+        "op": "create",
+        "id": "n16",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 70, "height": 70 },
+          "animation": "snappy",
+          "stroke": "success",
+          "trim": { "to": 0.58 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n14", "children": ["n15", "n16"] },
+      { "op": "create", "id": "n17", "type": "Text", "props": { "font": "title2", "monospaced": true, "text": "78" } },
+      { "op": "children", "id": "n10", "children": ["n11", "n14", "n17"] },
+      { "op": "create", "id": "n18", "type": "VStack", "props": { "spacing": 4 } },
+      { "op": "create", "id": "n19", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n20", "type": "Icon", "props": { "symbol": "gauge.with.needle", "color": "accent" } },
+      { "op": "create", "id": "n21", "type": "Text", "props": { "font": "title3", "text": "Claude" } },
+      { "op": "create", "id": "n22", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n23", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n19", "children": ["n20", "n21", "n22", "n23"] },
+      {
+        "op": "create",
+        "id": "n24",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "5-hour 78% · resets in 1h 36m" }
+      },
+      {
+        "op": "create",
+        "id": "n25",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "Week 58% · resets in 2d 4h" }
+      },
+      {
+        "op": "create",
+        "id": "n26",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "41.20M tok · $61.30 · 3 working · 1840 calls" }
+      },
+      { "op": "children", "id": "n18", "children": ["n19", "n24", "n25", "n26"] },
+      { "op": "children", "id": "n9", "children": ["n10", "n18"] },
+      { "op": "create", "id": "n27", "type": "HStack", "props": { "spacing": 16, "padding": 12, "transition": "pop" } },
+      { "op": "create", "id": "n28", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n29", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n30",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 96, "height": 96 } }
+      },
+      {
+        "op": "create",
+        "id": "n31",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 96, "height": 96 },
+          "animation": "snappy",
+          "stroke": "success",
+          "trim": { "to": 0.34 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n29", "children": ["n30", "n31"] },
+      { "op": "create", "id": "n32", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n33",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 70, "height": 70 } }
+      },
+      {
+        "op": "create",
+        "id": "n34",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 70, "height": 70 },
+          "animation": "snappy",
+          "stroke": "warning",
+          "trim": { "to": 0.71 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n32", "children": ["n33", "n34"] },
+      { "op": "create", "id": "n35", "type": "Text", "props": { "font": "title2", "monospaced": true, "text": "34" } },
+      { "op": "children", "id": "n28", "children": ["n29", "n32", "n35"] },
+      { "op": "create", "id": "n36", "type": "VStack", "props": { "spacing": 4 } },
+      { "op": "create", "id": "n37", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n38", "type": "Icon", "props": { "symbol": "gauge.with.needle", "color": "accent" } },
+      { "op": "create", "id": "n39", "type": "Text", "props": { "font": "title3", "text": "Codex" } },
+      { "op": "create", "id": "n40", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n41", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n37", "children": ["n38", "n39", "n40", "n41"] },
+      {
+        "op": "create",
+        "id": "n42",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "5-hour 34% · resets in 3h 12m" }
+      },
+      {
+        "op": "create",
+        "id": "n43",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "Week 71% · resets in 20h 0m" }
+      },
+      {
+        "op": "create",
+        "id": "n44",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "18.70M tok · $22.80 · 1 working · 610 calls" }
+      },
+      { "op": "children", "id": "n36", "children": ["n37", "n42", "n43", "n44"] },
+      { "op": "children", "id": "n27", "children": ["n28", "n36"] },
+      { "op": "create", "id": "n45", "type": "HStack", "props": { "spacing": 16, "padding": 12, "transition": "pop" } },
+      { "op": "create", "id": "n46", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n47", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n48",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 96, "height": 96 } }
+      },
+      {
+        "op": "create",
+        "id": "n49",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 96, "height": 96 },
+          "animation": "snappy",
+          "stroke": "separator",
+          "trim": { "to": 0 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n47", "children": ["n48", "n49"] },
+      { "op": "create", "id": "n50", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n51",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 70, "height": 70 } }
+      },
+      {
+        "op": "create",
+        "id": "n52",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 70, "height": 70 },
+          "animation": "snappy",
+          "stroke": "separator",
+          "trim": { "to": 0 },
+          "glow": null
+        }
+      },
+      { "op": "children", "id": "n50", "children": ["n51", "n52"] },
+      { "op": "create", "id": "n53", "type": "Text", "props": { "font": "title2", "monospaced": true, "text": "–" } },
+      { "op": "children", "id": "n46", "children": ["n47", "n50", "n53"] },
+      { "op": "create", "id": "n54", "type": "VStack", "props": { "spacing": 4 } },
+      { "op": "create", "id": "n55", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n56", "type": "Icon", "props": { "symbol": "gauge.with.needle", "color": "accent" } },
+      { "op": "create", "id": "n57", "type": "Text", "props": { "font": "title3", "text": "Gemini" } },
+      { "op": "create", "id": "n58", "type": "Spacer", "props": {} },
+      {
+        "op": "create",
+        "id": "n59",
+        "type": "Badge",
+        "props": { "text": "no limits", "tone": "secondary", "loop": null }
+      },
+      { "op": "children", "id": "n55", "children": ["n56", "n57", "n58", "n59"] },
+      {
+        "op": "create",
+        "id": "n60",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "5-hour not reported" }
+      },
+      {
+        "op": "create",
+        "id": "n61",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "Week not reported" }
+      },
+      {
+        "op": "create",
+        "id": "n62",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "– tok · – · – calls" }
+      },
+      { "op": "children", "id": "n54", "children": ["n55", "n60", "n61", "n62"] },
+      { "op": "children", "id": "n45", "children": ["n46", "n54"] },
+      { "op": "children", "id": "n8", "children": ["n9", "n27", "n45"] },
+      { "op": "create", "id": "n63", "type": "Group", "props": {} },
+      { "op": "create", "id": "n64", "type": "Text", "props": { "color": "warning", "text": "" } },
+      { "op": "children", "id": "n63", "children": ["n64"] },
+      { "op": "children", "id": "n3", "children": ["n4", "n8", "n63"] },
+      { "op": "children", "id": "n2", "children": ["n3"] },
+      { "op": "create", "id": "n65", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n1", "children": ["n2", "n65"] },
+      { "op": "root", "id": "n1" }
+    ],
+    "steps": [
+      [
+        { "op": "remove", "id": "n64" },
+        { "op": "create", "id": "n66", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n66"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8019008251056323 } } },
+        { "op": "update", "id": "n17", "props": { "text": "80" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.21M tok · $61.31 · 3 working · 1841 calls" } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 80% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.34911931279124325 } } },
+        { "op": "update", "id": "n35", "props": { "text": "35" } },
+        { "op": "update", "id": "n42", "props": { "text": "5-hour 35% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.12 today" } },
+        { "op": "remove", "id": "n66" },
+        { "op": "create", "id": "n67", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n67"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8232623792124926 } } },
+        { "op": "update", "id": "n17", "props": { "text": "82" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.22M tok · $61.33 · 3 working · 1841 calls" } },
+        { "op": "update", "id": "n23", "props": { "text": "over pace ×1.2" } },
+        { "op": "update", "id": "n23", "props": { "tone": "warning" } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 82% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.35811974139406116 } } },
+        { "op": "update", "id": "n35", "props": { "text": "36" } },
+        { "op": "update", "id": "n44", "props": { "text": "18.71M tok · $22.81 · 1 working · 610 calls" } },
+        { "op": "update", "id": "n42", "props": { "text": "5-hour 36% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.91M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.13 today" } },
+        { "op": "remove", "id": "n67" },
+        { "op": "create", "id": "n68", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n68"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8435586699635366 } } },
+        { "op": "update", "id": "n17", "props": { "text": "84" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.23M tok · $61.34 · 3 working · 1842 calls" } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 84% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.3668839514572344 } } },
+        { "op": "update", "id": "n35", "props": { "text": "37" } },
+        { "op": "update", "id": "n44", "props": { "text": "18.71M tok · $22.81 · 1 working · 611 calls" } },
+        { "op": "update", "id": "n42", "props": { "text": "5-hour 37% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.92M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.15 today" } },
+        { "op": "remove", "id": "n68" },
+        { "op": "create", "id": "n69", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n69"] },
+        { "op": "update", "id": "n13", "props": { "stroke": "danger" } },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8622899353209462 } } },
+        { "op": "update", "id": "n17", "props": { "text": "86" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.24M tok · $61.35 · 3 working · 1842 calls" } },
+        { "op": "update", "id": "n23", "props": { "text": "near limit" } },
+        { "op": "update", "id": "n23", "props": { "tone": "danger" } },
+        { "op": "update", "id": "n23", "props": { "loop": { "effect": "pulse" } } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 86% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.37529768809945774 } } },
+        { "op": "update", "id": "n35", "props": { "text": "38" } },
+        { "op": "update", "id": "n44", "props": { "text": "18.71M tok · $22.82 · 1 working · 611 calls" } },
+        { "op": "update", "id": "n42", "props": { "text": "5-hour 38% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.93M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.17 today" } },
+        { "op": "remove", "id": "n69" },
+        { "op": "create", "id": "n70", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n70"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8789949493661166 } } },
+        { "op": "update", "id": "n17", "props": { "text": "88" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.25M tok · $61.36 · 3 working · 1843 calls" } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 88% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.38325126539644777 } } },
+        { "op": "update", "id": "n44", "props": { "text": "18.72M tok · $22.82 · 1 working · 611 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.94M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.19 today" } },
+        { "op": "remove", "id": "n70" },
+        { "op": "create", "id": "n71", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n71"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8932623792124926 } } },
+        { "op": "update", "id": "n17", "props": { "text": "89" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.25M tok · $61.38 · 3 working · 1843 calls" } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 89% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.3906409963047096 } } },
+        { "op": "update", "id": "n35", "props": { "text": "39" } },
+        { "op": "update", "id": "n42", "props": { "text": "5-hour 39% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.95M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.20 today" } },
+        { "op": "remove", "id": "n71" },
+        { "op": "create", "id": "n72", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n72"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9047409133863715 } } },
+        { "op": "update", "id": "n17", "props": { "text": "90" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.26M tok · $61.39 · 3 working · 1844 calls" } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 90% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.3973705443807171 } } },
+        { "op": "update", "id": "n35", "props": { "text": "40" } },
+        { "op": "update", "id": "n44", "props": { "text": "18.72M tok · $22.83 · 1 working · 611 calls" } },
+        { "op": "update", "id": "n42", "props": { "text": "5-hour 40% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.96M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.22 today" } },
+        { "op": "remove", "id": "n72" },
+        { "op": "create", "id": "n73", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n73"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9131479122813215 } } },
+        { "op": "update", "id": "n17", "props": { "text": "91" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.27M tok · $61.40 · 3 working · 1844 calls" } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 91% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.403352179673782 } } },
+        { "op": "update", "id": "n44", "props": { "text": "18.73M tok · $22.83 · 1 working · 612 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.98M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.24 today" } },
+        { "op": "remove", "id": "n73" },
+        { "op": "create", "id": "n74", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n74"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9182763676833193 } } },
+        { "op": "update", "id": "n17", "props": { "text": "92" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.28M tok · $61.42 · 3 working · 1845 calls" } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 92% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.40850792242012707 } } },
+        { "op": "update", "id": "n35", "props": { "text": "41" } },
+        { "op": "update", "id": "n44", "props": { "text": "18.73M tok · $22.84 · 1 working · 612 calls" } },
+        { "op": "update", "id": "n42", "props": { "text": "5-hour 41% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.99M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.25 today" } },
+        { "op": "remove", "id": "n74" },
+        { "op": "create", "id": "n75", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n75"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.92 } } },
+        { "op": "update", "id": "n26", "props": { "text": "41.29M tok · $61.43 · 3 working · 1845 calls" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.41277055962836146 } } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.00M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.27 today" } },
+        { "op": "remove", "id": "n75" },
+        { "op": "create", "id": "n76", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n76"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9182763676833193 } } },
+        { "op": "update", "id": "n26", "props": { "text": "41.30M tok · $61.44 · 3 working · 1846 calls" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.4160845213036123 } } },
+        { "op": "update", "id": "n35", "props": { "text": "42" } },
+        { "op": "update", "id": "n44", "props": { "text": "18.74M tok · $22.84 · 1 working · 612 calls" } },
+        { "op": "update", "id": "n42", "props": { "text": "5-hour 42% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.01M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.29 today" } },
+        { "op": "remove", "id": "n76" },
+        { "op": "create", "id": "n77", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n77"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9131479122813215 } } },
+        { "op": "update", "id": "n17", "props": { "text": "91" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.31M tok · $61.46 · 3 working · 1846 calls" } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 91% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.41840660488739145 } } },
+        { "op": "update", "id": "n44", "props": { "text": "18.74M tok · $22.85 · 1 working · 612 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.02M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.30 today" } },
+        { "op": "remove", "id": "n77" },
+        { "op": "create", "id": "n78", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n78"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.9047409133863715 } } },
+        { "op": "update", "id": "n17", "props": { "text": "90" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.32M tok · $61.47 · 3 working · 1847 calls" } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 90% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.4197065384690153 } } },
+        { "op": "update", "id": "n44", "props": { "text": "18.74M tok · $22.85 · 1 working · 613 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.04M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.32 today" } },
+        { "op": "remove", "id": "n78" },
+        { "op": "create", "id": "n79", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n63", "children": ["n79"] },
+        { "op": "update", "id": "n13", "props": { "trim": { "to": 0.8932623792124926 } } },
+        { "op": "update", "id": "n17", "props": { "text": "89" } },
+        { "op": "update", "id": "n26", "props": { "text": "41.33M tok · $61.48 · 3 working · 1847 calls" } },
+        { "op": "update", "id": "n24", "props": { "text": "5-hour 89% · resets in 1h 36m" } },
+        { "op": "update", "id": "n31", "props": { "trim": { "to": 0.4199673754262551 } } },
+        { "op": "update", "id": "n44", "props": { "text": "18.75M tok · $22.86 · 1 working · 613 calls" } }
+      ]
+    ]
+  },
+  "bars-section": {
+    "initial": [
+      { "op": "create", "id": "n1", "type": "Panel", "props": { "style": "glass" } },
+      { "op": "create", "id": "n2", "type": "Group", "props": {} },
+      { "op": "create", "id": "n3", "type": "VStack", "props": { "spacing": 8 } },
+      { "op": "create", "id": "n4", "type": "HStack", "props": { "spacing": 6 } },
+      {
+        "op": "create",
+        "id": "n5",
+        "type": "Text",
+        "props": { "font": "title3", "monospaced": true, "weight": "semibold", "text": "59.90M" }
+      },
+      {
+        "op": "create",
+        "id": "n6",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "tokens · $84.10 today" }
+      },
+      { "op": "create", "id": "n7", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n4", "children": ["n5", "n6", "n7"] },
+      { "op": "create", "id": "n8", "type": "ForEach", "props": {} },
+      { "op": "create", "id": "n9", "type": "VStack", "props": { "spacing": 3, "transition": "pop" } },
+      { "op": "create", "id": "n10", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n11", "type": "Text", "props": { "font": "headline", "text": "Claude" } },
+      { "op": "create", "id": "n12", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n13", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n10", "children": ["n11", "n12", "n13"] },
+      { "op": "create", "id": "n14", "type": "HStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n15",
+        "type": "Text",
+        "props": { "text": "5h", "font": "caption2", "color": "tertiary" }
+      },
+      { "op": "create", "id": "n16", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n17",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 120, "height": 6 } }
+      },
+      { "op": "create", "id": "n18", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 120 } } },
+      {
+        "op": "create",
+        "id": "n19",
+        "type": "Capsule",
+        "props": {
+          "animation": "snappy",
+          "fill": "warning",
+          "frame": { "width": 93.60000000000001, "height": 6 },
+          "glow": null
+        }
+      },
+      { "op": "create", "id": "n20", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n18", "children": ["n19", "n20"] },
+      { "op": "children", "id": "n16", "children": ["n17", "n18"] },
+      { "op": "create", "id": "n21", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n14", "children": ["n15", "n16", "n21"] },
+      { "op": "create", "id": "n22", "type": "HStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n23",
+        "type": "Text",
+        "props": { "text": "wk", "font": "caption2", "color": "tertiary" }
+      },
+      { "op": "create", "id": "n24", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n25",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 120, "height": 6 } }
+      },
+      { "op": "create", "id": "n26", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 120 } } },
+      {
+        "op": "create",
+        "id": "n27",
+        "type": "Capsule",
+        "props": { "animation": "snappy", "fill": "success", "frame": { "width": 69.6, "height": 6 }, "glow": null }
+      },
+      { "op": "create", "id": "n28", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n26", "children": ["n27", "n28"] },
+      { "op": "children", "id": "n24", "children": ["n25", "n26"] },
+      { "op": "create", "id": "n29", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n22", "children": ["n23", "n24", "n29"] },
+      {
+        "op": "create",
+        "id": "n30",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "41.20M tok · $61.30 · 3 working" }
+      },
+      { "op": "children", "id": "n9", "children": ["n10", "n14", "n22", "n30"] },
+      { "op": "create", "id": "n31", "type": "VStack", "props": { "spacing": 3, "transition": "pop" } },
+      { "op": "create", "id": "n32", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n33", "type": "Text", "props": { "font": "headline", "text": "Codex" } },
+      { "op": "create", "id": "n34", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n35", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n32", "children": ["n33", "n34", "n35"] },
+      { "op": "create", "id": "n36", "type": "HStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n37",
+        "type": "Text",
+        "props": { "text": "5h", "font": "caption2", "color": "tertiary" }
+      },
+      { "op": "create", "id": "n38", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n39",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 120, "height": 6 } }
+      },
+      { "op": "create", "id": "n40", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 120 } } },
+      {
+        "op": "create",
+        "id": "n41",
+        "type": "Capsule",
+        "props": {
+          "animation": "snappy",
+          "fill": "success",
+          "frame": { "width": 40.800000000000004, "height": 6 },
+          "glow": null
+        }
+      },
+      { "op": "create", "id": "n42", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n40", "children": ["n41", "n42"] },
+      { "op": "children", "id": "n38", "children": ["n39", "n40"] },
+      { "op": "create", "id": "n43", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n36", "children": ["n37", "n38", "n43"] },
+      { "op": "create", "id": "n44", "type": "HStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n45",
+        "type": "Text",
+        "props": { "text": "wk", "font": "caption2", "color": "tertiary" }
+      },
+      { "op": "create", "id": "n46", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n47",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 120, "height": 6 } }
+      },
+      { "op": "create", "id": "n48", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 120 } } },
+      {
+        "op": "create",
+        "id": "n49",
+        "type": "Capsule",
+        "props": {
+          "animation": "snappy",
+          "fill": "warning",
+          "frame": { "width": 85.19999999999999, "height": 6 },
+          "glow": null
+        }
+      },
+      { "op": "create", "id": "n50", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n48", "children": ["n49", "n50"] },
+      { "op": "children", "id": "n46", "children": ["n47", "n48"] },
+      { "op": "create", "id": "n51", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n44", "children": ["n45", "n46", "n51"] },
+      {
+        "op": "create",
+        "id": "n52",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "18.70M tok · $22.80 · 1 working" }
+      },
+      { "op": "children", "id": "n31", "children": ["n32", "n36", "n44", "n52"] },
+      { "op": "create", "id": "n53", "type": "VStack", "props": { "spacing": 3, "transition": "pop" } },
+      { "op": "create", "id": "n54", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n55", "type": "Text", "props": { "font": "headline", "text": "Gemini" } },
+      { "op": "create", "id": "n56", "type": "Spacer", "props": {} },
+      {
+        "op": "create",
+        "id": "n57",
+        "type": "Badge",
+        "props": { "text": "no limits", "tone": "secondary", "loop": null }
+      },
+      { "op": "children", "id": "n54", "children": ["n55", "n56", "n57"] },
+      { "op": "create", "id": "n58", "type": "HStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n59",
+        "type": "Text",
+        "props": { "text": "5h", "font": "caption2", "color": "tertiary" }
+      },
+      { "op": "create", "id": "n60", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n61",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 120, "height": 6 } }
+      },
+      { "op": "create", "id": "n62", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 120 } } },
+      {
+        "op": "create",
+        "id": "n63",
+        "type": "Capsule",
+        "props": { "animation": "snappy", "fill": "separator", "frame": { "width": 6, "height": 6 }, "glow": null }
+      },
+      { "op": "create", "id": "n64", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n62", "children": ["n63", "n64"] },
+      { "op": "children", "id": "n60", "children": ["n61", "n62"] },
+      { "op": "create", "id": "n65", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n58", "children": ["n59", "n60", "n65"] },
+      { "op": "create", "id": "n66", "type": "HStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n67",
+        "type": "Text",
+        "props": { "text": "wk", "font": "caption2", "color": "tertiary" }
+      },
+      { "op": "create", "id": "n68", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n69",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 120, "height": 6 } }
+      },
+      { "op": "create", "id": "n70", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 120 } } },
+      {
+        "op": "create",
+        "id": "n71",
+        "type": "Capsule",
+        "props": { "animation": "snappy", "fill": "separator", "frame": { "width": 6, "height": 6 }, "glow": null }
+      },
+      { "op": "create", "id": "n72", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n70", "children": ["n71", "n72"] },
+      { "op": "children", "id": "n68", "children": ["n69", "n70"] },
+      { "op": "create", "id": "n73", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n66", "children": ["n67", "n68", "n73"] },
+      {
+        "op": "create",
+        "id": "n74",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "– tok · –" }
+      },
+      { "op": "children", "id": "n53", "children": ["n54", "n58", "n66", "n74"] },
+      { "op": "children", "id": "n8", "children": ["n9", "n31", "n53"] },
+      { "op": "create", "id": "n75", "type": "Text", "props": { "font": "caption", "color": "secondary", "text": "" } },
+      { "op": "children", "id": "n3", "children": ["n4", "n8", "n75"] },
+      { "op": "children", "id": "n2", "children": ["n3"] },
+      { "op": "children", "id": "n1", "children": ["n2"] },
+      { "op": "root", "id": "n1" }
+    ],
+    "steps": [
+      [
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 96.22809901267588, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.21M tok · $61.31 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 41.89431753494919, "height": 6 } } }
+      ],
+      [
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.12 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 98.79148550549911, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.22M tok · $61.33 · 3 working" } },
+        { "op": "update", "id": "n13", "props": { "text": "over pace ×1.2" } },
+        { "op": "update", "id": "n13", "props": { "tone": "warning" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 42.97436896728734, "height": 6 } } },
+        { "op": "update", "id": "n52", "props": { "text": "18.71M tok · $22.81 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.91M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.13 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 101.22704039562439, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.23M tok · $61.34 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 44.02607417486813, "height": 6 } } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.92M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.15 today" } },
+        { "op": "update", "id": "n19", "props": { "fill": "danger" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 103.47479223851354, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.24M tok · $61.35 · 3 working" } },
+        { "op": "update", "id": "n13", "props": { "text": "near limit" } },
+        { "op": "update", "id": "n13", "props": { "tone": "danger" } },
+        { "op": "update", "id": "n13", "props": { "loop": { "effect": "pulse" } } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 45.035722571934926, "height": 6 } } },
+        { "op": "update", "id": "n52", "props": { "text": "18.71M tok · $22.82 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.93M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.17 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 105.47939392393398, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.25M tok · $61.36 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 45.990151847573735, "height": 6 } } },
+        { "op": "update", "id": "n52", "props": { "text": "18.72M tok · $22.82 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.94M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.19 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 107.19148550549912, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.25M tok · $61.38 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 46.876919556565156, "height": 6 } } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.95M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.20 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 108.56890960636458, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.26M tok · $61.39 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 47.684465325686055, "height": 6 } } },
+        { "op": "update", "id": "n52", "props": { "text": "18.72M tok · $22.83 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.96M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.22 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 109.57774947375859, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.27M tok · $61.40 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 48.402261560853844, "height": 6 } } },
+        { "op": "update", "id": "n52", "props": { "text": "18.73M tok · $22.83 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.98M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.24 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 110.19316412199832, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.28M tok · $61.42 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 49.02095069041525, "height": 6 } } },
+        { "op": "update", "id": "n52", "props": { "text": "18.73M tok · $22.84 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.99M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.25 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 110.4, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.29M tok · $61.43 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 49.532467155403374, "height": 6 } } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.00M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.27 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 110.19316412199832, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.30M tok · $61.44 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 49.93014255643347, "height": 6 } } },
+        { "op": "update", "id": "n52", "props": { "text": "18.74M tok · $22.84 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.01M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.29 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 109.57774947375859, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.31M tok · $61.46 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 50.20879258648697, "height": 6 } } },
+        { "op": "update", "id": "n52", "props": { "text": "18.74M tok · $22.85 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.02M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.30 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 108.56890960636458, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.32M tok · $61.47 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 50.36478461628184, "height": 6 } } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.04M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.32 today" } },
+        { "op": "update", "id": "n19", "props": { "frame": { "width": 107.19148550549912, "height": 6 } } },
+        { "op": "update", "id": "n30", "props": { "text": "41.33M tok · $61.48 · 3 working" } },
+        { "op": "update", "id": "n41", "props": { "frame": { "width": 50.396085051150614, "height": 6 } } },
+        { "op": "update", "id": "n52", "props": { "text": "18.75M tok · $22.86 · 1 working" } }
+      ]
+    ]
+  },
+  "bars-pane": {
+    "initial": [
+      { "op": "create", "id": "n1", "type": "VStack", "props": { "spacing": 12, "padding": 16 } },
+      { "op": "create", "id": "n2", "type": "Group", "props": {} },
+      { "op": "create", "id": "n3", "type": "VStack", "props": { "spacing": 8 } },
+      { "op": "create", "id": "n4", "type": "HStack", "props": { "spacing": 6 } },
+      {
+        "op": "create",
+        "id": "n5",
+        "type": "Text",
+        "props": { "font": "largeTitle", "monospaced": true, "weight": "semibold", "text": "59.90M" }
+      },
+      {
+        "op": "create",
+        "id": "n6",
+        "type": "Text",
+        "props": { "font": "title3", "color": "secondary", "text": "tokens · $84.10 today" }
+      },
+      { "op": "create", "id": "n7", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n4", "children": ["n5", "n6", "n7"] },
+      { "op": "create", "id": "n8", "type": "ForEach", "props": {} },
+      { "op": "create", "id": "n9", "type": "HStack", "props": { "spacing": 16, "padding": 12, "transition": "pop" } },
+      { "op": "create", "id": "n10", "type": "VStack", "props": { "spacing": 6 } },
+      { "op": "create", "id": "n11", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n12",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 220, "height": 6 } }
+      },
+      { "op": "create", "id": "n13", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 220 } } },
+      {
+        "op": "create",
+        "id": "n14",
+        "type": "Capsule",
+        "props": { "animation": "snappy", "fill": "warning", "frame": { "width": 171.6, "height": 6 }, "glow": null }
+      },
+      { "op": "create", "id": "n15", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n13", "children": ["n14", "n15"] },
+      { "op": "children", "id": "n11", "children": ["n12", "n13"] },
+      { "op": "create", "id": "n16", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n17",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 220, "height": 6 } }
+      },
+      { "op": "create", "id": "n18", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 220 } } },
+      {
+        "op": "create",
+        "id": "n19",
+        "type": "Capsule",
+        "props": { "animation": "snappy", "fill": "success", "frame": { "width": 127.6, "height": 6 }, "glow": null }
+      },
+      { "op": "create", "id": "n20", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n18", "children": ["n19", "n20"] },
+      { "op": "children", "id": "n16", "children": ["n17", "n18"] },
+      { "op": "children", "id": "n10", "children": ["n11", "n16"] },
+      { "op": "create", "id": "n21", "type": "VStack", "props": { "spacing": 4 } },
+      { "op": "create", "id": "n22", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n23", "type": "Icon", "props": { "symbol": "gauge.with.needle", "color": "accent" } },
+      { "op": "create", "id": "n24", "type": "Text", "props": { "font": "title3", "text": "Claude" } },
+      { "op": "create", "id": "n25", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n26", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n22", "children": ["n23", "n24", "n25", "n26"] },
+      {
+        "op": "create",
+        "id": "n27",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "5-hour 78% · resets in 1h 36m" }
+      },
+      {
+        "op": "create",
+        "id": "n28",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "Week 58% · resets in 2d 4h" }
+      },
+      {
+        "op": "create",
+        "id": "n29",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "41.20M tok · $61.30 · 3 working · 1840 calls" }
+      },
+      { "op": "children", "id": "n21", "children": ["n22", "n27", "n28", "n29"] },
+      { "op": "children", "id": "n9", "children": ["n10", "n21"] },
+      { "op": "create", "id": "n30", "type": "HStack", "props": { "spacing": 16, "padding": 12, "transition": "pop" } },
+      { "op": "create", "id": "n31", "type": "VStack", "props": { "spacing": 6 } },
+      { "op": "create", "id": "n32", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n33",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 220, "height": 6 } }
+      },
+      { "op": "create", "id": "n34", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 220 } } },
+      {
+        "op": "create",
+        "id": "n35",
+        "type": "Capsule",
+        "props": {
+          "animation": "snappy",
+          "fill": "success",
+          "frame": { "width": 74.80000000000001, "height": 6 },
+          "glow": null
+        }
+      },
+      { "op": "create", "id": "n36", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n34", "children": ["n35", "n36"] },
+      { "op": "children", "id": "n32", "children": ["n33", "n34"] },
+      { "op": "create", "id": "n37", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n38",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 220, "height": 6 } }
+      },
+      { "op": "create", "id": "n39", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 220 } } },
+      {
+        "op": "create",
+        "id": "n40",
+        "type": "Capsule",
+        "props": { "animation": "snappy", "fill": "warning", "frame": { "width": 156.2, "height": 6 }, "glow": null }
+      },
+      { "op": "create", "id": "n41", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n39", "children": ["n40", "n41"] },
+      { "op": "children", "id": "n37", "children": ["n38", "n39"] },
+      { "op": "children", "id": "n31", "children": ["n32", "n37"] },
+      { "op": "create", "id": "n42", "type": "VStack", "props": { "spacing": 4 } },
+      { "op": "create", "id": "n43", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n44", "type": "Icon", "props": { "symbol": "gauge.with.needle", "color": "accent" } },
+      { "op": "create", "id": "n45", "type": "Text", "props": { "font": "title3", "text": "Codex" } },
+      { "op": "create", "id": "n46", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n47", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n43", "children": ["n44", "n45", "n46", "n47"] },
+      {
+        "op": "create",
+        "id": "n48",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "5-hour 34% · resets in 3h 12m" }
+      },
+      {
+        "op": "create",
+        "id": "n49",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "Week 71% · resets in 20h 0m" }
+      },
+      {
+        "op": "create",
+        "id": "n50",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "18.70M tok · $22.80 · 1 working · 610 calls" }
+      },
+      { "op": "children", "id": "n42", "children": ["n43", "n48", "n49", "n50"] },
+      { "op": "children", "id": "n30", "children": ["n31", "n42"] },
+      { "op": "create", "id": "n51", "type": "HStack", "props": { "spacing": 16, "padding": 12, "transition": "pop" } },
+      { "op": "create", "id": "n52", "type": "VStack", "props": { "spacing": 6 } },
+      { "op": "create", "id": "n53", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n54",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 220, "height": 6 } }
+      },
+      { "op": "create", "id": "n55", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 220 } } },
+      {
+        "op": "create",
+        "id": "n56",
+        "type": "Capsule",
+        "props": { "animation": "snappy", "fill": "separator", "frame": { "width": 6, "height": 6 }, "glow": null }
+      },
+      { "op": "create", "id": "n57", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n55", "children": ["n56", "n57"] },
+      { "op": "children", "id": "n53", "children": ["n54", "n55"] },
+      { "op": "create", "id": "n58", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n59",
+        "type": "Capsule",
+        "props": { "fill": "separator", "frame": { "width": 220, "height": 6 } }
+      },
+      { "op": "create", "id": "n60", "type": "HStack", "props": { "spacing": 0, "frame": { "width": 220 } } },
+      {
+        "op": "create",
+        "id": "n61",
+        "type": "Capsule",
+        "props": { "animation": "snappy", "fill": "separator", "frame": { "width": 6, "height": 6 }, "glow": null }
+      },
+      { "op": "create", "id": "n62", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n60", "children": ["n61", "n62"] },
+      { "op": "children", "id": "n58", "children": ["n59", "n60"] },
+      { "op": "children", "id": "n52", "children": ["n53", "n58"] },
+      { "op": "create", "id": "n63", "type": "VStack", "props": { "spacing": 4 } },
+      { "op": "create", "id": "n64", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n65", "type": "Icon", "props": { "symbol": "gauge.with.needle", "color": "accent" } },
+      { "op": "create", "id": "n66", "type": "Text", "props": { "font": "title3", "text": "Gemini" } },
+      { "op": "create", "id": "n67", "type": "Spacer", "props": {} },
+      {
+        "op": "create",
+        "id": "n68",
+        "type": "Badge",
+        "props": { "text": "no limits", "tone": "secondary", "loop": null }
+      },
+      { "op": "children", "id": "n64", "children": ["n65", "n66", "n67", "n68"] },
+      {
+        "op": "create",
+        "id": "n69",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "5-hour not reported" }
+      },
+      {
+        "op": "create",
+        "id": "n70",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "Week not reported" }
+      },
+      {
+        "op": "create",
+        "id": "n71",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "– tok · – · – calls" }
+      },
+      { "op": "children", "id": "n63", "children": ["n64", "n69", "n70", "n71"] },
+      { "op": "children", "id": "n51", "children": ["n52", "n63"] },
+      { "op": "children", "id": "n8", "children": ["n9", "n30", "n51"] },
+      { "op": "create", "id": "n72", "type": "Group", "props": {} },
+      { "op": "create", "id": "n73", "type": "Text", "props": { "color": "warning", "text": "" } },
+      { "op": "children", "id": "n72", "children": ["n73"] },
+      { "op": "children", "id": "n3", "children": ["n4", "n8", "n72"] },
+      { "op": "children", "id": "n2", "children": ["n3"] },
+      { "op": "create", "id": "n74", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n1", "children": ["n2", "n74"] },
+      { "op": "root", "id": "n1" }
+    ],
+    "steps": [
+      [
+        { "op": "remove", "id": "n73" },
+        { "op": "create", "id": "n75", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n75"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 176.4181815232391, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.21M tok · $61.31 · 3 working · 1841 calls" } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 80% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 76.80624881407351, "height": 6 } } },
+        { "op": "update", "id": "n48", "props": { "text": "5-hour 35% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.12 today" } },
+        { "op": "remove", "id": "n75" },
+        { "op": "create", "id": "n76", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n76"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 181.11772342674837, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.22M tok · $61.33 · 3 working · 1841 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "over pace ×1.2" } },
+        { "op": "update", "id": "n26", "props": { "tone": "warning" } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 82% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 78.78634310669345, "height": 6 } } },
+        { "op": "update", "id": "n50", "props": { "text": "18.71M tok · $22.81 · 1 working · 610 calls" } },
+        { "op": "update", "id": "n48", "props": { "text": "5-hour 36% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.91M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.13 today" } },
+        { "op": "remove", "id": "n76" },
+        { "op": "create", "id": "n77", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n77"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 185.58290739197804, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.23M tok · $61.34 · 3 working · 1842 calls" } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 84% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 80.71446932059158, "height": 6 } } },
+        { "op": "update", "id": "n50", "props": { "text": "18.71M tok · $22.81 · 1 working · 611 calls" } },
+        { "op": "update", "id": "n48", "props": { "text": "5-hour 37% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.92M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.15 today" } },
+        { "op": "remove", "id": "n77" },
+        { "op": "create", "id": "n78", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n78"] },
+        { "op": "update", "id": "n14", "props": { "fill": "danger" } },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 189.70378577060816, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.24M tok · $61.35 · 3 working · 1842 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "near limit" } },
+        { "op": "update", "id": "n26", "props": { "tone": "danger" } },
+        { "op": "update", "id": "n26", "props": { "loop": { "effect": "pulse" } } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 86% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 82.5654913818807, "height": 6 } } },
+        { "op": "update", "id": "n50", "props": { "text": "18.71M tok · $22.82 · 1 working · 611 calls" } },
+        { "op": "update", "id": "n48", "props": { "text": "5-hour 38% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.93M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.17 today" } },
+        { "op": "remove", "id": "n78" },
+        { "op": "create", "id": "n79", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n79"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 193.37888886054563, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.25M tok · $61.36 · 3 working · 1843 calls" } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 88% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 84.31527838721851, "height": 6 } } },
+        { "op": "update", "id": "n50", "props": { "text": "18.72M tok · $22.82 · 1 working · 611 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.94M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.19 today" } },
+        { "op": "remove", "id": "n79" },
+        { "op": "create", "id": "n80", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n80"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 196.51772342674838, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.25M tok · $61.38 · 3 working · 1843 calls" } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 89% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 85.94101918703612, "height": 6 } } },
+        { "op": "update", "id": "n48", "props": { "text": "5-hour 39% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.95M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.20 today" } },
+        { "op": "remove", "id": "n80" },
+        { "op": "create", "id": "n81", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n81"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 199.04300094500172, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.26M tok · $61.39 · 3 working · 1844 calls" } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 90% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 87.42151976375777, "height": 6 } } },
+        { "op": "update", "id": "n50", "props": { "text": "18.72M tok · $22.83 · 1 working · 611 calls" } },
+        { "op": "update", "id": "n48", "props": { "text": "5-hour 40% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.96M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.22 today" } },
+        { "op": "remove", "id": "n81" },
+        { "op": "create", "id": "n82", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n82"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 200.89254070189074, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.27M tok · $61.40 · 3 working · 1844 calls" } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 91% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 88.73747952823204, "height": 6 } } },
+        { "op": "update", "id": "n50", "props": { "text": "18.73M tok · $22.83 · 1 working · 612 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.98M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.24 today" } },
+        { "op": "remove", "id": "n82" },
+        { "op": "create", "id": "n83", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n83"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 202.02080089033026, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.28M tok · $61.42 · 3 working · 1845 calls" } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 92% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 89.87174293242795, "height": 6 } } },
+        { "op": "update", "id": "n50", "props": { "text": "18.73M tok · $22.84 · 1 working · 612 calls" } },
+        { "op": "update", "id": "n48", "props": { "text": "5-hour 41% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "59.99M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.25 today" } },
+        { "op": "remove", "id": "n83" },
+        { "op": "create", "id": "n84", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n84"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 202.4, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.29M tok · $61.43 · 3 working · 1845 calls" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 90.80952311823953, "height": 6 } } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.00M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.27 today" } },
+        { "op": "remove", "id": "n84" },
+        { "op": "create", "id": "n85", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n85"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 202.02080089033026, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.30M tok · $61.44 · 3 working · 1846 calls" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 91.53859468679471, "height": 6 } } },
+        { "op": "update", "id": "n50", "props": { "text": "18.74M tok · $22.84 · 1 working · 612 calls" } },
+        { "op": "update", "id": "n48", "props": { "text": "5-hour 42% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.01M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.29 today" } },
+        { "op": "remove", "id": "n85" },
+        { "op": "create", "id": "n86", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n86"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 200.89254070189074, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.31M tok · $61.46 · 3 working · 1846 calls" } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 91% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 92.04945307522613, "height": 6 } } },
+        { "op": "update", "id": "n50", "props": { "text": "18.74M tok · $22.85 · 1 working · 612 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.02M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.30 today" } },
+        { "op": "remove", "id": "n86" },
+        { "op": "create", "id": "n87", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n87"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 199.04300094500172, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.32M tok · $61.47 · 3 working · 1847 calls" } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 90% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 92.33543846318337, "height": 6 } } },
+        { "op": "update", "id": "n50", "props": { "text": "18.74M tok · $22.85 · 1 working · 613 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n5", "props": { "text": "60.04M" } },
+        { "op": "update", "id": "n6", "props": { "text": "tokens · $84.32 today" } },
+        { "op": "remove", "id": "n87" },
+        { "op": "create", "id": "n88", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n72", "children": ["n88"] },
+        { "op": "update", "id": "n14", "props": { "frame": { "width": 196.51772342674838, "height": 6 } } },
+        { "op": "update", "id": "n29", "props": { "text": "41.33M tok · $61.48 · 3 working · 1847 calls" } },
+        { "op": "update", "id": "n27", "props": { "text": "5-hour 89% · resets in 1h 36m" } },
+        { "op": "update", "id": "n35", "props": { "frame": { "width": 92.39282259377613, "height": 6 } } },
+        { "op": "update", "id": "n50", "props": { "text": "18.75M tok · $22.86 · 1 working · 613 calls" } }
+      ]
+    ]
+  },
+  "neon-section": {
+    "initial": [
+      { "op": "create", "id": "n1", "type": "Panel", "props": { "style": "glass" } },
+      { "op": "create", "id": "n2", "type": "Group", "props": {} },
+      {
+        "op": "create",
+        "id": "n3",
+        "type": "ZStack",
+        "props": { "gradient": { "colors": ["#14102AE6", "#2A1240E6"], "angle": 135 }, "cornerRadius": 12 }
+      },
+      { "op": "create", "id": "n4", "type": "Particles", "props": { "preset": "embers", "opacity": 0.5, "rate": 1 } },
+      { "op": "create", "id": "n5", "type": "VStack", "props": { "spacing": 8, "padding": 10 } },
+      { "op": "create", "id": "n6", "type": "HStack", "props": { "spacing": 6 } },
+      {
+        "op": "create",
+        "id": "n7",
+        "type": "Text",
+        "props": { "font": "title3", "monospaced": true, "weight": "semibold", "text": "59.90M" }
+      },
+      {
+        "op": "create",
+        "id": "n8",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "tokens · $84.10 today" }
+      },
+      { "op": "create", "id": "n9", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n6", "children": ["n7", "n8", "n9"] },
+      { "op": "create", "id": "n10", "type": "ForEach", "props": {} },
+      { "op": "create", "id": "n11", "type": "HStack", "props": { "spacing": 8, "transition": "pop" } },
+      { "op": "create", "id": "n12", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n13", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n14",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 30, "height": 30 } }
+      },
+      {
+        "op": "create",
+        "id": "n15",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 30, "height": 30 },
+          "animation": "snappy",
+          "stroke": "warning",
+          "trim": { "to": 0.78 },
+          "glow": { "color": "warning", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n13", "children": ["n14", "n15"] },
+      { "op": "create", "id": "n16", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n17",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 18, "height": 18 } }
+      },
+      {
+        "op": "create",
+        "id": "n18",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 18, "height": 18 },
+          "animation": "snappy",
+          "stroke": "success",
+          "trim": { "to": 0.58 },
+          "glow": { "color": "success", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n16", "children": ["n17", "n18"] },
+      {
+        "op": "create",
+        "id": "n19",
+        "type": "Text",
+        "props": { "font": "caption2", "monospaced": true, "text": "78" }
+      },
+      { "op": "children", "id": "n12", "children": ["n13", "n16", "n19"] },
+      { "op": "create", "id": "n20", "type": "VStack", "props": { "spacing": 1 } },
+      { "op": "create", "id": "n21", "type": "Text", "props": { "font": "headline", "text": "Claude" } },
+      {
+        "op": "create",
+        "id": "n22",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "lineLimit": 1, "text": "41.20M tok · $61.30 · 3 working" }
+      },
+      { "op": "children", "id": "n20", "children": ["n21", "n22"] },
+      { "op": "create", "id": "n23", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n24", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n11", "children": ["n12", "n20", "n23", "n24"] },
+      { "op": "create", "id": "n25", "type": "HStack", "props": { "spacing": 8, "transition": "pop" } },
+      { "op": "create", "id": "n26", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n27", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n28",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 30, "height": 30 } }
+      },
+      {
+        "op": "create",
+        "id": "n29",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 30, "height": 30 },
+          "animation": "snappy",
+          "stroke": "success",
+          "trim": { "to": 0.34 },
+          "glow": { "color": "success", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n27", "children": ["n28", "n29"] },
+      { "op": "create", "id": "n30", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n31",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 18, "height": 18 } }
+      },
+      {
+        "op": "create",
+        "id": "n32",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 18, "height": 18 },
+          "animation": "snappy",
+          "stroke": "warning",
+          "trim": { "to": 0.71 },
+          "glow": { "color": "warning", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n30", "children": ["n31", "n32"] },
+      {
+        "op": "create",
+        "id": "n33",
+        "type": "Text",
+        "props": { "font": "caption2", "monospaced": true, "text": "34" }
+      },
+      { "op": "children", "id": "n26", "children": ["n27", "n30", "n33"] },
+      { "op": "create", "id": "n34", "type": "VStack", "props": { "spacing": 1 } },
+      { "op": "create", "id": "n35", "type": "Text", "props": { "font": "headline", "text": "Codex" } },
+      {
+        "op": "create",
+        "id": "n36",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "lineLimit": 1, "text": "18.70M tok · $22.80 · 1 working" }
+      },
+      { "op": "children", "id": "n34", "children": ["n35", "n36"] },
+      { "op": "create", "id": "n37", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n38", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n25", "children": ["n26", "n34", "n37", "n38"] },
+      { "op": "create", "id": "n39", "type": "HStack", "props": { "spacing": 8, "transition": "pop" } },
+      { "op": "create", "id": "n40", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n41", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n42",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 30, "height": 30 } }
+      },
+      {
+        "op": "create",
+        "id": "n43",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 30, "height": 30 },
+          "animation": "snappy",
+          "stroke": "separator",
+          "trim": { "to": 0 },
+          "glow": { "color": "separator", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n41", "children": ["n42", "n43"] },
+      { "op": "create", "id": "n44", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n45",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 3, "frame": { "width": 18, "height": 18 } }
+      },
+      {
+        "op": "create",
+        "id": "n46",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 3,
+          "frame": { "width": 18, "height": 18 },
+          "animation": "snappy",
+          "stroke": "separator",
+          "trim": { "to": 0 },
+          "glow": { "color": "separator", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n44", "children": ["n45", "n46"] },
+      { "op": "create", "id": "n47", "type": "Text", "props": { "font": "caption2", "monospaced": true, "text": "–" } },
+      { "op": "children", "id": "n40", "children": ["n41", "n44", "n47"] },
+      { "op": "create", "id": "n48", "type": "VStack", "props": { "spacing": 1 } },
+      { "op": "create", "id": "n49", "type": "Text", "props": { "font": "headline", "text": "Gemini" } },
+      {
+        "op": "create",
+        "id": "n50",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "lineLimit": 1, "text": "– tok · –" }
+      },
+      { "op": "children", "id": "n48", "children": ["n49", "n50"] },
+      { "op": "create", "id": "n51", "type": "Spacer", "props": {} },
+      {
+        "op": "create",
+        "id": "n52",
+        "type": "Badge",
+        "props": { "text": "no limits", "tone": "secondary", "loop": null }
+      },
+      { "op": "children", "id": "n39", "children": ["n40", "n48", "n51", "n52"] },
+      { "op": "children", "id": "n10", "children": ["n11", "n25", "n39"] },
+      { "op": "create", "id": "n53", "type": "Text", "props": { "font": "caption", "color": "secondary", "text": "" } },
+      { "op": "children", "id": "n5", "children": ["n6", "n10", "n53"] },
+      { "op": "children", "id": "n3", "children": ["n4", "n5"] },
+      { "op": "children", "id": "n2", "children": ["n3"] },
+      { "op": "children", "id": "n1", "children": ["n2"] },
+      { "op": "root", "id": "n1" }
+    ],
+    "steps": [
+      [
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8019008251056323 } } },
+        { "op": "update", "id": "n19", "props": { "text": "80" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.21M tok · $61.31 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.34911931279124325 } } },
+        { "op": "update", "id": "n33", "props": { "text": "35" } }
+      ],
+      [
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.12 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8232623792124926 } } },
+        { "op": "update", "id": "n19", "props": { "text": "82" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.22M tok · $61.33 · 3 working" } },
+        { "op": "update", "id": "n24", "props": { "text": "over pace ×1.2" } },
+        { "op": "update", "id": "n24", "props": { "tone": "warning" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.35811974139406116 } } },
+        { "op": "update", "id": "n33", "props": { "text": "36" } },
+        { "op": "update", "id": "n36", "props": { "text": "18.71M tok · $22.81 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.91M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.13 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8435586699635366 } } },
+        { "op": "update", "id": "n19", "props": { "text": "84" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.23M tok · $61.34 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.3668839514572344 } } },
+        { "op": "update", "id": "n33", "props": { "text": "37" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.92M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.15 today" } },
+        { "op": "update", "id": "n15", "props": { "stroke": "danger" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8622899353209462 } } },
+        { "op": "update", "id": "n15", "props": { "glow": { "color": "danger", "radius": 8, "opacity": 0.8 } } },
+        { "op": "update", "id": "n19", "props": { "text": "86" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.24M tok · $61.35 · 3 working" } },
+        { "op": "update", "id": "n24", "props": { "text": "near limit" } },
+        { "op": "update", "id": "n24", "props": { "tone": "danger" } },
+        { "op": "update", "id": "n24", "props": { "loop": { "effect": "pulse" } } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.37529768809945774 } } },
+        { "op": "update", "id": "n33", "props": { "text": "38" } },
+        { "op": "update", "id": "n36", "props": { "text": "18.71M tok · $22.82 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.93M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.17 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8789949493661166 } } },
+        { "op": "update", "id": "n19", "props": { "text": "88" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.25M tok · $61.36 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.38325126539644777 } } },
+        { "op": "update", "id": "n36", "props": { "text": "18.72M tok · $22.82 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.94M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.19 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8932623792124926 } } },
+        { "op": "update", "id": "n19", "props": { "text": "89" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.25M tok · $61.38 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.3906409963047096 } } },
+        { "op": "update", "id": "n33", "props": { "text": "39" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.95M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.20 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9047409133863715 } } },
+        { "op": "update", "id": "n19", "props": { "text": "90" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.26M tok · $61.39 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.3973705443807171 } } },
+        { "op": "update", "id": "n33", "props": { "text": "40" } },
+        { "op": "update", "id": "n36", "props": { "text": "18.72M tok · $22.83 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.96M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.22 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9131479122813215 } } },
+        { "op": "update", "id": "n19", "props": { "text": "91" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.27M tok · $61.40 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.403352179673782 } } },
+        { "op": "update", "id": "n36", "props": { "text": "18.73M tok · $22.83 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.98M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.24 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9182763676833193 } } },
+        { "op": "update", "id": "n19", "props": { "text": "92" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.28M tok · $61.42 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.40850792242012707 } } },
+        { "op": "update", "id": "n33", "props": { "text": "41" } },
+        { "op": "update", "id": "n36", "props": { "text": "18.73M tok · $22.84 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.99M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.25 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.92 } } },
+        { "op": "update", "id": "n22", "props": { "text": "41.29M tok · $61.43 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.41277055962836146 } } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "60.00M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.27 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9182763676833193 } } },
+        { "op": "update", "id": "n22", "props": { "text": "41.30M tok · $61.44 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.4160845213036123 } } },
+        { "op": "update", "id": "n33", "props": { "text": "42" } },
+        { "op": "update", "id": "n36", "props": { "text": "18.74M tok · $22.84 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "60.01M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.29 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9131479122813215 } } },
+        { "op": "update", "id": "n19", "props": { "text": "91" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.31M tok · $61.46 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.41840660488739145 } } },
+        { "op": "update", "id": "n36", "props": { "text": "18.74M tok · $22.85 · 1 working" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "60.02M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.30 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9047409133863715 } } },
+        { "op": "update", "id": "n19", "props": { "text": "90" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.32M tok · $61.47 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.4197065384690153 } } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "60.04M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.32 today" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8932623792124926 } } },
+        { "op": "update", "id": "n19", "props": { "text": "89" } },
+        { "op": "update", "id": "n22", "props": { "text": "41.33M tok · $61.48 · 3 working" } },
+        { "op": "update", "id": "n29", "props": { "trim": { "to": 0.4199673754262551 } } },
+        { "op": "update", "id": "n36", "props": { "text": "18.75M tok · $22.86 · 1 working" } }
+      ]
+    ]
+  },
+  "neon-pane": {
+    "initial": [
+      { "op": "create", "id": "n1", "type": "VStack", "props": { "spacing": 12, "padding": 16 } },
+      { "op": "create", "id": "n2", "type": "Group", "props": {} },
+      {
+        "op": "create",
+        "id": "n3",
+        "type": "ZStack",
+        "props": { "gradient": { "colors": ["#14102AE6", "#2A1240E6"], "angle": 135 }, "cornerRadius": 12 }
+      },
+      { "op": "create", "id": "n4", "type": "Particles", "props": { "preset": "embers", "opacity": 0.5, "rate": 1 } },
+      { "op": "create", "id": "n5", "type": "VStack", "props": { "spacing": 8, "padding": 10 } },
+      { "op": "create", "id": "n6", "type": "HStack", "props": { "spacing": 6 } },
+      {
+        "op": "create",
+        "id": "n7",
+        "type": "Text",
+        "props": { "font": "largeTitle", "monospaced": true, "weight": "semibold", "text": "59.90M" }
+      },
+      {
+        "op": "create",
+        "id": "n8",
+        "type": "Text",
+        "props": { "font": "title3", "color": "secondary", "text": "tokens · $84.10 today" }
+      },
+      { "op": "create", "id": "n9", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n6", "children": ["n7", "n8", "n9"] },
+      { "op": "create", "id": "n10", "type": "ForEach", "props": {} },
+      { "op": "create", "id": "n11", "type": "HStack", "props": { "spacing": 16, "padding": 12, "transition": "pop" } },
+      { "op": "create", "id": "n12", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n13", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n14",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 96, "height": 96 } }
+      },
+      {
+        "op": "create",
+        "id": "n15",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 96, "height": 96 },
+          "animation": "snappy",
+          "stroke": "warning",
+          "trim": { "to": 0.78 },
+          "glow": { "color": "warning", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n13", "children": ["n14", "n15"] },
+      { "op": "create", "id": "n16", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n17",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 70, "height": 70 } }
+      },
+      {
+        "op": "create",
+        "id": "n18",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 70, "height": 70 },
+          "animation": "snappy",
+          "stroke": "success",
+          "trim": { "to": 0.58 },
+          "glow": { "color": "success", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n16", "children": ["n17", "n18"] },
+      { "op": "create", "id": "n19", "type": "Text", "props": { "font": "title2", "monospaced": true, "text": "78" } },
+      { "op": "children", "id": "n12", "children": ["n13", "n16", "n19"] },
+      { "op": "create", "id": "n20", "type": "VStack", "props": { "spacing": 4 } },
+      { "op": "create", "id": "n21", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n22", "type": "Icon", "props": { "symbol": "gauge.with.needle", "color": "accent" } },
+      { "op": "create", "id": "n23", "type": "Text", "props": { "font": "title3", "text": "Claude" } },
+      { "op": "create", "id": "n24", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n25", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n21", "children": ["n22", "n23", "n24", "n25"] },
+      {
+        "op": "create",
+        "id": "n26",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "5-hour 78% · resets in 1h 36m" }
+      },
+      {
+        "op": "create",
+        "id": "n27",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "Week 58% · resets in 2d 4h" }
+      },
+      {
+        "op": "create",
+        "id": "n28",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "41.20M tok · $61.30 · 3 working · 1840 calls" }
+      },
+      { "op": "children", "id": "n20", "children": ["n21", "n26", "n27", "n28"] },
+      { "op": "children", "id": "n11", "children": ["n12", "n20"] },
+      { "op": "create", "id": "n29", "type": "HStack", "props": { "spacing": 16, "padding": 12, "transition": "pop" } },
+      { "op": "create", "id": "n30", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n31", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n32",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 96, "height": 96 } }
+      },
+      {
+        "op": "create",
+        "id": "n33",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 96, "height": 96 },
+          "animation": "snappy",
+          "stroke": "success",
+          "trim": { "to": 0.34 },
+          "glow": { "color": "success", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n31", "children": ["n32", "n33"] },
+      { "op": "create", "id": "n34", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n35",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 70, "height": 70 } }
+      },
+      {
+        "op": "create",
+        "id": "n36",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 70, "height": 70 },
+          "animation": "snappy",
+          "stroke": "warning",
+          "trim": { "to": 0.71 },
+          "glow": { "color": "warning", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n34", "children": ["n35", "n36"] },
+      { "op": "create", "id": "n37", "type": "Text", "props": { "font": "title2", "monospaced": true, "text": "34" } },
+      { "op": "children", "id": "n30", "children": ["n31", "n34", "n37"] },
+      { "op": "create", "id": "n38", "type": "VStack", "props": { "spacing": 4 } },
+      { "op": "create", "id": "n39", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n40", "type": "Icon", "props": { "symbol": "gauge.with.needle", "color": "accent" } },
+      { "op": "create", "id": "n41", "type": "Text", "props": { "font": "title3", "text": "Codex" } },
+      { "op": "create", "id": "n42", "type": "Spacer", "props": {} },
+      { "op": "create", "id": "n43", "type": "Badge", "props": { "text": "on pace", "tone": "accent", "loop": null } },
+      { "op": "children", "id": "n39", "children": ["n40", "n41", "n42", "n43"] },
+      {
+        "op": "create",
+        "id": "n44",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "5-hour 34% · resets in 3h 12m" }
+      },
+      {
+        "op": "create",
+        "id": "n45",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "Week 71% · resets in 20h 0m" }
+      },
+      {
+        "op": "create",
+        "id": "n46",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "18.70M tok · $22.80 · 1 working · 610 calls" }
+      },
+      { "op": "children", "id": "n38", "children": ["n39", "n44", "n45", "n46"] },
+      { "op": "children", "id": "n29", "children": ["n30", "n38"] },
+      { "op": "create", "id": "n47", "type": "HStack", "props": { "spacing": 16, "padding": 12, "transition": "pop" } },
+      { "op": "create", "id": "n48", "type": "ZStack", "props": {} },
+      { "op": "create", "id": "n49", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n50",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 96, "height": 96 } }
+      },
+      {
+        "op": "create",
+        "id": "n51",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 96, "height": 96 },
+          "animation": "snappy",
+          "stroke": "separator",
+          "trim": { "to": 0 },
+          "glow": { "color": "separator", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n49", "children": ["n50", "n51"] },
+      { "op": "create", "id": "n52", "type": "ZStack", "props": {} },
+      {
+        "op": "create",
+        "id": "n53",
+        "type": "Circle",
+        "props": { "stroke": "separator", "strokeWidth": 10, "frame": { "width": 70, "height": 70 } }
+      },
+      {
+        "op": "create",
+        "id": "n54",
+        "type": "Circle",
+        "props": {
+          "strokeWidth": 10,
+          "frame": { "width": 70, "height": 70 },
+          "animation": "snappy",
+          "stroke": "separator",
+          "trim": { "to": 0 },
+          "glow": { "color": "separator", "radius": 8, "opacity": 0.8 }
+        }
+      },
+      { "op": "children", "id": "n52", "children": ["n53", "n54"] },
+      { "op": "create", "id": "n55", "type": "Text", "props": { "font": "title2", "monospaced": true, "text": "–" } },
+      { "op": "children", "id": "n48", "children": ["n49", "n52", "n55"] },
+      { "op": "create", "id": "n56", "type": "VStack", "props": { "spacing": 4 } },
+      { "op": "create", "id": "n57", "type": "HStack", "props": {} },
+      { "op": "create", "id": "n58", "type": "Icon", "props": { "symbol": "gauge.with.needle", "color": "accent" } },
+      { "op": "create", "id": "n59", "type": "Text", "props": { "font": "title3", "text": "Gemini" } },
+      { "op": "create", "id": "n60", "type": "Spacer", "props": {} },
+      {
+        "op": "create",
+        "id": "n61",
+        "type": "Badge",
+        "props": { "text": "no limits", "tone": "secondary", "loop": null }
+      },
+      { "op": "children", "id": "n57", "children": ["n58", "n59", "n60", "n61"] },
+      {
+        "op": "create",
+        "id": "n62",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "5-hour not reported" }
+      },
+      {
+        "op": "create",
+        "id": "n63",
+        "type": "Text",
+        "props": { "font": "callout", "monospaced": true, "text": "Week not reported" }
+      },
+      {
+        "op": "create",
+        "id": "n64",
+        "type": "Text",
+        "props": { "font": "caption", "color": "secondary", "text": "– tok · – · – calls" }
+      },
+      { "op": "children", "id": "n56", "children": ["n57", "n62", "n63", "n64"] },
+      { "op": "children", "id": "n47", "children": ["n48", "n56"] },
+      { "op": "children", "id": "n10", "children": ["n11", "n29", "n47"] },
+      { "op": "create", "id": "n65", "type": "Group", "props": {} },
+      { "op": "create", "id": "n66", "type": "Text", "props": { "color": "warning", "text": "" } },
+      { "op": "children", "id": "n65", "children": ["n66"] },
+      { "op": "children", "id": "n5", "children": ["n6", "n10", "n65"] },
+      { "op": "children", "id": "n3", "children": ["n4", "n5"] },
+      { "op": "children", "id": "n2", "children": ["n3"] },
+      { "op": "create", "id": "n67", "type": "Spacer", "props": {} },
+      { "op": "children", "id": "n1", "children": ["n2", "n67"] },
+      { "op": "root", "id": "n1" }
+    ],
+    "steps": [
+      [
+        { "op": "remove", "id": "n66" },
+        { "op": "create", "id": "n68", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n68"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8019008251056323 } } },
+        { "op": "update", "id": "n19", "props": { "text": "80" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.21M tok · $61.31 · 3 working · 1841 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 80% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.34911931279124325 } } },
+        { "op": "update", "id": "n37", "props": { "text": "35" } },
+        { "op": "update", "id": "n44", "props": { "text": "5-hour 35% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.12 today" } },
+        { "op": "remove", "id": "n68" },
+        { "op": "create", "id": "n69", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n69"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8232623792124926 } } },
+        { "op": "update", "id": "n19", "props": { "text": "82" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.22M tok · $61.33 · 3 working · 1841 calls" } },
+        { "op": "update", "id": "n25", "props": { "text": "over pace ×1.2" } },
+        { "op": "update", "id": "n25", "props": { "tone": "warning" } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 82% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.35811974139406116 } } },
+        { "op": "update", "id": "n37", "props": { "text": "36" } },
+        { "op": "update", "id": "n46", "props": { "text": "18.71M tok · $22.81 · 1 working · 610 calls" } },
+        { "op": "update", "id": "n44", "props": { "text": "5-hour 36% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.91M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.13 today" } },
+        { "op": "remove", "id": "n69" },
+        { "op": "create", "id": "n70", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n70"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8435586699635366 } } },
+        { "op": "update", "id": "n19", "props": { "text": "84" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.23M tok · $61.34 · 3 working · 1842 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 84% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.3668839514572344 } } },
+        { "op": "update", "id": "n37", "props": { "text": "37" } },
+        { "op": "update", "id": "n46", "props": { "text": "18.71M tok · $22.81 · 1 working · 611 calls" } },
+        { "op": "update", "id": "n44", "props": { "text": "5-hour 37% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.92M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.15 today" } },
+        { "op": "remove", "id": "n70" },
+        { "op": "create", "id": "n71", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n71"] },
+        { "op": "update", "id": "n15", "props": { "stroke": "danger" } },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8622899353209462 } } },
+        { "op": "update", "id": "n15", "props": { "glow": { "color": "danger", "radius": 8, "opacity": 0.8 } } },
+        { "op": "update", "id": "n19", "props": { "text": "86" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.24M tok · $61.35 · 3 working · 1842 calls" } },
+        { "op": "update", "id": "n25", "props": { "text": "near limit" } },
+        { "op": "update", "id": "n25", "props": { "tone": "danger" } },
+        { "op": "update", "id": "n25", "props": { "loop": { "effect": "pulse" } } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 86% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.37529768809945774 } } },
+        { "op": "update", "id": "n37", "props": { "text": "38" } },
+        { "op": "update", "id": "n46", "props": { "text": "18.71M tok · $22.82 · 1 working · 611 calls" } },
+        { "op": "update", "id": "n44", "props": { "text": "5-hour 38% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.93M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.17 today" } },
+        { "op": "remove", "id": "n71" },
+        { "op": "create", "id": "n72", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n72"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8789949493661166 } } },
+        { "op": "update", "id": "n19", "props": { "text": "88" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.25M tok · $61.36 · 3 working · 1843 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 88% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.38325126539644777 } } },
+        { "op": "update", "id": "n46", "props": { "text": "18.72M tok · $22.82 · 1 working · 611 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.94M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.19 today" } },
+        { "op": "remove", "id": "n72" },
+        { "op": "create", "id": "n73", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n73"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8932623792124926 } } },
+        { "op": "update", "id": "n19", "props": { "text": "89" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.25M tok · $61.38 · 3 working · 1843 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 89% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.3906409963047096 } } },
+        { "op": "update", "id": "n37", "props": { "text": "39" } },
+        { "op": "update", "id": "n44", "props": { "text": "5-hour 39% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.95M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.20 today" } },
+        { "op": "remove", "id": "n73" },
+        { "op": "create", "id": "n74", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n74"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9047409133863715 } } },
+        { "op": "update", "id": "n19", "props": { "text": "90" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.26M tok · $61.39 · 3 working · 1844 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 90% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.3973705443807171 } } },
+        { "op": "update", "id": "n37", "props": { "text": "40" } },
+        { "op": "update", "id": "n46", "props": { "text": "18.72M tok · $22.83 · 1 working · 611 calls" } },
+        { "op": "update", "id": "n44", "props": { "text": "5-hour 40% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.96M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.22 today" } },
+        { "op": "remove", "id": "n74" },
+        { "op": "create", "id": "n75", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n75"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9131479122813215 } } },
+        { "op": "update", "id": "n19", "props": { "text": "91" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.27M tok · $61.40 · 3 working · 1844 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 91% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.403352179673782 } } },
+        { "op": "update", "id": "n46", "props": { "text": "18.73M tok · $22.83 · 1 working · 612 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.98M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.24 today" } },
+        { "op": "remove", "id": "n75" },
+        { "op": "create", "id": "n76", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n76"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9182763676833193 } } },
+        { "op": "update", "id": "n19", "props": { "text": "92" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.28M tok · $61.42 · 3 working · 1845 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 92% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.40850792242012707 } } },
+        { "op": "update", "id": "n37", "props": { "text": "41" } },
+        { "op": "update", "id": "n46", "props": { "text": "18.73M tok · $22.84 · 1 working · 612 calls" } },
+        { "op": "update", "id": "n44", "props": { "text": "5-hour 41% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "59.99M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.25 today" } },
+        { "op": "remove", "id": "n76" },
+        { "op": "create", "id": "n77", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n77"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.92 } } },
+        { "op": "update", "id": "n28", "props": { "text": "41.29M tok · $61.43 · 3 working · 1845 calls" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.41277055962836146 } } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "60.00M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.27 today" } },
+        { "op": "remove", "id": "n77" },
+        { "op": "create", "id": "n78", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n78"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9182763676833193 } } },
+        { "op": "update", "id": "n28", "props": { "text": "41.30M tok · $61.44 · 3 working · 1846 calls" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.4160845213036123 } } },
+        { "op": "update", "id": "n37", "props": { "text": "42" } },
+        { "op": "update", "id": "n46", "props": { "text": "18.74M tok · $22.84 · 1 working · 612 calls" } },
+        { "op": "update", "id": "n44", "props": { "text": "5-hour 42% · resets in 3h 12m" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "60.01M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.29 today" } },
+        { "op": "remove", "id": "n78" },
+        { "op": "create", "id": "n79", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n79"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9131479122813215 } } },
+        { "op": "update", "id": "n19", "props": { "text": "91" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.31M tok · $61.46 · 3 working · 1846 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 91% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.41840660488739145 } } },
+        { "op": "update", "id": "n46", "props": { "text": "18.74M tok · $22.85 · 1 working · 612 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "60.02M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.30 today" } },
+        { "op": "remove", "id": "n79" },
+        { "op": "create", "id": "n80", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n80"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.9047409133863715 } } },
+        { "op": "update", "id": "n19", "props": { "text": "90" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.32M tok · $61.47 · 3 working · 1847 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 90% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.4197065384690153 } } },
+        { "op": "update", "id": "n46", "props": { "text": "18.74M tok · $22.85 · 1 working · 613 calls" } }
+      ],
+      [
+        { "op": "update", "id": "n7", "props": { "text": "60.04M" } },
+        { "op": "update", "id": "n8", "props": { "text": "tokens · $84.32 today" } },
+        { "op": "remove", "id": "n80" },
+        { "op": "create", "id": "n81", "type": "Text", "props": { "color": "warning", "text": "" } },
+        { "op": "children", "id": "n65", "children": ["n81"] },
+        { "op": "update", "id": "n15", "props": { "trim": { "to": 0.8932623792124926 } } },
+        { "op": "update", "id": "n19", "props": { "text": "89" } },
+        { "op": "update", "id": "n28", "props": { "text": "41.33M tok · $61.48 · 3 working · 1847 calls" } },
+        { "op": "update", "id": "n26", "props": { "text": "5-hour 89% · resets in 1h 36m" } },
+        { "op": "update", "id": "n33", "props": { "trim": { "to": 0.4199673754262551 } } },
+        { "op": "update", "id": "n46", "props": { "text": "18.75M tok · $22.86 · 1 working · 613 calls" } }
+      ]
+    ]
+  }
+}
