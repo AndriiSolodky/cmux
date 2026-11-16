@@ -132,8 +132,12 @@ test("a push of 300 reply chunks is stored, not reduced, in the task that got it
     expect(chat.pane.lastSeq).toBe(from);
     expect(manual.pendingFrames()).toBe(1);
     await manual.frame();
-    // One frame: the reply's first chunk alone, the other 299 as one, one snapshot.
+    // One slice: the reply's first chunk alone, the other 299 as one. The slice draws nothing itself:
+    // one snapshot, in the one display frame asked for.
     expect(chat.reduces()).toBe(2);
+    expect(chat.snapshots() - before).toBe(0);
+    expect(frames.length).toBe(1);
+    for (const run of frames.splice(0)) run();
     expect(chat.snapshots() - before).toBe(1);
     // Every record is held, by its own seq.
     expect(chat.pane.lastSeq).toBe(from + 300);

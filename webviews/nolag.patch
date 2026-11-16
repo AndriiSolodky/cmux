@@ -1,0 +1,11 @@
+--- a/webviews/src/agent-session/acpmux/direct.ts
++++ b/webviews/src/agent-session/acpmux/direct.ts
+@@ -5208,7 +5208,7 @@
+       // output while the person types) is folded at once past INGEST_MAX_LAG_MS, so what is drawn
+       // never falls further behind than that and the queue never grows without end.
+       const oldest = this.ingestQueue[this.ingestHead];
+-      if (oldest && now - oldest.at > INGEST_MAX_LAG_MS) this.drainIngest();
++      if (oldest && now - oldest.at > INGEST_MAX_LAG_MS * 1e9) this.drainIngest();
+       else lanes.frame(this.ingestKey, (slice) => this.drainIngest(slice));
+       return;
+     }
