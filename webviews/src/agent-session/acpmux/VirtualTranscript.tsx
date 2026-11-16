@@ -684,6 +684,16 @@ function rememberSentPromptId(ids: Set<string>, id: string): void {
 }
 /// How long after a row arrived its room still counts as the arrival: the passes that measure it.
 const ARRIVAL_PASS_MS = 100;
+/// How many rows at the end of `after` are the very objects at the end of `before`, at most `limit`
+/// (the rows a front scan already matched are not counted twice). An older page lands above the rows
+/// held: they keep their objects, so the walks below that read only new rows skip them with a pointer
+/// compare each instead of a key per row (a 100k-row chat paid three such walks per page).
+function sameTail(before: readonly AcpmuxRow[], after: readonly AcpmuxRow[], limit: number): number {
+  let same = 0;
+  while (same < limit && after[after.length - 1 - same] === before[before.length - 1 - same]) same += 1;
+  return same;
+}
+
 function arrivedAtTail(before: readonly AcpmuxRow[], after: readonly AcpmuxRow[]): boolean {
   if (before.length !== after.length) return true;
   for (let index = after.length - 1; index >= Math.max(0, after.length - ARRIVAL_TAIL); index -= 1) {
@@ -2699,7 +2709,10 @@ function TranscriptView({
     // the last rows did not end with came now, with the prompt that opened it, so it enters on the
     // send's clock with the prompt (conversation.css SEND-ENTRANCE). O(1): the last rows' tail only.
     const liveBefore = previous.at(-1)?.below ? rowFrameKey(previous.at(-1)!) : undefined;
-    for (let index = from; index < rows.length; index += 1) {
+    // The rows after the last one that changed were there last time too, as the same objects (an older
+    // page lands above them): all known, the live line among them (its key is `liveBefore`).
+    const end = rows.length - sameTail(previous, rows, Math.min(rows.length, previous.length) - from);
+    for (let index = from; index < end; index += 1) {
       const row = rows[index]!;
       const key = rowFrameKey(row);
       // A row that takes over a frame on screen (OrderedRows `adoptFrames`) is drawn all the same.
@@ -2746,7 +2759,11 @@ function TranscriptView({
     const last = committedRows.current?.drawn === chatRowsDrawn ? committedRows.current.rows : NO_ROWS;
     let from = 0;
     while (from < rows.length && from < last.length && rows[from] === last[from]) from += 1;
-    for (let index = from; index < rows.length; index += 1) chatRowsDrawn.add(drawnKey(rows[index]!));
+    // The record keeps only its newest `kept` rows, in row order: rows before the last `kept` would go
+    // again within this same walk, so they are not walked (an older page lands at index 0, and walking
+    // the whole held chat for it was O(rows) per page).
+    for (let index = Math.max(from, rows.length - chatRowsDrawn.kept); index < rows.length; index += 1)
+      chatRowsDrawn.add(drawnKey(rows[index]!));
     committedRows.current = { drawn: chatRowsDrawn, rows };
   }, [rows, chatRowsDrawn]);
   const onEntered = useCallback((id: string) => void enteringRows.current.delete(id), []);
@@ -3172,6 +3189,10 @@ function TranscriptView({
       // every streamed snapshot. Only the changed suffix can have lost a row id.
       const change = rowsChange.current;
       const start = change?.base === previous && change.rows === rows ? change.from : 0;
+      // An older page landed above every row held: the rows held before are the same objects at the
+      // end, so none left. One pointer compare each, where the id walk below stops at the first row
+      // and forgot nothing for a whole-chat id set (O(rows) per page).
+      if (sameTail(previous, rows, Math.min(rows.length, previous.length) - start) === previous.length - start) return;
       let sameIds = true;
       for (let index = Math.min(start, previous.length - line); index < previous.length - line; index += 1) {
         if (previous[index]!.id !== rows[index]?.id) {
@@ -6614,12 +6635,14 @@ function TranscriptView({
     olderAsking.current = true;
     const ask = ++olderAsk.current;
     const askedAt = performance.now();
+    window.__cmuxOlderTrace?.("ask", askedAt, ask);
     // A page that lands changes the key in the commit it brings, and the check after it asks for
     // the next. An ask that brought nothing (a read that failed, or one the client dropped) leaves
     // the key as it was: ask once more a moment later, as long as the view is still near the top.
     // At the very top no scroll event comes to ask for it, and a check on every render would ask
     // on every streamed chunk (Leo 2026-10-21: a 720-turn chat stopped paging for good).
     const settled = () => {
+      window.__cmuxOlderTrace?.("settled", performance.now(), ask);
       if (ask !== olderAsk.current) return;
       olderAsking.current = false;
       clearTimeout(olderRecheck.current);
