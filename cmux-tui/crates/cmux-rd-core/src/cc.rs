@@ -68,6 +68,8 @@ const BURST_ARRIVAL_US: i64 = 5_000;
 const MAX_BURST_US: i64 = 100_000;
 /// Groups in the trend window.
 const TREND_WINDOW: usize = 20;
+/// The slope is fitted once this many groups are in the window (fewer is noise).
+const TREND_MIN_POINTS: usize = 8;
 const TREND_SMOOTHING: f64 = 0.9;
 const TREND_GAIN: f64 = 4.0;
 /// The adaptive threshold on the modified trend, in milliseconds.
@@ -204,7 +206,7 @@ impl Trendline {
             self.history.pop_front();
         }
         let prev_trend = self.trend;
-        if self.history.len() == TREND_WINDOW {
+        if self.history.len() >= TREND_MIN_POINTS {
             if let Some(slope) = slope(&self.history) {
                 self.trend = slope;
             }
@@ -531,9 +533,12 @@ impl CongestionController {
         };
         let sending_more = self.sent_bps(now_us).is_some_and(|sent| sent > 1.2 * acked);
         if acked < 0.5 * target && !sending_more {
-            // Our own traffic is far under the target and all of it gets through (a
-            // quiet screen): the queue is not ours to drain, and cutting would only
-            // start the next motion low.
+            // Our own traffic is far under the target and all of it gets through (a quiet
+            // screen): the throughput says nothing about the path's capacity. A queue that
+            // still grows (the trend filter qualified it) is someone else's; step down from
+            // the target, not to our small throughput, so the next motion does not start low.
+            self.target_bps = (target * BETA) as u64;
+            self.last_decrease_us = Some(now_us);
             return;
         }
         self.capacity_bps = Some(match self.capacity_bps {
@@ -560,7 +565,7 @@ impl CongestionController {
             }
         }
         let growth = match self.capacity_bps {
-            Some(c) if target < 0.7 * c => RECOVER_GROWTH_PER_S,
+            Some(c) if target < 0.85 * c => RECOVER_GROWTH_PER_S,
             Some(c) if target <= 1.5 * c => NEAR_GROWTH_PER_S,
             _ => {
                 // Well over the last measured capacity without a queue: it moved.
