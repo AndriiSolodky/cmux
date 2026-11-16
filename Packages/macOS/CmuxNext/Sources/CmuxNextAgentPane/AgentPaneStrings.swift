@@ -265,7 +265,7 @@ extension AgentPaneView {
     /// types would reach the agent as an unverified sender's until the identity reconnects.
     static var personUnprovenMessage: String {
         String(localized: "agentPane.personUnproven.message",
-               defaultValue: "Not verified as you. Reconnecting your identity to the agent service…",
+               defaultValue: "Your identity is not verified. Wait before sending a message.",
                bundle: .module)
     }
 

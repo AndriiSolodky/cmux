@@ -15,7 +15,6 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { DaemonSocket, type DaemonAuth } from "../shared/daemonSocket";
 import type { Strings } from "../shared/i18n";
 import { OWNER_SENTENCE, userMessage } from "../shared/userMessage";
-import { useLasting } from "../../ui/lasting";
 import "./DaemonGate.css";
 
 const storageKey = (url: string) => `cmux.daemon.credential:${url}`;
@@ -268,19 +267,12 @@ export function DaemonGate({
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- resume is rebuilt each render; the effect runs once per endpoint.
   }, [url, source.kind]);
 
-  // Connecting (a launch, the daemon or this build's Chief starting or restarting, a dropped link):
-  // nothing shows while the retries can still outlast it. Only one that lasts past the grace is
-  // said, as one muted line: the last attempt's reason, never in red, since the retries go on.
-  const lasting = useLasting(phase.kind === "connecting");
+  // Automatic reconnects stay silent; final credential/setup refusals below keep their action.
   // A new store per connection: the key remounts the page on every reconnect.
   if (phase.kind === "ready")
     return <Fragment key={phase.generation}>{children(phase.daemon, phase.pages, phase.owner)}</Fragment>;
   if (phase.kind === "connecting")
-    return (
-      <section className="hc-gate" aria-busy="true">
-        {lasting && <output className="hc-gate-line">{phase.note ?? t("connect.connecting")}</output>}
-      </section>
-    );
+    return <section className="hc-gate" aria-busy="true" />;
   return (
     <section className="hc-gate" aria-labelledby="hc-gate-title">
       <h1 id="hc-gate-title">{t("connect.title")}</h1>

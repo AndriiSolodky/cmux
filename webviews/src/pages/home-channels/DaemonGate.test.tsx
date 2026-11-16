@@ -77,7 +77,7 @@ const starting: DaemonSource = {
   load: () => Promise.reject(pageError("cmux.protocol.unavailable", "Starting this build's Chief…", true)),
 };
 
-test("a daemon still starting shows nothing, then one muted line once it lasts", async () => {
+test("a daemon still starting stays silent while automatic retries continue", async () => {
   const container = installDom();
   jest.useFakeTimers();
   root = createRoot(container);
@@ -94,9 +94,8 @@ test("a daemon still starting shows nothing, then one muted line once it lasts",
   expect(container.querySelector(".hc-gate-error")).toBeNull();
   await act(async () => void jest.advanceTimersByTime(1));
   const lines = container.querySelectorAll(".hc-gate-line");
-  expect(lines).toHaveLength(1);
-  // The host words this one for the person; it is said as is.
-  expect(lines[0]!.textContent).toBe("Starting this build's Chief…");
+  expect(lines).toHaveLength(0);
+  expect(container.textContent).toBe("");
   expect(container.querySelector(".hc-gate-error")).toBeNull();
   expect(container.querySelector("h1")).toBeNull();
 });

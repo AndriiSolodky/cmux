@@ -345,6 +345,10 @@ export function useCmuxClient() {
     setConfig({ ...next, token: next.token || undefined });
   }, []);
 
+  const retryConnection = useCallback(() => {
+    setConfig((current) => (current ? { ...current } : current));
+  }, []);
+
   const runMutation = useCallback(
     async (mutation: (client: CmuxClient) => Promise<unknown>) => {
       if (!state.client) return false;
@@ -474,6 +478,7 @@ export function useCmuxClient() {
     active: activeScreen(view),
     toasts,
     connect,
+    retryConnection,
     selectScreen,
     selectPane,
     selectTab,

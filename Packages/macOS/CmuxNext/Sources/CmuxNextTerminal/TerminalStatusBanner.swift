@@ -241,7 +241,7 @@ final class TerminalStatusBanner: NSView {
     /// "Disconnected: …" shows only after `disconnectedRevealDelay`: a daemon restart drops every
     /// pane's link, and a click, a key or the link back re-attaches within it, so a drop that heals
     /// at once never flashes the label on every pane.
-    static let disconnectedRevealDelay: CFTimeInterval = 1.5
+    static let disconnectedRevealDelay: CFTimeInterval = 10
     /// A new pane's "Starting…" mark shows only after `startingRevealDelay`: the daemon confirms a
     /// split or a tab well within it, so the usual one never shows a mark.
     static let startingRevealDelay: CFTimeInterval = 1
@@ -300,7 +300,7 @@ final class TerminalStatusBanner: NSView {
         strings: ModuleResourceBundle = .terminal
     ) -> String? {
         if let stall = shownStall(status, stall) {
-            return stallText(stall, strings: strings)
+            return stall == .reconnecting ? nil : stallText(stall, strings: strings)
         }
         if case .exited = status, hostLoss != nil, let cause,
            let detail = causeText(cause, strings: strings),
@@ -311,7 +311,7 @@ final class TerminalStatusBanner: NSView {
         case .connected:
             return nil
         case .restoring:
-            return strings.text("terminal.link.restoring", defaultValue: "Restoring…")
+            return nil
         case .starting:
             return strings.text("terminal.link.starting", defaultValue: "Starting…")
         case .exited:
@@ -334,7 +334,7 @@ final class TerminalStatusBanner: NSView {
         case .disconnected(.turnedOffByOrganization, _):
             return strings.text("terminal.link.turnedOffByOrganization", defaultValue: "Turned off by your organization")
         case .disconnected(_, reconnecting: true):
-            return strings.text("terminal.link.reconnecting", defaultValue: "Reconnecting…")
+            return nil
         case .disconnected(let cause, reconnecting: false):
             let reason = switch cause {
             case .streamEnded:

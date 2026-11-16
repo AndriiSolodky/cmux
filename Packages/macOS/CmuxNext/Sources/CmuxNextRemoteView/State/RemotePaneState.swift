@@ -83,8 +83,8 @@ public nonisolated struct RemotePaneState: Sendable, Hashable {
         }
     }
 
-    /// Reconnecting over the last frame, under the notice bound: nothing to say yet.
-    public var quietReconnect: Bool { reconnecting && !reconnectNoticeDue }
+    /// Automatic reconnect keeps the last frame until recovery or an actionable ended state.
+    public var quietReconnect: Bool { reconnecting }
 
     /// The "View only: high latency" banner with "Control Anyway".
     public var showsLatencyBanner: Bool {

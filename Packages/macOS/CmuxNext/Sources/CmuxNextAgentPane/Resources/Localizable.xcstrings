@@ -10135,7 +10135,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Not verified as you. Reconnecting your identity to the agent service…"
+            "value": "Your identity is not verified. Wait before sending a message."
           }
         },
         "es": {
