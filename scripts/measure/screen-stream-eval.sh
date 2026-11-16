@@ -157,6 +157,11 @@ work="$root/.build/screen-stream-eval"
 case "$prebuilt/" in
   "$out"/* | "$work"/*) echo "screen-stream-eval.sh: prebuilt= may not be inside $out or $work (the run removes both)" >&2; exit 2 ;;
 esac
+# A viewer that opens windows or posts input fights the person at a Mac they use (person_guard.py):
+# refuse before anything is removed or started. A tools-only build opens nothing.
+if [[ "$tools_only" != 1 ]]; then
+  python3 -I "$here/person_guard.py" check "$targets" || exit 2
+fi
 rm -rf "$out" "$work"
 mkdir -p "$out" "$work/bin"
 chmod 700 "$work"
