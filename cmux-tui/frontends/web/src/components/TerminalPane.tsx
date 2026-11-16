@@ -16,6 +16,7 @@ import { RenderTerminal } from "./RenderTerminal";
 
 interface TerminalPaneProps {
   client: CmuxClient | null;
+  connected?: boolean;
   clients: ClientInfo[];
   screen: ScreenView | null;
   onRefreshClients(): void;
@@ -121,6 +122,7 @@ interface PaneLeafProps extends Omit<TerminalPaneProps, "screen" | "onSetSplitRa
 
 function PaneLeaf({
   client,
+  connected = true,
   clients,
   pane,
   paneId,
@@ -173,7 +175,9 @@ function PaneLeaf({
     [client, surface],
   );
   const terminalError =
-    errorState !== null && errorState.client === client && errorState.surface === surface ? errorState.message : null;
+    connected && errorState !== null && errorState.client === client && errorState.surface === surface
+      ? errorState.message
+      : null;
   const commitPaneRename = () => {
     if (!renameCanCommit(rename)) return;
     onRenamePane(paneId, rename.value.trim());
@@ -677,7 +681,7 @@ export function TerminalPane({ screen, ...props }: TerminalPaneProps) {
   if (!screen) return <section className="terminal-empty terminal-root">{t("noSurface")}</section>;
   const node = layoutToViewModel(screen.layout, screen.zoomedPane, screen.activePane);
   return (
-    <div className="pane-layout">
+    <div className="pane-layout" inert={props.connected === false}>
       <LayoutNode {...props} node={node} screen={screen} paneById={paneById} />
     </div>
   );

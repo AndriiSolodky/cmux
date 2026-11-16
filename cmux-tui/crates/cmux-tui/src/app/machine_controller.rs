@@ -23,7 +23,63 @@ use crate::machine::{
     WorkspaceCreationPolicy,
 };
 
+const MACHINE_RECOVERY_NOTICE_DELAY: Duration = Duration::from_secs(10);
+
+pub(super) struct MachineRecovery {
+    machine: Option<MachineKey>,
+    started: Instant,
+    failed: bool,
+    notified: bool,
+}
+
 impl App {
+    pub(super) fn begin_machine_recovery(&mut self) {
+        self.machine_recovery.get_or_insert(MachineRecovery {
+            machine: self.machine_presented,
+            started: Instant::now(),
+            failed: false,
+            notified: false,
+        });
+    }
+
+    pub(super) fn clear_machine_recovery(&mut self) {
+        if self.machine_recovery.take().is_some_and(|recovery| recovery.notified)
+            && self.status_message.as_deref()
+                == Some(localization::catalog().runtime.session_transport_lost().as_str())
+        {
+            self.status_message = None;
+        }
+    }
+
+    /// The presented pane remains the last frame during automatic recovery.
+    /// A different machine or an explicit first connection keeps its own UI.
+    pub(crate) fn machine_has_recovery_frame(&self, machine: MachineKey) -> bool {
+        self.machine_presented == Some(machine)
+            && self
+                .machine_recovery
+                .as_ref()
+                .is_some_and(|recovery| recovery.machine == Some(machine))
+    }
+
+    pub(super) fn machine_recovery_notice_deadline(&self) -> Option<Instant> {
+        self.machine_recovery
+            .as_ref()
+            .filter(|recovery| recovery.failed && !recovery.notified)
+            .map(|recovery| recovery.started + MACHINE_RECOVERY_NOTICE_DELAY)
+    }
+
+    pub(super) fn show_machine_recovery_failure(&mut self, now: Instant) -> RenderAction {
+        if self.machine_recovery_notice_deadline().is_some_and(|deadline| now >= deadline) {
+            if let Some(recovery) = self.machine_recovery.as_mut() {
+                recovery.notified = true;
+            }
+            self.status_message = Some(localization::catalog().runtime.session_transport_lost());
+            RenderAction::Draw
+        } else {
+            RenderAction::None
+        }
+    }
+
     pub(crate) fn selected_machine(&self) -> Option<MachineKey> {
         self.machine_selection_intent.or(self.machine_presented)
     }
@@ -32,6 +88,9 @@ impl App {
         let selected = self.machine_selection_intent?;
         let ui = self.machine_ui.as_ref()?;
         if self.machine_presented == Some(selected) && ui.session_available {
+            return None;
+        }
+        if self.machine_has_recovery_frame(selected) {
             return None;
         }
         // Switching to a machine whose connection is already warm settles in
@@ -106,6 +165,10 @@ impl App {
     }
 
     pub(super) fn select_machine_intent(&mut self, machine: MachineKey) {
+        if self.machine_recovery.as_ref().is_some_and(|recovery| recovery.machine != Some(machine))
+        {
+            self.clear_machine_recovery();
+        }
         if self.machine_selection_intent != Some(machine) {
             self.cancel_pointer_interaction();
             self.machine_selection_generation =
@@ -231,6 +294,11 @@ impl App {
     }
 
     pub(super) fn process_machine_requests(&mut self) -> RenderAction {
+        let notice = self.show_machine_recovery_failure(Instant::now());
+        notice.merge(self.dispatch_machine_requests())
+    }
+
+    fn dispatch_machine_requests(&mut self) -> RenderAction {
         self.submit_pending_durable_notice_ack();
         if self.machine_action_in_flight {
             return RenderAction::None;
@@ -253,6 +321,9 @@ impl App {
         let Some(request) = self.machine_ui.as_mut().and_then(|ui| ui.request.take()) else {
             return RenderAction::None;
         };
+        if matches!(request, MachineRequest::ReconnectProvider) {
+            self.begin_machine_recovery();
+        }
         crate::client_log::info(
             "machine",
             &format!("dispatching machine request: {}", request.kind()),
@@ -310,6 +381,7 @@ impl App {
     }
 
     pub(super) fn schedule_machine_provider_reconnect(&mut self) {
+        self.begin_machine_recovery();
         self.machine_provider_reconnect_attempts =
             self.machine_provider_reconnect_attempts.saturating_add(1);
         let exponent = self
@@ -328,6 +400,7 @@ impl App {
     pub(super) fn clear_machine_provider_reconnect(&mut self) {
         self.machine_provider_reconnect_attempts = 0;
         self.machine_provider_reconnect_retry_at = None;
+        self.clear_machine_recovery();
     }
 
     fn connection_attempt_was_canceled(&self, attempt: Option<u64>) -> bool {
@@ -396,6 +469,15 @@ impl App {
         attempt: Option<u64>,
         message: String,
     ) {
+        if let Some(recovery) = self.machine_recovery.as_mut()
+            && (matches!(request, Some(MachineRequest::ReconnectProvider))
+                || matches!(request, Some(MachineRequest::Switch(machine)) if recovery.machine == Some(*machine)))
+        {
+            crate::client_log::info("reconnect", &message);
+            recovery.failed = true;
+            self.show_machine_recovery_failure(Instant::now());
+            return;
+        }
         let is_connection = matches!(request, Some(MachineRequest::Connect { .. }));
         let matched = self.fail_connection_transaction(request, attempt, message.clone());
         if !matched && (!is_connection || self.connection_transaction.is_none()) {

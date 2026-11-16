@@ -15,7 +15,6 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { DaemonSocket, type DaemonAuth } from "../shared/daemonSocket";
 import type { Strings } from "../shared/i18n";
 import { OWNER_SENTENCE, userMessage } from "../shared/userMessage";
-import { useLasting } from "../../ui/lasting";
 import "./DaemonGate.css";
 
 const storageKey = (url: string) => `cmux.daemon.credential:${url}`;
@@ -65,14 +64,16 @@ export interface HostCredential {
 /** Where the page's daemon comes from: a URL the person authenticates, or the hosting app. */
 export type DaemonSource = { kind: "url"; url: string } | { kind: "host"; load(): Promise<HostCredential> };
 
+type ReadyPhase = { kind: "ready"; daemon: DaemonSocket; owner?: DaemonSocket; generation: number; pages?: string };
+
 type Phase =
   | { kind: "form"; error?: string }
-  | { kind: "connecting"; note?: string }
+  | { kind: "connecting"; note?: string; previous?: ReadyPhase }
   | { kind: "pairing"; code: string }
   /** The host says this daemon cannot serve the page and cmux cannot fix it by itself: no retry
    *  loop. `restart` when restarting cmux-tui is the fix. */
   | { kind: "blocked"; error: string; restart?: boolean }
-  | { kind: "ready"; daemon: DaemonSocket; owner?: DaemonSocket; generation: number; pages?: string };
+  | ReadyPhase;
 
 const BACKOFF_MIN_MS = 500;
 const BACKOFF_MAX_MS = 10_000;
@@ -242,7 +243,11 @@ export function DaemonGate({
   /** Capped exponential backoff with jitter, one attempt in flight (spec transports.md "Reconnect"). */
   const retry = (note?: string) => {
     if (!live.current.mounted || live.current.daemon) return;
-    setPhase({ kind: "connecting", note });
+    setPhase((previous) => ({
+      kind: "connecting",
+      note,
+      previous: previous.kind === "ready" ? previous : previous.kind === "connecting" ? previous.previous : undefined,
+    }));
     const step = live.current.attempt++;
     const max = document.visibilityState === "visible" ? SHOWN_BACKOFF_MAX_MS : BACKOFF_MAX_MS;
     const delay = Math.min(max, BACKOFF_MIN_MS * 2 ** step) * (0.5 + Math.random() / 2);
@@ -268,19 +273,13 @@ export function DaemonGate({
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- resume is rebuilt each render; the effect runs once per endpoint.
   }, [url, source.kind]);
 
-  // Connecting (a launch, the daemon or this build's Chief starting or restarting, a dropped link):
-  // nothing shows while the retries can still outlast it. Only one that lasts past the grace is
-  // said, as one muted line: the last attempt's reason, never in red, since the retries go on.
-  const lasting = useLasting(phase.kind === "connecting");
+  // Automatic reconnects stay silent; final credential/setup refusals below keep their action.
   // A new store per connection: the key remounts the page on every reconnect.
-  if (phase.kind === "ready")
-    return <Fragment key={phase.generation}>{children(phase.daemon, phase.pages, phase.owner)}</Fragment>;
+  const ready = phase.kind === "ready" ? phase : phase.kind === "connecting" ? phase.previous : undefined;
+  if (ready)
+    return <Fragment key={ready.generation}>{children(ready.daemon, ready.pages, ready.owner)}</Fragment>;
   if (phase.kind === "connecting")
-    return (
-      <section className="hc-gate" aria-busy="true">
-        {lasting && <output className="hc-gate-line">{phase.note ?? t("connect.connecting")}</output>}
-      </section>
-    );
+    return <section className="hc-gate" aria-busy="true" />;
   return (
     <section className="hc-gate" aria-labelledby="hc-gate-title">
       <h1 id="hc-gate-title">{t("connect.title")}</h1>
