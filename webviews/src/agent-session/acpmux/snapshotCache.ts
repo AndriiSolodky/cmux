@@ -116,13 +116,10 @@ export function cachedSnapshot(): AcpmuxSnapshot {
     if (value?.type === "snapshot" && Array.isArray(value.rows) && Array.isArray(value.sessions)) {
       acpmuxPerf.markAgent("snapshotPaint");
       // `connection`, `drewKeptTail`, `chatRead` and `turnsEnded` are facts about a live client, and this one is
-      // restored: no client has drawn anything yet, so this document's first paint is its own to report. The prompt
-      // index is never restored: a copy saved by an older build holds it as rows, not columns, and a client reads
-      // it again.
+      // restored: no client has drawn anything yet, so this document's first paint is its own to report.
       return {
         ...emptySnapshot(),
         ...value,
-        earlierPrompts: undefined,
         connection: "connecting",
         drewKeptTail: undefined,
         chatRead: undefined,
