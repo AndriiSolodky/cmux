@@ -262,12 +262,16 @@ fn a_recovery_request_forces_a_keyframe_at_most_every_250_ms() {
 /// soon as the viewer can know it is lost.
 #[test]
 fn the_forced_recovery_interval_is_one_round_trip_plus_ten_ms() {
+    use cmux_rd_engine::MIN_FORCED_IDR_INTERVAL_US;
     let mut e = engine();
+    assert_eq!(e.recovery_interval_us(), MIN_FORCED_IDR_INTERVAL_US, "the ceiling until an RTT");
     let first = e.start(0).expect("first");
     send(&mut e, &first, true, 500, 0);
     // The ack 20 ms after the send measures the round trip.
     let ack = Feedback { acked_frame: first.frame, ..Feedback::default() };
     e.on_datagram(&feedback(&ack), true, 20_000);
+    assert_eq!(e.rtt_us(), Some(20_000));
+    assert_eq!(e.recovery_interval_us(), 30_000);
     let ask = feedback(&Feedback { need_recovery: true, ..ack.clone() });
     let idr = e.on_datagram(&ask, true, 40_000).encode.expect("recovery encode");
     assert!(idr.force_idr);
@@ -278,6 +282,19 @@ fn the_forced_recovery_interval_is_one_round_trip_plus_ten_ms() {
     // Past that, the recovery frame was lost too: another one goes out at once.
     let again = e.on_datagram(&ask, true, 70_000).encode.expect("a second recovery encode");
     assert!(again.force_idr);
+}
+
+/// The path's RTT from the carrier counts too, and the interval never goes
+/// under two frame intervals.
+#[test]
+fn rtt_sized_intervals_have_a_floor_of_two_frames() {
+    let mut e = engine();
+    e.update_frames_in_flight_from_rtt(Some(1_000));
+    assert_eq!(e.rtt_us(), Some(1_000));
+    assert_eq!(e.recovery_interval_us(), 2 * (1_000_000 / 60), "floor: two frames at 60 fps");
+    e.update_frames_in_flight_from_rtt(Some(400_000));
+    assert_eq!(e.recovery_interval_us(), cmux_rd_engine::MIN_FORCED_IDR_INTERVAL_US);
+    assert_eq!(e.tail_probe_us(), cmux_rd_engine::TAIL_PROBE_US);
 }
 
 #[test]
@@ -372,25 +389,27 @@ fn a_frame_lost_whole_is_resent_then_recovered_from_a_keyframe() {
         true,
         10_000,
     );
+    // The ack measured a 10 ms round trip: the probe waits two of them plus 10 ms, at least
+    // two frame intervals, not the 250 ms ceiling.
+    let probe_us = e.tail_probe_us();
+    assert_eq!(probe_us, 2 * (1_000_000 / 60));
+    assert!(probe_us < TAIL_PROBE_US);
     // A small P-frame of one datagram, which the path loses: the viewer sees nothing of it.
     let small = Rect { x: 1, y: 1, width: 10, height: 10 };
     let p = e.damage(0, small, 20_000).expect("second frame");
     let lost = send(&mut e, &p, false, 100, 20_000);
     assert_eq!(lost.len(), 1);
-    assert!(
-        e.tick(true, 20_000 + TAIL_PROBE_US - 1).datagrams.is_empty(),
-        "no probe before its time"
-    );
-    assert_eq!(e.next_deadline_us(), Some(20_000 + TAIL_PROBE_US));
+    assert!(e.tick(true, 20_000 + probe_us - 1).datagrams.is_empty(), "no probe before its time");
+    assert_eq!(e.next_deadline_us(), Some(20_000 + probe_us));
     let mut now = 20_000;
     for _ in 0..TAIL_PROBES {
-        now += TAIL_PROBE_US;
+        now += probe_us;
         let out = e.tick(true, now);
         assert_eq!(out.datagrams, lost, "the unacknowledged frame is resent");
         assert!(out.encode.is_none());
     }
     // Every probe lost too: the gate opens for a keyframe instead of waiting forever.
-    now += TAIL_PROBE_US;
+    now += probe_us;
     let out = e.tick(true, now);
     let idr = out.encode.expect("a recovery frame");
     assert!(idr.force_idr);
