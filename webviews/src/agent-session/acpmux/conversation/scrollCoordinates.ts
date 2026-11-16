@@ -37,9 +37,16 @@ export function writeAnchorScrollTop(node: ScrollCoordinateNode, desiredLogicalT
   return retainScrollOrigin(node, desiredLogicalTop);
 }
 
-/** Keep logical placement after an existing rounded physical write, without writing scrollTop again. */
-export function retainScrollOrigin(node: ScrollCoordinateNode, desiredLogicalTop: number): number {
-  const residual = node.scrollTop - desiredLogicalTop;
+/**
+ * Keep logical placement after an existing rounded physical write, without writing scrollTop again.
+ * `physicalTop`: where that write landed, when the caller already knows it (no read back).
+ */
+export function retainScrollOrigin(
+  node: ScrollCoordinateNode,
+  desiredLogicalTop: number,
+  physicalTop: number = node.scrollTop,
+): number {
+  const residual = physicalTop - desiredLogicalTop;
   if (!Number.isFinite(residual) || Math.abs(residual) > 1) {
     clearScrollOrigin(node);
     return 0;
