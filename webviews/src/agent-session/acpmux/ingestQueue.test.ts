@@ -37,8 +37,11 @@ function manualLanes() {
       throw error;
     },
   };
+  // The client's own display frames (`scheduleFrame`): drawn after the lane's slices, as in a browser.
+  let draws: (() => void)[] = [];
   return {
     lanes: createLanes(env),
+    scheduleFrame: (run: () => void) => void draws.push(run),
     advance: (ms: number) => (time += ms),
     pendingFrames: () => frames.length,
     async frame() {
@@ -46,6 +49,9 @@ function manualLanes() {
       frames = [];
       for (const cb of run) cb();
       while (tasks.length) tasks.shift()!();
+      const draw = draws;
+      draws = [];
+      for (const cb of draw) cb();
       await new Promise((resolve) => setTimeout(resolve, 0));
     },
   };
@@ -132,8 +138,12 @@ test("a push of 300 reply chunks is stored, not reduced, in the task that got it
     expect(chat.pane.lastSeq).toBe(from);
     expect(manual.pendingFrames()).toBe(1);
     await manual.frame();
-    // One frame: the reply's first chunk alone, the other 299 as one, one snapshot.
+    // One slice: the reply's first chunk alone, the other 299 as one. The slice draws nothing itself:
+    // one snapshot, in the one display frame asked for.
     expect(chat.reduces()).toBe(2);
+    expect(chat.snapshots() - before).toBe(0);
+    expect(frames.length).toBe(1);
+    for (const run of frames.splice(0)) run();
     expect(chat.snapshots() - before).toBe(1);
     // Every record is held, by its own seq.
     expect(chat.pane.lastSeq).toBe(from + 300);
@@ -154,7 +164,7 @@ test("a push of 300 reply chunks is stored, not reduced, in the task that got it
 test("the frame lane stops at its budget and goes on next frame; nothing is lost or reordered", async () => {
   const { AcpmuxDirectClient } = await import("./direct");
   const manual = manualLanes();
-  AcpmuxDirectClient.scheduleFrame = () => undefined;
+  AcpmuxDirectClient.scheduleFrame = manual.scheduleFrame;
   AcpmuxDirectClient.ingestLanes = manual.lanes;
   const chat = await openChat();
   try {
@@ -193,7 +203,7 @@ test("the frame lane stops at its budget and goes on next frame; nothing is lost
 test("a notification that is not a stream record applies after the records sent before it", async () => {
   const { AcpmuxDirectClient } = await import("./direct");
   const manual = manualLanes();
-  AcpmuxDirectClient.scheduleFrame = () => undefined;
+  AcpmuxDirectClient.scheduleFrame = manual.scheduleFrame;
   AcpmuxDirectClient.ingestLanes = manual.lanes;
   const chat = await openChat();
   try {
@@ -214,7 +224,7 @@ test("a notification that is not a stream record applies after the records sent 
 test("a duplicate record in a push is dropped as before, never folded ahead of the records before it", async () => {
   const { AcpmuxDirectClient } = await import("./direct");
   const manual = manualLanes();
-  AcpmuxDirectClient.scheduleFrame = () => undefined;
+  AcpmuxDirectClient.scheduleFrame = manual.scheduleFrame;
   AcpmuxDirectClient.ingestLanes = manual.lanes;
   const chat = await openChat();
   try {
@@ -242,7 +252,7 @@ test("a duplicate record in a push is dropped as before, never folded ahead of t
 test("a page that hides folds what it received at once", async () => {
   const { AcpmuxDirectClient } = await import("./direct");
   const manual = manualLanes();
-  AcpmuxDirectClient.scheduleFrame = () => undefined;
+  AcpmuxDirectClient.scheduleFrame = manual.scheduleFrame;
   AcpmuxDirectClient.ingestLanes = manual.lanes;
   const chat = await openChat();
   const doc = dom.window.document;
