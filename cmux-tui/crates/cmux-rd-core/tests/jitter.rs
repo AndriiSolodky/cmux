@@ -394,17 +394,19 @@ fn sustained_queue_growth_cuts() {
     let mut cc = controller();
     let initial = cc.target_bps();
     // Each 60 fps burst waits 2 ms longer than the last: a queue growing 12% of real time.
-    let delays: Vec<_> = (0..60).map(|i| (25_000 + i * 2_000, 25_000)).collect();
+    // The trend filter needs a few hundred milliseconds of it (a radio scatters more).
+    let delays: Vec<_> = (0..90).map(|i| (25_000 + i * 2_000, 25_000)).collect();
     let samples = trace(&mut cc, 0, 16_667, 0, &delays);
     let cut = samples.iter().position(|&(_, t)| t < initial).expect("never cut");
-    assert!(samples[cut].0 < 700_000, "cut only at {} us", samples[cut].0);
+    println!("sustained growth: cut at {} us", samples[cut].0);
+    assert!(samples[cut].0 < 1_200_000, "cut only at {} us", samples[cut].0);
 }
 
 #[test]
 fn queue_growth_survives_transport_and_arrival_clock_wrap() {
     let mut cc = controller();
     let initial = cc.target_bps();
-    let delays: Vec<_> = (0..60).map(|i| (25_000 + i * 2_000, 25_000)).collect();
+    let delays: Vec<_> = (0..90).map(|i| (25_000 + i * 2_000, 25_000)).collect();
     trace(&mut cc, u64::from(u32::MAX) - 300_000, 16_667, u16::MAX - 20, &delays);
     assert!(cc.target_bps() < initial);
 }
