@@ -18,6 +18,7 @@ enum MiscHandlerStrings {
     static var untitledScreen: String { String(localized: "handlers.misc.closed.untitledScreen", defaultValue: "Untitled Screen", table: "MiscHandlers", bundle: .module) }
     static var untitledWorkspace: String { String(localized: "handlers.misc.closed.untitledWorkspace", defaultValue: "Untitled Workspace", table: "MiscHandlers", bundle: .module) }
     static var cloud: String { String(localized: "handlers.misc.unavailable.cloud", defaultValue: "This version of cmux can't run this Cloud action. Update cmux, then try again.", table: "MiscHandlers", bundle: .module) }
+    static var notYet: String { String(localized: "handlers.misc.unavailable.notYet", defaultValue: "This version of cmux can't run this action yet. Update cmux, then try again.", table: "MiscHandlers", bundle: .module) }
     static var reactGrabFailed: String { String(localized: "handlers.misc.reactGrabFailed", defaultValue: "React Grab could not load on this page.", table: "MiscHandlers", bundle: .module) }
     /// A browser tab refused while `browser.enabled` is off.
     static var browserOff: String { String(localized: "handlers.misc.browserOff", defaultValue: "The cmux browser is off. Run Enable cmux Browser to open web pages in cmux.", table: "MiscHandlers", bundle: .module) }

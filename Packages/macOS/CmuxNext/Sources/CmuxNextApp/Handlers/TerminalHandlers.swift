@@ -17,6 +17,9 @@ enum TerminalHandlers {
         bindKeep(registry, ctx)
         bindCopyMode(registry, ctx)
         TextBoxHandlers.bind(into: registry, context: ctx)
+        // Catalog rows ahead of their handlers (#43840, FFI step A of #38590): unavailable until step B binds them.
+        let awaitingHandlers: Set<ActionID> = ["terminal.fixLastCommand", "terminal.sendLastOutputToChat", "terminal.sendSelectionToChat"]
+        registry.bindUnavailable(registry.unboundActionIDs(in: [.terminal]).filter(awaitingHandlers.contains), ActionFailure(message: MiscHandlerStrings.notYet))
     }
 
     /// Runs a Ghostty binding action on the targeted or focused terminal.
