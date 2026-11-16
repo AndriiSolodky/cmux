@@ -18,7 +18,7 @@ export function describe(code: number): { text: string; kind: Kind; partly: bool
   if (code === 3) return { text: "Overcast", kind: "cloudy", partly: false, heavy: false }
   if (code <= 48) return { text: "Fog", kind: "fog", partly: false, heavy: false }
   if (code <= 57) return { text: "Drizzle", kind: "rain", partly: false, heavy: false }
-  if (code <= 67) return { text: "Rain", kind: "rain", partly: false, heavy: code % 2 === 1 && code >= 63 }
+  if (code <= 67) return { text: "Rain", kind: "rain", partly: false, heavy: code === 65 || code === 67 }
   if (code <= 77) return { text: "Snow", kind: "snow", partly: false, heavy: code >= 75 }
   if (code <= 82) return { text: "Showers", kind: "rain", partly: false, heavy: code === 82 }
   if (code <= 86) return { text: "Snow showers", kind: "snow", partly: false, heavy: code === 86 }

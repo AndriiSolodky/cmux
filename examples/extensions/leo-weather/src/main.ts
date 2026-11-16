@@ -51,6 +51,8 @@ function load(): Promise<void> {
       setProblem(e?.code === "scope.missing" ? "Turn on network access for Leo weather in Settings > Apps." : e?.message ?? String(error))
     } finally {
       inflight = null
+      // The place changed while this read was out: read the new one.
+      if ((placeName() || (fromIP() ? "@ip" : "")) !== key) void load()
     }
   })()
   return inflight
