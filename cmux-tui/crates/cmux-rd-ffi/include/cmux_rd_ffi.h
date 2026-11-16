@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 /* Version of this ABI; bumped on every incompatible change. */
-#define CMUX_RD_FFI_ABI_VERSION 5u
+#define CMUX_RD_FFI_ABI_VERSION 6u
 
 /* Carriers. */
 #define CMUX_RD_CARRIER_DATAGRAM 0u
@@ -103,6 +103,7 @@ typedef struct CmuxRdStats {
     uint64_t frames_lost;
     uint32_t acked_frame;
     bool need_recovery;
+    uint64_t frames_skipped; /* frames a newer keyframe replaced on the ready queue (ABI 6) */
 } CmuxRdStats;
 
 /* One viewer input event. Fields the kind does not use are ignored. */
@@ -123,8 +124,10 @@ typedef struct CmuxRdInputEvent {
 
 uint32_t cmux_rd_ffi_abi_version(void);
 
-/* Returns NULL for an unknown carrier. deadline_us: how long a frame may wait
-   for missing shards; nack_after_us: how long before its gaps are NACKed. */
+/* Returns NULL for an unknown carrier. deadline_us: the longest a frame may
+   wait for missing shards (each is NACKed once and waited for one round trip
+   plus 10 ms, measured by the receiver; deadline_us caps that wait);
+   nack_after_us: how long before its gaps are NACKed. */
 CmuxRdReceiver *cmux_rd_receiver_new(uint32_t carrier, uint64_t deadline_us, uint64_t nack_after_us);
 void cmux_rd_receiver_free(CmuxRdReceiver *receiver);
 

@@ -289,11 +289,11 @@ fn missing_shards_wake_the_receiver_after_the_reorder_grace() {
     assert_eq!(fb.nacks[0].indexes, vec![0]);
     assert!(!fb.need_recovery);
     assert!(feedback(&r, 30_000).is_none(), "no same-tick retry loop");
-    assert!(feedback(&r, 79_999).is_none(), "a lost request retries on the feedback cadence");
-    let retry = decode_feedback(&feedback(&r, 80_000).expect("bounded NACK retry"));
-    assert_eq!(retry.nacks[0].indexes, vec![0]);
-    // The repair arrives one 50 ms RTT after the first request, before the
-    // 100 ms on-time frame deadline; no replacement keyframe is needed.
+    // Each shard is requested once: a lost request is not repeated, the
+    // frame is given up one repair window later and recovery requested.
+    assert!(feedback(&r, 80_000).is_none(), "no NACK retry");
+    // The repair arrives one 50 ms RTT after the request, inside the
+    // window (no RTT known yet: the 200 ms ceiling); no recovery is needed.
     push(&r, &sent[1].1[0], 80_000);
     let ready = pop_all(&r);
     assert_eq!(ready.len(), 1);
