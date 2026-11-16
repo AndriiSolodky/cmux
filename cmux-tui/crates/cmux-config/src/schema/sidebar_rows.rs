@@ -3,7 +3,9 @@
 //! shape checks the nesting and the token names; the reducer then resolves the layout as the app
 //! draws it, and every problem it reports (more than three lines, more than six text tokens on a
 //! line, the name off the first line, a repeated token) refuses the write. A value already in
-//! the file still draws: the reducer skips what it reports. One rule, one place.
+//! the file that the reducer reports a problem in reads as unset to `settings.list` and the
+//! effective value (the row's default), while the app still draws what the reducer keeps of it.
+//! One rule, one place.
 
 use cmux_layout_reducer::sidebar_row_layout::{Request, respond};
 use serde_json::{Value, json};
