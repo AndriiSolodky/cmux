@@ -1,0 +1,10 @@
+{ "envs": [["light","none"],["dark","none"]],
+  "shots": [
+    {"name":"all-rows-compact","entry":"pages.settings-row-layout","variant":"all-rows","opts":"density:compact","width":1000,"height":760,"deviceScaleFactor":2,"clip":"[data-row-layout-editor]"},
+    {"name":"all-rows-comfortable","entry":"pages.settings-row-layout","variant":"all-rows","opts":"density:comfortable","width":1000,"height":760,"deviceScaleFactor":2,"clip":"[data-row-layout-editor]"},
+    {"name":"item-switches","entry":"pages.settings-row-layout","variant":"item-switches","opts":"density:compact","width":1000,"height":760,"deviceScaleFactor":2,"clip":"[data-row-layout-editor]"},
+    {"name":"by-kind","entry":"pages.settings-row-layout","variant":"by-kind","opts":"density:comfortable","width":1000,"height":900,"deviceScaleFactor":2,"clip":"[data-row-layout-editor]"},
+    {"name":"by-agent","entry":"pages.settings-row-layout","variant":"by-agent","opts":"density:compact","width":1000,"height":900,"deviceScaleFactor":2,"clip":"[data-row-layout-editor]"},
+    {"name":"refused","entry":"pages.settings-row-layout","variant":"refused","opts":"density:compact","width":1000,"height":800,"deviceScaleFactor":2,"clip":"[data-row-layout-editor]"},
+    {"name":"full-narrow","entry":"pages.settings-row-layout","variant":"full","opts":"density:compact","width":480,"height":900,"deviceScaleFactor":2}
+  ] }
