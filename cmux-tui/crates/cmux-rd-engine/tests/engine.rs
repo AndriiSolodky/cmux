@@ -257,6 +257,29 @@ fn a_recovery_request_forces_a_keyframe_at_most_every_250_ms() {
     assert!(out.encode.is_none_or(|r| !r.force_idr), "a second forced keyframe within 250 ms");
 }
 
+/// Design D6: the forced-recovery interval is one round trip plus 10 ms, not
+/// a fixed 250 ms, so a recovery frame that is itself lost is replaced as
+/// soon as the viewer can know it is lost.
+#[test]
+fn the_forced_recovery_interval_is_one_round_trip_plus_ten_ms() {
+    let mut e = engine();
+    let first = e.start(0).expect("first");
+    send(&mut e, &first, true, 500, 0);
+    // The ack 20 ms after the send measures the round trip.
+    let ack = Feedback { acked_frame: first.frame, ..Feedback::default() };
+    e.on_datagram(&feedback(&ack), true, 20_000);
+    let ask = feedback(&Feedback { need_recovery: true, ..ack.clone() });
+    let idr = e.on_datagram(&ask, true, 40_000).encode.expect("recovery encode");
+    assert!(idr.force_idr);
+    send(&mut e, &idr, true, 500, 40_000);
+    // Requests sent before the recovery frame could arrive are answered by it.
+    let out = e.on_datagram(&ask, true, 69_999);
+    assert!(out.encode.is_none_or(|r| !r.force_idr), "a second recovery inside one RTT + 10 ms");
+    // Past that, the recovery frame was lost too: another one goes out at once.
+    let again = e.on_datagram(&ask, true, 70_000).encode.expect("a second recovery encode");
+    assert!(again.force_idr);
+}
+
 #[test]
 fn input_is_applied_once_and_acknowledged_and_refused_input_is_acknowledged_too() {
     let mut e = engine();
