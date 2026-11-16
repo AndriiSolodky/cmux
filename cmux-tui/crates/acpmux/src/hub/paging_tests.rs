@@ -917,3 +917,127 @@ fn subagent_page_perf() {
         std::fs::remove_dir_all(&root).ok();
     }
 }
+
+/// A chat as a Claude Code session logs it, `records` long: per turn a prompt, its start, the
+/// agent's thinking and reply as text deltas, tool calls whose results are bulky (2 to 40 KB of
+/// output), a usage update (no transcript record) and the turn's result.
+fn claude_chat(records: usize) -> Vec<EventRecord> {
+    let mut out = Vec::with_capacity(records + 64);
+    let mut seq = 0u64;
+    let mut turn = 0usize;
+    let mux = |seq: u64, kind: &str, msg: Value| EventRecord {
+        seq,
+        at: seq,
+        dir: "mux".into(),
+        kind: kind.into(),
+        msg,
+        host_seq: None,
+    };
+    let delta = |n: usize| format!("{} ", "word ".repeat(10 + n % 40));
+    while out.len() < records {
+        turn += 1;
+        let mut next = || {
+            seq += 1;
+            seq
+        };
+        let prompt = format!("prompt {turn}: {}", "please look at this ".repeat(1 + turn % 20));
+        out.push(mux(next(), "user_message", json!({"promptId": format!("p{turn}"), "text": prompt})));
+        out.push(mux(next(), "turn_started", json!({"turnId": format!("t{turn}")})));
+        for n in 0..8 {
+            out.push(agent(next(), "agent_thought_chunk", json!({"sessionUpdate": "agent_thought_chunk", "content": {"type": "text", "text": delta(n)}})));
+        }
+        for call in 0..3 {
+            let id = format!("toolu_{turn}_{call}");
+            out.push(agent(next(), "tool_call", json!({"sessionUpdate": "tool_call", "toolCallId": id, "title": "Bash", "kind": "execute", "status": "pending", "rawInput": {"command": format!("cargo test -p crate{call} -- --nocapture"), "description": "run the tests"}})));
+            out.push(agent(next(), "tool_call_update", json!({"sessionUpdate": "tool_call_update", "toolCallId": id, "status": "in_progress"})));
+            let size = 2_000 + (turn * 7919 + call * 104_729) % 38_000;
+            let mut output = String::with_capacity(size + 80);
+            let mut line = 0;
+            while output.len() < size {
+                line += 1;
+                output.push_str(&format!("test module::case_{line} ... ok {}\n", "-".repeat(line % 60)));
+            }
+            out.push(agent(next(), "tool_call_update", json!({"sessionUpdate": "tool_call_update", "toolCallId": id, "status": "completed", "rawOutput": {"stdout": output, "exit_code": 0}, "content": [{"type": "content", "content": {"type": "text", "text": output}}]})));
+            for n in 0..4 {
+                out.push(agent(next(), "agent_message_chunk", json!({"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": delta(n + call)}})));
+            }
+        }
+        for n in 0..12 {
+            out.push(agent(next(), "agent_message_chunk", json!({"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": delta(n)}})));
+        }
+        out.push(agent(next(), "usage_update", json!({"sessionUpdate": "usage_update", "used": turn * 1000, "size": 200_000})));
+        out.push(mux(next(), "turn_result", json!({"turnId": format!("t{turn}"), "stopReason": "end_turn"})));
+    }
+    out.truncate(records);
+    out
+}
+
+/// Older pages as the pane reads them while a reader scrolls up (webviews `direct.ts`
+/// `olderPage`: `limit` 2000, `maxBytes` 1 MiB, kinds transcript and the preset approvals) and at
+/// rest (400, 256 KiB), at 1k and 100k records, near the tail, the middle and the head: each page
+/// should cost its own records, not the chat's. Run with
+/// `cargo test -p acpmux --release --lib -- --ignored --nocapture older_page_scale_perf`.
+#[test]
+#[ignore = "a measurement, not a check"]
+fn older_page_scale_perf() {
+    let kinds = json!(["transcript", "preset_approval_request", "preset_approval_decision"]);
+    let filter = EventFilter::parse(Some(&kinds)).unwrap().omitting_superseded(true);
+    println!(
+        "| records | log MB | segments | read | position | beforeSeq | ms p50 | ms max | records | bytes | lines parsed | hasMore |"
+    );
+    println!("|---|---|---|---|---|---|---|---|---|---|---|---|");
+    for size in [1_000usize, 100_000] {
+        let root =
+            std::env::temp_dir().join(format!("acpmux-older-page-scale-{}", uuid::Uuid::now_v7()));
+        let sessions = root.join("sessions");
+        {
+            let writer = LocalStore::new(sessions.clone(), 8 << 20).unwrap();
+            writer.save(&meta("c")).unwrap();
+            for rec in claude_chat(size) {
+                writer.append("c", &rec).unwrap();
+            }
+            writer.flush().unwrap();
+        }
+        let events = sessions.join("c").join("events");
+        let (segments, log_bytes) = std::fs::read_dir(&events)
+            .unwrap()
+            .map(|e| e.unwrap().metadata().unwrap().len())
+            .fold((0usize, 0u64), |(n, b), len| (n + 1, b + len));
+        let hub = hub(Box::new(LocalStore::new(sessions.clone(), 8 << 20).unwrap()));
+        let last = size as u64;
+        // Near the tail (the first older page past an open), the middle, and near the head with a
+        // full page still below it.
+        let positions = [("tail", last - 50), ("middle", last / 2), ("head", 900u64.min(last))];
+        for (read, limit, max_bytes) in
+            [("scroll 2000/1MiB", 2000usize, 1usize << 20), ("rest 400/256KiB", 400, 256 << 10)]
+        {
+            for (position, before) in positions {
+                // One read to warm the page cache, as a reader's second page finds it.
+                hub.events_page("c", 0, Some(before), limit, Some(max_bytes), true, &filter)
+                    .unwrap();
+                let mut runs = Vec::new();
+                let (mut records, mut bytes, mut parsed, mut more) = (0, 0, 0, false);
+                for _ in 0..20 {
+                    let parsed_before = PARSED_LINES.with(std::cell::Cell::get);
+                    let started = std::time::Instant::now();
+                    let page = hub
+                        .events_page("c", 0, Some(before), limit, Some(max_bytes), true, &filter)
+                        .unwrap();
+                    runs.push(started.elapsed().as_secs_f64() * 1000.0);
+                    parsed = PARSED_LINES.with(std::cell::Cell::get) - parsed_before;
+                    records = page.events.len();
+                    bytes = serde_json::to_vec(&page.events).unwrap().len();
+                    more = page.has_more;
+                }
+                runs.sort_by(f64::total_cmp);
+                println!(
+                    "| {size} | {:.1} | {segments} | {read} | {position} | {before} | {:.2} | {:.2} | {records} | {bytes} | {parsed} | {more} |",
+                    log_bytes as f64 / 1e6,
+                    runs[runs.len() / 2],
+                    runs[runs.len() - 1],
+                );
+            }
+        }
+        std::fs::remove_dir_all(&root).ok();
+    }
+}
