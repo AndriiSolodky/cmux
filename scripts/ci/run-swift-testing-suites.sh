@@ -118,10 +118,14 @@ fi
 # matches it in any test target), so a fleet step can run one suite of a package
 # (cmux-ci run --env CMUX_SWIFT_TEST_SUITES=SidebarScrollCostTests). Every name
 # must be a suite the package lists: a typo fails, never a green run of nothing.
+# A name with `*` is a pattern over suite names (`*Sidebar*`), each matching
+# suite still in its own process: one `swift test --filter Sidebar` process
+# started about 250 GUI tests at once on one main thread and stalled until the
+# watchdog ended it (2026-11-15). A pattern that matches no suite fails too.
 only_suites=()
 if [ -n "${CMUX_SWIFT_TEST_SUITES:-}" ]; then
-  if ! [[ "$CMUX_SWIFT_TEST_SUITES" =~ ^[A-Za-z_][A-Za-z0-9_.]*(,[A-Za-z_][A-Za-z0-9_.]*)*$ ]]; then
-    echo "CMUX_SWIFT_TEST_SUITES must be comma-separated suite names, Suite or Target.Suite (got '$CMUX_SWIFT_TEST_SUITES')" >&2
+  if ! [[ "$CMUX_SWIFT_TEST_SUITES" =~ ^[A-Za-z_*][A-Za-z0-9_.*]*(,[A-Za-z_*][A-Za-z0-9_.*]*)*$ ]]; then
+    echo "CMUX_SWIFT_TEST_SUITES must be comma-separated suite names or * patterns, Suite or Target.Suite (got '$CMUX_SWIFT_TEST_SUITES')" >&2
     exit 2
   fi
   IFS=, read -r -a only_suites <<< "$CMUX_SWIFT_TEST_SUITES"
@@ -310,12 +314,19 @@ if [ "${#only_suites[@]}" -gt 0 ]; then
       plain="${filter#^}"
       plain="${plain%/}"
       plain="${plain//\\/}"
-      if [ "$plain" = "$name" ] || [ "${plain#*.}" = "$name" ]; then
+      # Unquoted on the right, a `*` in name is a glob (the format check above admits no other glob character).
+      # A bare name or pattern matches the suite part only, so `*Sidebar*` never takes a whole target whose
+      # name holds Sidebar; Target.Suite matches the whole name.
+      # shellcheck disable=SC2053
+      if [[ "$name" == *.* && "$plain" == $name ]] || [[ "${plain#*.}" == $name ]]; then
         grep -qxF -- "$filter" "$evidence_dir/named-filters.txt" || echo "$filter" >> "$evidence_dir/named-filters.txt"
         matched=1
       fi
     done < "$evidence_dir/filters.txt"
-    if [ "$matched" -eq 0 ]; then
+    if [ "$matched" -eq 0 ] && [[ "$name" == *"*"* ]]; then
+      echo "CMUX_SWIFT_TEST_SUITES pattern $name matches no suite of $package_path" >&2
+      exit 2
+    elif [ "$matched" -eq 0 ]; then
       echo "CMUX_SWIFT_TEST_SUITES names $name, which is not a suite of $package_path" >&2
       exit 2
     fi
