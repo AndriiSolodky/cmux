@@ -1,0 +1,124 @@
+--- a/webviews/src/agent-session/acpmux/VirtualTranscript.tsx
++++ b/webviews/src/agent-session/acpmux/VirtualTranscript.tsx
+@@ -300,7 +300,16 @@
+ ) => void;
+ 
+ /// Enqueues a row's pre-paint measurement after all sibling content layout effects have written.
+-type QueueDrawn = (node: HTMLElement, id: string, version: number, actions?: boolean, status?: string) => () => void;
++/// `versionOnly`: only the row's version changed since its last queue (a streamed token), which the
++/// row's ResizeObserver reports if it changed the row's size (queueDrawn).
++type QueueDrawn = (
++  node: HTMLElement,
++  id: string,
++  version: number,
++  actions?: boolean,
++  status?: string,
++  versionOnly?: boolean,
++) => () => void;
+ 
+ /// A mounted row's drawn height, or undefined when the page has not laid it out (an undisplayed
+ /// transcript, or a DOM without layout): such a box has no client rects. A laid-out row that draws
+@@ -308,6 +317,9 @@
+ /// that never came) is 0 high, and is placed at 0. Dropping that 0 as "not laid out" kept the row's
+ /// estimate, 26px for each of its items, as blank space in the transcript (Leo, 2026-10-21: a
+ /// screen-tall gap under "Worked for" and under an opened fold's last command).
++/// The cleanup of a row whose commit queued no measure.
++const noQueue = () => {};
++
+ function drawnHeightOf(node: HTMLElement): number | undefined {
+   const height = node.getBoundingClientRect().height;
+   return height > 0 || node.getClientRects().length > 0 ? height : undefined;
+@@ -600,9 +612,32 @@
+     observer.observe(node);
+     return () => observer.unobserve(node);
+   }, [observer]);
++  // What the last queue was for, but the version: a commit that changed only the version (a streamed
++  // token) is one the row's observer reports when it changed the row's size (queueDrawn).
++  const queuedFor = useRef<readonly unknown[] | undefined>(undefined);
+   useLayoutEffect(() => {
+     const node = ref.current;
+-    if (node) return queueDrawn(node, row.id, row.version, replyActions, status);
++    if (!node) return;
++    const was = queuedFor.current;
++    const now = [
++      row.id,
++      replyActions,
++      status,
++      rowWidth,
++      expanded,
++      joinsPrevious,
++      joinsNext,
++      beforeFooter,
++      lastFooter,
++      continuationFooter,
++      lastTurn,
++      queueDrawn,
++      // The observer sees the content box: a class that moves the padding is read here.
++      node.className,
++    ];
++    queuedFor.current = now;
++    const versionOnly = was !== undefined && now.every((value, at) => value === was[at]);
++    return queueDrawn(node, row.id, row.version, replyActions, status, versionOnly);
+   }, [
+     row.id,
+     row.version,
+@@ -1051,7 +1086,7 @@
+   // Measurements above the view can move the logical end by half a pixel while the physical
+   // end stays rounded. Keep that fraction even when the browser already clamped to the end,
+   // so releasing follow before the next wheel does not inherit a half-pixel row jump.
+-  retainScrollOrigin(node, latest, top);
++  retainScrollOrigin(node, latest);
+   return { moved, top };
+ }
+ 
+@@ -2800,7 +2835,23 @@
+     [sessionId],
+   );
+   const queueDrawn = useCallback<QueueDrawn>(
+-    (node, id, version, actions, status) => {
++    (node, id, version, actions, status, versionOnly) => {
++      // A streamed token: no height read in the commit (a forced layout after React's writes, the top
++      // one per token in a long chat). A row it resized is reported by the row's observer, in the
++      // browser's own layout pass, before the frame paints (`observer` below); one it left at its
++      // height keeps the height already placed, whose version differs only in a field placement
++      // never reads. Read here only when no height is kept for the row as it is drawn now.
++      if (versionOnly && typeof ResizeObserver !== "undefined") {
++        const known = drawnRef.current.get(id);
++        if (
++          known &&
++          known.sessionId === sessionId &&
++          known.width === rowWidthRef.current &&
++          Boolean(known.actions) === Boolean(actions) &&
++          known.status === (status || undefined)
++        )
++          return noQueue;
++      }
+       const measure = () => {
+         if (!node.isConnected || node.dataset.rowId !== id) return;
+         reportDrawn(
+@@ -2817,7 +2868,7 @@
+         if (pendingMeasures.current.get(node) === measure) pendingMeasures.current.delete(node);
+       };
+     },
+-    [reportDrawn],
++    [reportDrawn, sessionId],
+   );
+   // All of a commit's reports land in one update, before the frame paints.
+   /// Rows whose drawn height changed since the last placement, which places again from the first.
+@@ -4634,6 +4685,7 @@
+       // after that fold ends slides only by what it adds, never by the whole fold again.
+       stack.delta = delta;
+       stack.pinned = pinned;
++      passTop = pinned;
+       scrollPacer.current?.cancel();
+       setScrollAt(pinned);
+     } else if (
+@@ -5012,7 +5064,7 @@
+           // leaves the page laid out): nothing after it reads the scroller.
+           node.scrollTop = nextTop;
+           passTop = node.scrollTop;
+-          retainScrollOrigin(node, nextTop, passTop);
++          retainScrollOrigin(node, nextTop);
+           // Keep React's rendered offset in the same frame as the anchor correction. Otherwise a
+           // rounded DOM offset arrives through scroll later and can briefly show Jump to latest.
+           scrollPacer.current?.cancel();
