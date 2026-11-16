@@ -86,6 +86,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         super.init()
     }
 
+    /// Run deferred launch work in a fresh main-thread turn after the first
+    /// frame. `FirstFrameGate` invokes its callbacks from the Core Animation
+    /// completion block, so doing the work directly there would extend the
+    /// frame's commit turn.
+    private func afterFirstFrame(_ work: @escaping @MainActor () -> Void) {
+        firstFrame.whenOpen {
+            Task { @MainActor in work() }
+        }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Design mode files a crash left (BrowserDesignModeTempFiles); off the main thread.
         Task.detached(priority: .background) { BrowserDesignModeController.tempFiles.removeAll() }
@@ -149,20 +159,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Debug Settings overrides (DEV and NIGHTLY only) before any window lays out.
         services.debugSettings.start()
         DebugTimings.markLaunch("dfl.services")
-        AppActions.bind(services)
-        HandlerCoverage.verify(services.registry)
-        services.palette.bindRegistryActions()
-        let ghosttyKeybinds = GhosttyKeybindSync(router: services.keyRouter)
-        self.ghosttyKeybinds = ghosttyKeybinds
-        ghosttyKeybinds.start()
-        let ghosttyConfigLiveReload = GhosttyConfigLiveReload()
-        self.ghosttyConfigLiveReload = ghosttyConfigLiveReload
-        ghosttyConfigLiveReload.start()
-        // App-scoped Ghostty actions (quit, toggle_visibility, ...) arrive with no surface.
-        TerminalHooks(services: services).install()
-        DebugTimings.markLaunch("dfl.bind")
+        // Action handlers, Ghostty bindings and live reload are not needed to
+        // draw the launch shell. Keep each launch task behind its own frame.
+        afterFirstFrame { [weak services] in
+            guard let services else { return }
+            AppActions.bind(services)
+            DebugTimings.markLaunch("dfl.actions")
+        }
+        afterFirstFrame { [weak services] in
+            guard let services else { return }
+            HandlerCoverage.verify(services.registry)
+            services.palette.bindRegistryActions()
+            DebugTimings.markLaunch("dfl.bind")
+        }
+        afterFirstFrame { [weak self, weak services] in
+            guard let services else { return }
+            let ghosttyKeybinds = GhosttyKeybindSync(router: services.keyRouter)
+            self?.ghosttyKeybinds = ghosttyKeybinds
+            ghosttyKeybinds.start()
+        }
+        afterFirstFrame { [weak self, weak services] in
+            guard let services else { return }
+            let ghosttyConfigLiveReload = GhosttyConfigLiveReload()
+            self?.ghosttyConfigLiveReload = ghosttyConfigLiveReload
+            ghosttyConfigLiveReload.start()
+        }
+        afterFirstFrame { [weak services] in
+            guard let services else { return }
+            // App-scoped Ghostty actions (quit, toggle_visibility, ...) arrive with no surface.
+            TerminalHooks(services: services).install()
+        }
         startSettingsAndControl(services: services, launch: settingsRead)
-        services.newTabSpares.prewarm() // the first agent page loads while the windows build (cx-z9kz0)
+        afterFirstFrame { [weak services] in
+            services?.newTabSpares.prewarm() // the first agent page loads while the windows build (cx-z9kz0)
+        }
         DebugTimings.markLaunch("dfl.settings")
         NSApp.mainMenu = MainMenu.make(registry: services.registry, blocking: services.blocking)
         DebugTimings.markLaunch("dfl.menu")
@@ -173,9 +203,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         services.daemon.start(launch: environment.launch, terminalEnvironment: environment.terminalEnvironment,
                               terminalEnvironmentProvider: environment.terminalEnvironmentProvider(),
                               resolvesShellIntegration: environment.resolvesShellIntegration, prestart: daemonPrestart)
-        FeaturePolicyEnforcer(services: services).start()
-        cloudContext = services.startCloud()
-        firstFrame.whenOpen { [weak services] in services?.startNonPaintServices() }
+        afterFirstFrame { [weak services] in
+            guard let services else { return }
+            FeaturePolicyEnforcer(services: services).start()
+        }
+        afterFirstFrame { [weak self, weak services] in
+            self?.cloudContext = services?.startCloud()
+        }
+        afterFirstFrame { [weak services] in services?.startNonPaintServices() }
         // Before the first window opens (restoreWhenLoaded opens one at once).
         services.windows.onPresent = { [weak services] controller in
             services?.crashRecovery.showRestartNotice(on: controller.window)
@@ -226,14 +261,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let profilesDirectory = BrowserProfileService.defaultDirectory(bundleID: services.environment.launch.bundleID)
         services.browserProfiles.load(directory: profilesDirectory, importStore: services.onboarding.importStore)
         DebugTimings.markLaunch("dfl.first_window_hooks")
-        services.home.start()
-        services.harnessIcons.start()
-        mouseSideButtons.start { [weak services] in _ = services?.registry.perform($0 == .back ? "focusHistoryBack" : "focusHistoryForward") }
-        services.keybindingsFile.start()
-        services.bookmarks.start(directory: profilesDirectory, importStore: services.onboarding.importStore)
-        services.history.start(supportDirectory: profilesDirectory.deletingLastPathComponent())
+        afterFirstFrame { [weak services] in services?.home.start() }
+        afterFirstFrame { [weak services] in services?.harnessIcons.start() }
+        afterFirstFrame { [weak services] in
+            mouseSideButtons.start { [weak services] in _ = services?.registry.perform($0 == .back ? "focusHistoryBack" : "focusHistoryForward") }
+        }
+        afterFirstFrame { [weak services] in services?.keybindingsFile.start() }
+        afterFirstFrame { [weak services] in
+            guard let services else { return }
+            services.bookmarks.start(directory: profilesDirectory, importStore: services.onboarding.importStore)
+        }
+        afterFirstFrame { [weak services] in
+            guard let services else { return }
+            services.history.start(supportDirectory: profilesDirectory.deletingLastPathComponent())
+        }
         // cmux-page:// first-party pages for Chromium, before any window can start it.
-        FirstPartyPageSchemes.install()
+        afterFirstFrame {
+            FirstPartyPageSchemes.install()
+        }
         // Every cmux page view follows `browser.defaultEngine` (Chromium by default) through this one host.
         PageWebView.openPanel = services.openPanel
         PageWebView.chromiumHosting = ChromiumPageHost(
@@ -250,29 +295,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DebugTimings.markLaunch("dfl.home_history")
         services.windows.restoreWhenLoaded()
         DebugTimings.markLaunch("dfl.windows")
-        // After two quick unexpected ends in a row, Chromium starts only
-        // when the user reloads a browser tab.
-        services.observeBorders()
-        services.observeGlass()
-        services.updateFeedObservation = UpdateFeedPosting.follow(services)
-        // The runtime pack check wires the engine reason at once; its download waits until asked.
-        services.startChromiumRuntime()
-        firstFrame.whenOpen { [weak services] in services?.startLaterTabWarmups() }
+        afterFirstFrame { [weak services] in
+            guard let services else { return }
+            // After two quick unexpected ends in a row, Chromium starts only
+            // when the user reloads a browser tab.
+            services.observeBorders()
+            services.observeGlass()
+            services.updateFeedObservation = UpdateFeedPosting.follow(services)
+        }
+        afterFirstFrame { [weak services] in
+            // The runtime pack check wires the engine reason at once; its download waits until asked.
+            services?.startChromiumRuntime()
+        }
+        afterFirstFrame { [weak services] in services?.startLaterTabWarmups() }
         // Other apps' sign-ins, before any request a launch by one delivers.
         // The engines' incognito profiles and the Chromium engine's sign-in tabs (AppServices).
-        let webAuthWindows = WebAuthSessionWindows(host: services, logger: services.daemon.logger,
-                                                   profiles: services.browserStores.offTheRecord, signInCallbacks: services.signInCallbacks,
-                                                   contextMenus: services.contextMenus, activeLook: services.activeLook)
-        let webAuthHandler = WebAuthSessionHandler(broker: WebAuthSessionBroker(opener: webAuthWindows))
-        self.webAuthHandler = webAuthHandler
-        WebAuthSessionHandler.install(webAuthHandler)
-        NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(handleURLEvent(_:reply:)),
-                                                     forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
+        afterFirstFrame { [weak self, weak services] in
+            guard let self, let services else { return }
+            let webAuthWindows = WebAuthSessionWindows(host: services, logger: services.daemon.logger,
+                                                       profiles: services.browserStores.offTheRecord, signInCallbacks: services.signInCallbacks,
+                                                       contextMenus: services.contextMenus, activeLook: services.activeLook)
+            let webAuthHandler = WebAuthSessionHandler(broker: WebAuthSessionBroker(opener: webAuthWindows))
+            self.webAuthHandler = webAuthHandler
+            WebAuthSessionHandler.install(webAuthHandler)
+        }
+        afterFirstFrame { [weak self] in
+            guard let self else { return }
+            NSAppleEventManager.shared().setEventHandler(self, andSelector: #selector(handleURLEvent(_:reply:)),
+                                                         forEventClass: AEEventClass(kInternetEventClass), andEventID: AEEventID(kAEGetURL))
+        }
         services.windows.onContentDidAppear = { [weak services] in services?.externalOpen.flush(); services?.pageHostPool.windowDidAppear($0.window) }
-        NSApp.servicesProvider = CmuxServicesProvider(open: services.externalOpen)
+        afterFirstFrame { [weak services] in
+            guard let services else { return }
+            NSApp.servicesProvider = CmuxServicesProvider(open: services.externalOpen)
+        }
         // A launch whose first window never draws (no window, a daemon that never answers) still
         // starts the work waiting for that frame.
-        openedURLs.start { [weak self] in self?.routeReadyURL($0) }
+        afterFirstFrame { [weak self] in
+            self?.openedURLs.start { [weak self] in self?.routeReadyURL($0) }
+        }
         firstFrame.armBackstop(after: .seconds(3))
     }
 
