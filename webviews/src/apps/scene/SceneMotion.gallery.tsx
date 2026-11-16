@@ -197,7 +197,7 @@ function shapes(): Fixture {
   const panelText = create(ops, "Text", { text: "Glow", color: "#FFFFFF", weight: "semibold" });
   ops.push({ op: "children", id: panel, children: [panelText] });
   const glowText = create(ops, "Icon", {
-    symbol: "bolt.fill",
+    symbol: "star.fill",
     size: 28,
     color: GOLD,
     glow: { color: GOLD, radius: 10 },
